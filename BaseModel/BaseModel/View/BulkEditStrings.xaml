@@ -1,0 +1,22 @@
+﻿<UserControl x:Class="BaseModel.View.BulkEditStrings"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+             xmlns:dxlc="http://schemas.devexpress.com/winfx/2008/xaml/layoutcontrol"
+             xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="100" d:DesignWidth="300">
+    <dxlc:LayoutControl Orientation="Vertical">
+        <dxlc:LayoutGroup Name="LayoutGroupMain" View="Group" Header="Edit Value" Orientation="Vertical">
+            <dxlc:LayoutGroup Height="40" Name="LayoutGroupContent" View="Group" Orientation="Horizontal">
+                <dxlc:LayoutItem Height="25" Label="Value:">
+                    <dxe:TextEdit x:Name="txtContent" Text="{Binding EditValue, Mode=TwoWay}" />
+                </dxlc:LayoutItem>
+            </dxlc:LayoutGroup>
+            <dxlc:LayoutGroup Height="25" HorizontalAlignment="Right" Name="LayoutGroupButtons" View="Group"
+                              Orientation="Horizontal" />
+        </dxlc:LayoutGroup>
+    </dxlc:LayoutControl>
+</UserControl>

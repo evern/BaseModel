@@ -1,0 +1,57 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
+                    xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
+                    xmlns:misc="clr-namespace:BaseModel.Misc"
+                    xmlns:local="clr-namespace:BluePrints.Views">
+    <Style x:Key="NestedGridControlTemplate" TargetType="{x:Type dxg:GridControl}">
+        <Setter Property="ShowLoadingPanel" Value="{Binding IsLoading}" />
+        <Setter Property="ItemsSource" Value="{Binding DisplayEntities}" />
+        <Setter Property="ClipboardCopyMode" Value="ExcludeHeader" />
+        <Setter Property="SelectionMode" Value="Row" />
+        <Setter Property="CurrentItem" Value="{Binding DisplaySelectedEntity, Mode=TwoWay}" />
+        <Setter Property="SelectedItems" Value="{Binding DisplaySelectedEntities, Mode=TwoWay}" />
+        <Setter Property="ShowBorder" Value="False" />
+        <Setter Property="AutoExpandAllGroups" Value="False" />
+    </Style>
+    <Style x:Key="NestedTableViewTemplate" TargetType="{x:Type misc:TableViewEx}">
+        <Setter Property="dxmvvm:Interaction.BehaviorsTemplate">
+            <Setter.Value>
+                <DataTemplate>
+                    <ItemsControl>
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True"
+                                               Command="{Binding MainViewModel.ExistingRowAddUndoAndSaveCommand}"
+                                               EventName="CellValueChanged" />
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True"
+                                               Command="{Binding MainViewModel.NewRowAddUndoAndSaveCommand}"
+                                               EventName="RowUpdated" />
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True"
+                                               Command="{Binding MainViewModel.ValidateCellCommand}"
+                                               EventName="ValidateCell" />
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True"
+                                               Command="{Binding MainViewModel.ValidateRowCommand}"
+                                               EventName="ValidateRow" />
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True"
+                                               Command="{Binding MainViewModel.PastingFromClipboardCommand}"
+                                               EventName="PastingFromClipboard" />
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True"
+                                               Command="{Binding MainViewModel.ShownEditorCommand}"
+                                               EventName="ShownEditor" />
+                        <!--<dxmvvm:KeyToCommand KeyGesture="Delete" Command="{Binding BulkDeleteCommand}"  />-->
+                        <dxmvvm:KeyToCommand KeyGesture="CTRL+Z" Command="{Binding MainViewModel.UndoCommand}" />
+                        <dxmvvm:KeyToCommand KeyGesture="CTRL+Y" Command="{Binding MainViewModel.RedoCommand}" />
+                    </ItemsControl>
+                </DataTemplate>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="ShowFixedTotalSummary" Value="True" />
+        <Setter Property="NewItemRowPosition" Value="Top" />
+        <Setter Property="AllowPerPixelScrolling" Value="True" />
+        <Setter Property="ShowGroupedColumns" Value="True" />
+        <Setter Property="ShowSearchPanelMode" Value="Always" />
+        <Setter Property="SearchDelay" Value="0" />
+        <Setter Property="AllowScrollAnimation" Value="True" />
+        <Setter Property="ShowAutoFilterRow" Value="True" />
+        <Setter Property="ShowCriteriaInAutoFilterRow" Value="True" />
+    </Style>
+</ResourceDictionary>

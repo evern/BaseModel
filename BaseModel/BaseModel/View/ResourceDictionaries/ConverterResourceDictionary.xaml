@@ -1,0 +1,10 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+                    xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
+                    xmlns:converter="clr-namespace:BluePrints.Common.ViewModel.Converters"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+    <dx:EmbeddedResourceImageConverter x:Key="EmbeddedResourceImageConverter" />
+    <dxmvvm:BooleanNegationConverter x:Key="BooleanNegationConverter" />
+    <dxmvvm:StringToBooleanConverter x:Key="StringToBoolConverter" />
+</ResourceDictionary>

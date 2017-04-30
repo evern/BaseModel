@@ -1,0 +1,192 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{25F838CC-CF00-4BA1-A2DD-21B4C02592CE}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>BaseModel</RootNamespace>
+    <AssemblyName>BaseModel</AssemblyName>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="DevExpress.Data.v16.2, Version=16.2.5.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL" />
+    <Reference Include="DevExpress.Mvvm.v16.2, Version=16.2.5.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL" />
+    <Reference Include="DevExpress.Xpf.Core.v16.2, Version=16.2.5.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL" />
+    <Reference Include="DevExpress.Xpf.Grid.v16.2, Version=16.2.5.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL" />
+    <Reference Include="DevExpress.Xpf.Grid.v16.2.Core, Version=16.2.5.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL" />
+    <Reference Include="DevExpress.Xpf.LayoutControl.v16.2, Version=16.2.5.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL" />
+    <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="EntityFramework.SqlServer, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.SqlServer.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="System" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Security" />
+    <Reference Include="System.Xaml" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+    <Reference Include="WindowsBase" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Attribute\BulkEditDisabledAttributes.cs" />
+    <Compile Include="Attribute\ConstraintAttributes.cs" />
+    <Compile Include="Attribute\FilterNameAttribute.cs" />
+    <Compile Include="Attribute\FilterValueAttribute.cs" />
+    <Compile Include="Attribute\ProjectionPropertyAttribute.cs" />
+    <Compile Include="Attribute\RequiredAttributes.cs" />
+    <Compile Include="DataModel\DbExceptions.cs" />
+    <Compile Include="DataModel\DesignTime\DesignTimeInstantFeedbackSource.cs" />
+    <Compile Include="DataModel\DesignTime\DesignTimeReadOnlyRepository.cs" />
+    <Compile Include="DataModel\DesignTime\DesignTimeRepository.cs" />
+    <Compile Include="DataModel\DesignTime\DesignTimeUnitOfWork.cs" />
+    <Compile Include="DataModel\DesignTime\DesignTimeUnitOfWorkFactory.cs" />
+    <Compile Include="DataModel\EntityFramework\CreatedAndUpdatedDateInterceptor.cs" />
+    <Compile Include="DataModel\EntityFramework\DbExceptionsConverter.cs" />
+    <Compile Include="DataModel\EntityFramework\DbReadOnlyRepository.cs" />
+    <Compile Include="DataModel\EntityFramework\DbRepository.cs" />
+    <Compile Include="DataModel\EntityFramework\DbUnitOfWork.cs" />
+    <Compile Include="DataModel\EntityFramework\DbUnitOfWorkFactory.cs" />
+    <Compile Include="DataModel\EntityFramework\Extensions.cs" />
+    <Compile Include="DataModel\EntityFramework\InstantFeedbackSource.cs" />
+    <Compile Include="DataModel\EntityFramework\SoftDeleteInterceptor.cs" />
+    <Compile Include="DataModel\EntityState.cs" />
+    <Compile Include="DataModel\IReadOnlyRepository.cs" />
+    <Compile Include="DataModel\IRepository.cs" />
+    <Compile Include="DataModel\IUnitOfWork.cs" />
+    <Compile Include="DataModel\UnitOfWorkBase.cs" />
+    <Compile Include="Misc\CommonResource.Designer.cs" />
+    <Compile Include="Misc\Enums.cs" />
+    <Compile Include="Misc\GridControlEx.cs" />
+    <Compile Include="Misc\Interfaces.cs" />
+    <Compile Include="Misc\LayoutSettings.Designer.cs" />
+    <Compile Include="Misc\Messages.cs" />
+    <Compile Include="Misc\OptionalEntitiesParameter.cs" />
+    <Compile Include="Misc\PersistentLayoutHelper.cs" />
+    <Compile Include="Misc\ProjectionBase.cs" />
+    <Compile Include="Misc\RangeObservableCollection.cs" />
+    <Compile Include="Misc\ViewRestoreUserControl.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Utils\DataUtils.cs" />
+    <Compile Include="Utils\ExpressionHelper.cs" />
+    <Compile Include="Utils\StringFormatUtils.cs" />
+    <Compile Include="ViewModel\Base\CollectionViewModel.cs" />
+    <Compile Include="ViewModel\Base\CollectionViewModelBase.cs" />
+    <Compile Include="ViewModel\Base\EntitiesViewModel.cs" />
+    <Compile Include="ViewModel\Base\ProjectionCollectionViewModel.Partial.cs" />
+    <Compile Include="ViewModel\Base\ReadOnlyCollectionViewModel.cs" />
+    <Compile Include="ViewModel\Dialogs\BulkEditEnumsViewModel.cs" />
+    <Compile Include="ViewModel\Dialogs\BulkEditNumbersViewModel.cs" />
+    <Compile Include="ViewModel\Dialogs\BulkEditStringsViewModel.cs" />
+    <Compile Include="ViewModel\Dialogs\DialogCollectionViewModel.cs" />
+    <Compile Include="ViewModel\Document\DocumentInfo.cs" />
+    <Compile Include="ViewModel\Document\DocumentManagerServiceExtensions.cs" />
+    <Compile Include="ViewModel\Document\DocumentsViewModel.cs" />
+    <Compile Include="ViewModel\Document\ModuleDescription.cs" />
+    <Compile Include="ViewModel\Loader\EntitiesCollectionsWrapper.cs" />
+    <Compile Include="ViewModel\Loader\EntitiesLoaderDescription.cs" />
+    <Compile Include="ViewModel\Loader\EntitiesLoaderDescriptionCollection.cs" />
+    <Compile Include="ViewModel\UndoRedo\EntitiesUndoRedoManager.cs" />
+    <Compile Include="ViewModel\UndoRedo\ISupportUndoRedo.cs" />
+    <Compile Include="ViewModel\UndoRedo\UndoRedoEntityInfo.cs" />
+    <Compile Include="View\BulkEditEnums.xaml.cs">
+      <DependentUpon>BulkEditEnums.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="View\BulkEditNumbers.xaml.cs">
+      <DependentUpon>BulkEditNumbers.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="View\BulkEditStrings.xaml.cs">
+      <DependentUpon>BulkEditStrings.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="View\DXSplashScreen\LoadingScreen.xaml.cs">
+      <DependentUpon>LoadingScreen.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="View\DXSplashScreen\LoadingScreenManager.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Misc\CommonResource.resx" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+    <None Include="Misc\LayoutSettings.settings" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Page Include="View\BulkEditEnums.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="View\BulkEditNumbers.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="View\BulkEditStrings.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="View\DXSplashScreen\LoadingScreen.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="View\ResourceDictionaries\ConverterResourceDictionary.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="View\ResourceDictionaries\CustomControlResourceDictionary.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="View\ResourceDictionaries\DefaultControlResourceDictionary.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="View\ResourceDictionaries\NestedControlResourceDictionary.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="View\DXSplashScreen\Image.png" />
+    <Content Include="View\DXSplashScreen\Logo.png" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
