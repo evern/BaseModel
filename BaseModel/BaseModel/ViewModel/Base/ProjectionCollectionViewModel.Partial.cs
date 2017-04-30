@@ -862,7 +862,7 @@ namespace BaseModel.ViewModel.Base
                                     IHaveGUID entityWithGuid = bulkEditEnumsViewModel.SelectedItem as IHaveGUID;
                                     if(entityWithGuid != null)
                                     {
-                                        newValue = entityWithGuid.GUID;
+                                        newValue = entityWithGuid.Guid;
                                     }
                                 }
                             }

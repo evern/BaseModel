@@ -16,12 +16,11 @@ using BaseModel.ViewModel.Base;
 namespace BaseModel.ViewModel.Loader
 {
     public abstract class CollectionViewModelsWrapper<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey,
-        TMainEntityUnitOfWork, TMainViewModel> : ICollectionViewModelsWrapper, IDocumentContent, ISupportParameter, ISupportViewRestoration
+        TMainEntityUnitOfWork> : ICollectionViewModelsWrapper, IDocumentContent, ISupportParameter, ISupportViewRestoration
         where TMainEntity : class, IHaveGUID
         where TMainProjectionEntity : class, IHaveGUID
         where TMainEntityUnitOfWork : IUnitOfWork
-        where TMainViewModel :
-        CollectionViewModel<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey, TMainEntityUnitOfWork>
+        
     {
         protected bool isSubEntitiesAdded;
         protected EntitiesLoaderDescriptionCollection loaderCollection = null;
@@ -30,7 +29,7 @@ namespace BaseModel.ViewModel.Loader
             EntitiesLoaderDescription<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey, TMainEntityUnitOfWork>
             mainEntityLoaderDescription;
 
-        public TMainViewModel MainViewModel { get; set; }
+        public CollectionViewModel<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey, TMainEntityUnitOfWork> MainViewModel { get; set; }
         public bool SuppressNotification { get; set; }
 
         //allows view state to interact with OnMainViewModelRefreshed
@@ -126,7 +125,7 @@ namespace BaseModel.ViewModel.Loader
 
         protected virtual bool OnMainViewModelLoaded(IEnumerable<TMainProjectionEntity> entities)
         {
-            MainViewModel = (TMainViewModel) mainEntityLoaderDescription.GetViewModel();
+            MainViewModel = (CollectionViewModel<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey, TMainEntityUnitOfWork>) mainEntityLoaderDescription.GetViewModel();
             AssignCallBacksAndRaisePropertyChange(entities);
             return true;
         }
@@ -134,7 +133,7 @@ namespace BaseModel.ViewModel.Loader
         protected virtual void AssignCallBacksAndRaisePropertyChange(IEnumerable<TMainProjectionEntity> entities)
         {
             MainViewModel.SelectedEntities = this.DisplaySelectedEntities;
-            MainViewModel.FullRefreshCallBack += this.FullRefresh;
+            MainViewModel.AfterBulkOperationRefreshCallBack = this.FullRefreshWithoutClearingUndoRedo;
             RefreshView();
         }
 
@@ -280,6 +279,16 @@ namespace BaseModel.ViewModel.Loader
             RefreshView();
         }
 
+        public virtual void FullRefreshWithoutClearingUndoRedo()
+        {
+            if (MainViewModel == null)
+                return;
+
+            mainThreadDispatcher.BeginInvoke(new Action(() => StoreViewState()));
+            MainViewModel.RefreshWithoutClearingUndoManager();
+            RefreshView();
+        }
+
         private bool doNotAutoRefresh { get; set; }
 
         public bool DoNotAutoRefresh
@@ -353,10 +362,10 @@ namespace BaseModel.ViewModel.Loader
             RestoreSelectedEntitiesGuids.Clear();
 
             foreach (var selectedEntity in DisplaySelectedEntities)
-                RestoreSelectedEntitiesGuids.Add(new Guid(selectedEntity.GUID.ToString()));
+                RestoreSelectedEntitiesGuids.Add(new Guid(selectedEntity.Guid.ToString()));
 
             if (DisplaySelectedEntity != null)
-                RestoreSelectedEntityGuid = DisplaySelectedEntity.GUID;
+                RestoreSelectedEntityGuid = DisplaySelectedEntity.Guid;
         }
 
         protected virtual void restoreViewState()
@@ -365,7 +374,7 @@ namespace BaseModel.ViewModel.Loader
                 return;
 
             var restoreSelectedEntities =
-                DisplayEntities.Where(x => RestoreSelectedEntitiesGuids.Any(y => y == x.GUID));
+                DisplayEntities.Where(x => RestoreSelectedEntitiesGuids.Any(y => y == x.Guid));
             DisplaySelectedEntities.Clear();
             if (restoreSelectedEntities.Count() > 0)
                 foreach (var restoreSelectedEntity in restoreSelectedEntities)
@@ -374,7 +383,7 @@ namespace BaseModel.ViewModel.Loader
             if (RestoreSelectedEntityGuid != Guid.Empty)
             {
                 var restoreSelectedEntity =
-                    DisplayEntities.FirstOrDefault(x => x.GUID == RestoreSelectedEntityGuid);
+                    DisplayEntities.FirstOrDefault(x => x.Guid == RestoreSelectedEntityGuid);
                 if (restoreSelectedEntity != null)
                     DisplaySelectedEntity = restoreSelectedEntity;
             }
@@ -411,8 +420,7 @@ namespace BaseModel.ViewModel.Loader
 
         public virtual void OnLoaded()
         {
-            if(IsLoading)
-                PersistentLayoutHelper.TryDeserializeLayout(LayoutSerializationService, ViewName);
+            PersistentLayoutHelper.TryDeserializeLayout(LayoutSerializationService, ViewName);
         }
 
         public bool IsLoading

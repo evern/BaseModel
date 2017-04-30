@@ -30,6 +30,8 @@ namespace BaseModel.ViewModel.Document
         protected DocumentsViewModel(IUnitOfWorkFactory<TUnitOfWork> unitOfWorkFactory)
         {
             this.unitOfWorkFactory = unitOfWorkFactory;
+            Modules = new RangeObservableCollection<TModule>();
+            Modules.AddRange(CreateModules());
             //foreach (var module in Modules)
             //    Messenger.Default.Register<NavigateMessage<TModule>>(this, module, x => Show(x.Token));
             //Messenger.Default.Register<DestroyOrphanedDocumentsMessage>(this, x => DestroyOrphanedDocuments());
@@ -139,30 +141,7 @@ namespace BaseModel.ViewModel.Document
         /// Finalizes the DocumentsViewModel initialization and opens the default document.
         /// Since DocumentsViewModel is a POCO view model, an instance of this class will also expose the OnLoadedCommand property that can be used as a binding source in views.
         /// </summary>
-        public virtual void OnLoaded(TModule module)
-        {
-            IsLoaded = true;
-            DocumentManagerService.ActiveDocumentChanged += OnActiveDocumentChanged;
-            if (!RestoreLogicalLayout())
-                Show(module);
-            PersistentLayoutHelper.TryDeserializeLayout(LayoutSerializationService, ViewLayoutName);
-        }
-
-        private bool documentChanging = false;
-        //BaseModel Customization
-        //void OnActiveDocumentChanged(object sender, ActiveDocumentChangedEventArgs e)
-        //{
-        //    if (e.NewDocument == null)
-        //    {
-        //        ActiveModule = null;
-        //    }
-        //    else
-        //    {
-        //        documentChanging = true;
-        //        ActiveModule = Modules.FirstOrDefault(m => m.DocumentType == (string)e.NewDocument.Id);
-        //        documentChanging = false;
-        //    }
-        //}
+        public abstract void OnLoaded(TModule module);
 
         protected IGroupedDocumentManagerService GroupedDocumentManagerService
         {
@@ -191,28 +170,7 @@ namespace BaseModel.ViewModel.Document
 
         protected bool IsLoaded { get; set; }
 
-        protected virtual void OnSelectedModuleChanged(TModule oldModule)
-        {
-            if (IsLoaded && !documentChanging)
-                Show(SelectedModule);
-        }
-
         #region Custom Implementation
-
-        private void OnActiveDocumentChanged(object sender, ActiveDocumentChangedEventArgs e)
-        {
-            if (e.NewDocument == null)
-            {
-                ActiveModule = null;
-            }
-            else
-            {
-                documentChanging = true;
-                ActiveModule = Modules.FirstOrDefault(m => m.DocumentId.ToString() == (string) e.NewDocument.Id);
-                documentChanging = false;
-            }
-        }
-
         /// <summary>
         /// Navigates to a document.
         /// Since DocumentsViewModel is a POCO view model, an instance of this class will also expose the NavigateCommand property that can be used as a binding source in views.
@@ -220,8 +178,7 @@ namespace BaseModel.ViewModel.Document
         /// <param name="module">A navigation list entry specifying a document what to be opened.</param>
         public void Navigate()
         {
-            if (IsLoaded && !documentChanging && SelectedModule != null &&
-                !SelectedModule.DocumentId.ToString().ToUpper().Contains("CATEGORYVIEW"))
+            if (IsLoaded && SelectedModule != null && SelectedModule.CanNavigate)
                 NavigateCore(SelectedModule);
         }
 
@@ -229,7 +186,7 @@ namespace BaseModel.ViewModel.Document
         {
             if (module == null || DocumentManagerService == null)
                 return null;
-            var document = DocumentManagerService.FindDocumentByIdOrCreate(module.DocumentId,
+            var document = DocumentManagerService.FindDocumentByIdOrCreate(module.ModuleTitle,
                 x => NavigateToDocument(module));
 
             document.Show();
@@ -240,7 +197,7 @@ namespace BaseModel.ViewModel.Document
         {
             var document = DocumentManagerService.CreateDocument(module.DocumentType, module.DocumentParameter, this);
             document.Title = module.ModuleTitle;
-            document.Id = module.DocumentId;
+            document.Id = module.ModuleTitle;
             document.DestroyOnClose = true;
             return document;
         }
@@ -265,19 +222,6 @@ namespace BaseModel.ViewModel.Document
         protected TUnitOfWork CreateUnitOfWork()
         {
             return unitOfWorkFactory.CreateUnitOfWork();
-        }
-
-        public void SaveLogicalLayout()
-        {
-            PersistentLayoutHelper.PersistentLogicalLayout = this.SerializeDocumentManagerService();
-        }
-
-        public bool RestoreLogicalLayout()
-        {
-            if (string.IsNullOrEmpty(PersistentLayoutHelper.PersistentLogicalLayout))
-                return false;
-            this.RestoreDocumentManagerService(PersistentLayoutHelper.PersistentLogicalLayout);
-            return true;
         }
 
         bool ISupportLogicalLayout.CanSerialize

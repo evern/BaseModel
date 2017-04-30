@@ -22,10 +22,10 @@ namespace BaseModel.Misc
         }
 
         [Key]
-        public Guid GUID
+        public Guid Guid
         {
-            get { return Entity.GUID; }
-            set { Entity.GUID = value; }
+            get { return Entity.Guid; }
+            set { Entity.Guid = value; }
         }
     }
 

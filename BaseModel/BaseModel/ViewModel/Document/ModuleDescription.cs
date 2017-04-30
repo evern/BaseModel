@@ -12,26 +12,27 @@ namespace BaseModel.ViewModel.Document
         /// <summary>
         ///     Initializes a new instance of the ModuleDescription class.
         /// </summary>
-        /// <param name="title">A navigation list entry display text.</param>
-        /// <param name="documentType">A string value that specifies the view type of corresponding document.</param>
-        /// <param name="treeViewProperty">A property containing tree view specific properties for view binding</param>
-        /// <param name="documentParameter">A document parameter to specify SingleObjectView to display</param>
-        protected ModuleDescription(object documentId, object parentId, string title, string documentType, object documentParameter = null, ImageSource image = null, bool treeViewIsExpanded = false)
+        protected ModuleDescription(object id, object parentId, string title, bool canNavigate, string documentType, object documentParameter = null, ImageSource image = null, bool treeViewIsExpanded = false)
         {
             ModuleTitle = title;
+            CanNavigate = canNavigate;
             DocumentType = documentType;
             DocumentParameter = documentParameter;
-            DocumentId = documentId;
+            Id = id;
             ParentId = parentId;
             Image = Image;
             TreeViewIsExpanded = treeViewIsExpanded;
         }
 
-
         /// <summary>
         /// The navigation list entry display text.
         /// </summary>
         public string ModuleTitle { get; private set; }
+
+        /// <summary>
+        /// Specify whether the document is navigatable
+        /// </summary>
+        public bool CanNavigate { get; private set; }
 
         /// <summary>
         /// Contains the corresponding document view type.
@@ -42,11 +43,6 @@ namespace BaseModel.ViewModel.Document
         ///     The navigation parameter for SingleObjectViewModel.
         /// </summary>
         public object DocumentParameter { get; private set; }
-
-        /// <summary>
-        ///     Specifies the SingleObjectView document id
-        /// </summary>
-        public object DocumentId { get; private set; }
 
         /// <summary>
         ///     Specifies the parentId for treeview binding, cannot be nested since dxTreeView doesn't support nested for Ids

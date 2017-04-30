@@ -8,10 +8,18 @@ namespace BaseModel.DataModel.EntityFramework
 {
     public class CreatedAndUpdatedDateInterceptor : IDbCommandTreeInterceptor
     {
-        public const string CreatedColumnName = "CREATED";
-        public const string CreatedByColumnName = "CREATEDBY";
-        public const string ModifiedColumnName = "UPDATED";
-        public const string ModifiedByColumnName = "UPDATEDBY";
+        private readonly string CreatedColumnName;
+        private readonly string CreatedByColumnName;
+        private readonly string ModifiedColumnName;
+        private readonly string ModifiedByColumnName;
+
+        public CreatedAndUpdatedDateInterceptor(string createdColumnName, string createdByColumnName, string modifiedColumnName, string modifiedByColumnName)
+        {
+            CreatedColumnName = createdColumnName;
+            CreatedByColumnName = createdByColumnName;
+            ModifiedColumnName = modifiedColumnName;
+            ModifiedByColumnName = modifiedByColumnName;
+        }
 
         public void TreeCreated(DbCommandTreeInterceptionContext interceptionContext)
         {
@@ -27,7 +35,7 @@ namespace BaseModel.DataModel.EntityFramework
                 interceptionContext.Result = HandleUpdateCommand(updateCommand);
         }
 
-        private static DbCommandTree HandleInsertCommand(DbInsertCommandTree insertCommand)
+        private DbCommandTree HandleInsertCommand(DbInsertCommandTree insertCommand)
         {
             var now = DateTime.Now;
 
@@ -47,7 +55,7 @@ namespace BaseModel.DataModel.EntityFramework
                 insertCommand.Returning);
         }
 
-        private static DbCommandTree HandleUpdateCommand(DbUpdateCommandTree updateCommand)
+        private DbCommandTree HandleUpdateCommand(DbUpdateCommandTree updateCommand)
         {
             DateTime? now = DateTime.Now;
 

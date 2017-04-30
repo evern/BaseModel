@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace BaseModel.DataModel.DesignTime
 {
-    internal class DesignTimeUnitOfWorkFactory<TUnitOfWork> : IUnitOfWorkFactory<TUnitOfWork> where TUnitOfWork : IUnitOfWork
+    public class DesignTimeUnitOfWorkFactory<TUnitOfWork> : IUnitOfWorkFactory<TUnitOfWork> where TUnitOfWork : IUnitOfWork
     {
         private Func<TUnitOfWork> getUnitOfWork;
 

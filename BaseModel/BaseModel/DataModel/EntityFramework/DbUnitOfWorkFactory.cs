@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace BaseModel.DataModel.EntityFramework
 {
-    internal class DbUnitOfWorkFactory<TUnitOfWork> : IUnitOfWorkFactory<TUnitOfWork> where TUnitOfWork : IUnitOfWork
+    public class DbUnitOfWorkFactory<TUnitOfWork> : IUnitOfWorkFactory<TUnitOfWork> where TUnitOfWork : IUnitOfWork
     {
         private Func<TUnitOfWork> createUnitOfWork;
 

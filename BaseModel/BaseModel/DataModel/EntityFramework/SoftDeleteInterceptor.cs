@@ -11,8 +11,14 @@ namespace BaseModel.DataModel.EntityFramework
 {
     public class SoftDeleteInterceptor : IDbCommandTreeInterceptor
     {
-        public const string DeletedColumnName = "DELETED";
-        public const string DeletedByColumnName = "DELETEDBY";
+        private readonly string DeletedColumnName;
+        private readonly string DeletedByColumnName;
+
+        public SoftDeleteInterceptor(string deletedColumnName, string deletedByColumnName)
+        {
+            DeletedColumnName = deletedColumnName;
+            DeletedByColumnName = deletedByColumnName;
+        }
 
         public void TreeCreated(DbCommandTreeInterceptionContext interceptionContext)
         {
@@ -28,16 +34,16 @@ namespace BaseModel.DataModel.EntityFramework
                 interceptionContext.Result = HandleDeleteCommand(deleteCommand);
         }
 
-        private static DbCommandTree HandleQueryCommand(DbQueryCommandTree queryCommand)
+        private DbCommandTree HandleQueryCommand(DbQueryCommandTree queryCommand)
         {
-            var newQuery = queryCommand.Query.Accept(new SoftDeleteQueryVisitor());
+            var newQuery = queryCommand.Query.Accept(new SoftDeleteQueryVisitor(DeletedColumnName));
             return new DbQueryCommandTree(
                 queryCommand.MetadataWorkspace,
                 queryCommand.DataSpace,
                 newQuery);
         }
 
-        private static DbCommandTree HandleDeleteCommand(DbDeleteCommandTree deleteCommand)
+        private DbCommandTree HandleDeleteCommand(DbDeleteCommandTree deleteCommand)
         {
             var setClauses = new List<DbModificationClause>();
             var table = (EntityType) deleteCommand.Target.VariableType.EdmType;
@@ -66,6 +72,12 @@ namespace BaseModel.DataModel.EntityFramework
 
         public class SoftDeleteQueryVisitor : DefaultExpressionVisitor
         {
+            private readonly string DeletedColumnName;
+            public SoftDeleteQueryVisitor(string deletedColumnName)
+            {
+                DeletedColumnName = deletedColumnName;
+            }
+
             public override DbExpression Visit(DbScanExpression expression)
             {
                 var table = (EntityType) expression.Target.ElementType;

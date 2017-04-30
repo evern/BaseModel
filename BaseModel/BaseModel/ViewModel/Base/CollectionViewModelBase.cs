@@ -283,10 +283,10 @@ namespace BaseModel.ViewModel.Base
                 MessageBoxService.ShowMessage(e.ErrorMessage, e.ErrorCaption, MessageButton.OK, MessageIcon.Error);
             }
 
-            FullRefreshCallBack?.Invoke();
+            AfterBulkOperationRefreshCallBack?.Invoke();
         }
 
-        public Action FullRefreshCallBack;
+        public Action AfterBulkOperationRefreshCallBack;
 
         public virtual void BaseBulkSave(IEnumerable<TProjection> projectionEntities)
         {
@@ -330,7 +330,7 @@ namespace BaseModel.ViewModel.Base
                 MessageBoxService.ShowMessage(e.ErrorMessage, e.ErrorCaption, MessageButton.OK, MessageIcon.Error);
             }
 
-            FullRefreshCallBack?.Invoke();
+            AfterBulkOperationRefreshCallBack?.Invoke();
         }
 
         public override void Refresh()

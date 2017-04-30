@@ -13,7 +13,7 @@ namespace BaseModel.Misc
 
     public interface IHaveGUID
     {
-        Guid GUID { get; set; }
+        Guid Guid { get; set; }
     }
 
     public interface IProjection<TEntity> : IHaveGUID
