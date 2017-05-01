@@ -10,12 +10,12 @@
              d:DesignHeight="100" d:DesignWidth="300">
     <dxlc:LayoutControl Orientation="Vertical">
         <dxlc:LayoutGroup Name="LayoutGroupMain" View="Group" Header="Edit Value" Orientation="Vertical">
-            <dxlc:LayoutGroup Height="40" Name="LayoutGroupContent" View="Group" Orientation="Horizontal">
-                <dxlc:LayoutItem Height="25" Label="Value:">
+            <dxlc:LayoutGroup Height="50" Name="LayoutGroupContent" View="Group" Orientation="Horizontal">
+                <dxlc:LayoutItem Height="50" Label="Value:">
                     <dxe:TextEdit x:Name="txtContent" Text="{Binding EditValue, Mode=TwoWay}" />
                 </dxlc:LayoutItem>
             </dxlc:LayoutGroup>
-            <dxlc:LayoutGroup Height="25" HorizontalAlignment="Right" Name="LayoutGroupButtons" View="Group"
+            <dxlc:LayoutGroup Height="30" HorizontalAlignment="Right" Name="LayoutGroupButtons" View="Group"
                               Orientation="Horizontal" />
         </dxlc:LayoutGroup>
     </dxlc:LayoutControl>

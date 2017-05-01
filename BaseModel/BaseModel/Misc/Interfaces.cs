@@ -11,20 +11,25 @@ namespace BaseModel.Misc
         void CleanUpCallBacks();
     }
 
-    public interface IHaveGUID
+    public interface IGuidEntityKey
     {
-        Guid Guid { get; set; }
+        Guid EntityKey { get; set; }
     }
 
-    public interface IProjection<TEntity> : IHaveGUID
+    public interface IOriginalGuidEntityKey
+    {
+        Guid OriginalEntityKey { get; set; }
+    }
+
+    public interface IProjection<TEntity> : IGuidEntityKey
         where TEntity : class, new()
     {
         TEntity Entity { get; set; }
     }
 
     public interface IProjectionMasterDetail<TEntity, TProjection> : IProjection<TEntity>
-        where TEntity : class, IHaveGUID, new()
-        where TProjection : class, IHaveGUID, new()
+        where TEntity : class, IGuidEntityKey, new()
+        where TProjection : class, IGuidEntityKey, new()
     {
         ObservableCollection<TProjection> DetailEntities { get; set; }
     }

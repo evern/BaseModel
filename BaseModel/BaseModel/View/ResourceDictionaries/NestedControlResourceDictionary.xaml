@@ -2,8 +2,7 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
                     xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
-                    xmlns:misc="clr-namespace:BaseModel.Misc"
-                    xmlns:local="clr-namespace:BluePrints.Views">
+                    xmlns:misc="clr-namespace:BaseModel.Misc">
     <Style x:Key="NestedGridControlTemplate" TargetType="{x:Type dxg:GridControl}">
         <Setter Property="ShowLoadingPanel" Value="{Binding IsLoading}" />
         <Setter Property="ItemsSource" Value="{Binding DisplayEntities}" />

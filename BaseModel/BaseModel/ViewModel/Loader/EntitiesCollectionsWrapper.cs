@@ -17,8 +17,8 @@ namespace BaseModel.ViewModel.Loader
 {
     public abstract class CollectionViewModelsWrapper<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey,
         TMainEntityUnitOfWork> : ICollectionViewModelsWrapper, IDocumentContent, ISupportParameter, ISupportViewRestoration
-        where TMainEntity : class, IHaveGUID
-        where TMainProjectionEntity : class, IHaveGUID
+        where TMainEntity : class, IGuidEntityKey
+        where TMainProjectionEntity : class, IGuidEntityKey
         where TMainEntityUnitOfWork : IUnitOfWork
         
     {
@@ -165,7 +165,7 @@ namespace BaseModel.ViewModel.Loader
                 return;
 
             if(!IsSingleMainEntityRefreshIdentified(key, changedType, messageType, sender))
-                mainThreadDispatcher.BeginInvoke(new Action(() => FullRefresh()));
+                mainThreadDispatcher.BeginInvoke(new Action(() => FullRefreshWithoutClearingUndoRedo()));
         }
 
         protected virtual bool IsSingleMainEntityRefreshIdentified(object key, Type changedType, EntityMessageType messageType, object sender)
@@ -362,10 +362,10 @@ namespace BaseModel.ViewModel.Loader
             RestoreSelectedEntitiesGuids.Clear();
 
             foreach (var selectedEntity in DisplaySelectedEntities)
-                RestoreSelectedEntitiesGuids.Add(new Guid(selectedEntity.Guid.ToString()));
+                RestoreSelectedEntitiesGuids.Add(new Guid(selectedEntity.EntityKey.ToString()));
 
             if (DisplaySelectedEntity != null)
-                RestoreSelectedEntityGuid = DisplaySelectedEntity.Guid;
+                RestoreSelectedEntityGuid = DisplaySelectedEntity.EntityKey;
         }
 
         protected virtual void restoreViewState()
@@ -374,7 +374,7 @@ namespace BaseModel.ViewModel.Loader
                 return;
 
             var restoreSelectedEntities =
-                DisplayEntities.Where(x => RestoreSelectedEntitiesGuids.Any(y => y == x.Guid));
+                DisplayEntities.Where(x => RestoreSelectedEntitiesGuids.Any(y => y == x.EntityKey));
             DisplaySelectedEntities.Clear();
             if (restoreSelectedEntities.Count() > 0)
                 foreach (var restoreSelectedEntity in restoreSelectedEntities)
@@ -383,7 +383,7 @@ namespace BaseModel.ViewModel.Loader
             if (RestoreSelectedEntityGuid != Guid.Empty)
             {
                 var restoreSelectedEntity =
-                    DisplayEntities.FirstOrDefault(x => x.Guid == RestoreSelectedEntityGuid);
+                    DisplayEntities.FirstOrDefault(x => x.EntityKey == RestoreSelectedEntityGuid);
                 if (restoreSelectedEntity != null)
                     DisplaySelectedEntity = restoreSelectedEntity;
             }

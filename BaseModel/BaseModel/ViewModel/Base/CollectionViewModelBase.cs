@@ -173,8 +173,15 @@ namespace BaseModel.ViewModel.Base
         {
             ApplyEntityPropertiesToProjectionCallBack?.Invoke(primaryKey, projectionEntity, entity, isNewEntity);
 
-            Messenger.Default.Send(new EntityMessage<TEntity, TPrimaryKey>(primaryKey,
-                isNewEntity ? EntityMessageType.Added : EntityMessageType.Changed, this, string.Empty, willPerformBulkRefresh));
+            try
+            {
+                Messenger.Default.Send(new EntityMessage<TEntity, TPrimaryKey>(primaryKey,
+    isNewEntity ? EntityMessageType.Added : EntityMessageType.Changed, this, string.Empty, willPerformBulkRefresh));
+            }
+            catch(Exception e)
+            {
+                string s = e.ToString();
+            }
         }
 
         protected override void OnIsLoadingChanged()

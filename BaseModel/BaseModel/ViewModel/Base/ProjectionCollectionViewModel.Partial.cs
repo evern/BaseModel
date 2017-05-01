@@ -859,10 +859,10 @@ namespace BaseModel.ViewModel.Base
                                 }
                                 else
                                 {
-                                    IHaveGUID entityWithGuid = bulkEditEnumsViewModel.SelectedItem as IHaveGUID;
+                                    IGuidEntityKey entityWithGuid = bulkEditEnumsViewModel.SelectedItem as IGuidEntityKey;
                                     if(entityWithGuid != null)
                                     {
-                                        newValue = entityWithGuid.Guid;
+                                        newValue = entityWithGuid.EntityKey;
                                     }
                                 }
                             }

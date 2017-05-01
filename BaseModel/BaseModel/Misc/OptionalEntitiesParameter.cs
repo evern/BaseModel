@@ -24,9 +24,9 @@ namespace BaseModel.Misc
         {
             if (entity != null)
             {
-                IHaveGUID entityWithGuid = entity as IHaveGUID;
+                IGuidEntityKey entityWithGuid = entity as IGuidEntityKey;
                 if (entityWithGuid != null)
-                    return entityWithGuid.Guid.ToString();
+                    return entityWithGuid.EntityKey.ToString();
                 else
                     return string.Empty;
             }
@@ -63,18 +63,18 @@ namespace BaseModel.Misc
         {
             if (entity != null)
             {
-                IHaveGUID entityWithGuid = entity as IHaveGUID;
+                IGuidEntityKey entityWithGuid = entity as IGuidEntityKey;
 
                 if (entityWithGuid != null)
-                    return entityWithGuid.Guid.ToString();
+                    return entityWithGuid.EntityKey.ToString();
                 else
                     return string.Empty;
             }
             else if (secondEntity != null)
             {
-                IHaveGUID entityWithGuid = secondEntity as IHaveGUID;
+                IGuidEntityKey entityWithGuid = secondEntity as IGuidEntityKey;
                 if (entityWithGuid != null)
-                    return entityWithGuid.Guid.ToString();
+                    return entityWithGuid.EntityKey.ToString();
                 else
                     return string.Empty;
             }

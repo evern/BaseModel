@@ -5,16 +5,6 @@ namespace BaseModel.Helpers
 {
     public static class StringFormatUtils
     {
-        public static string GetEntityNameByEntitiesType(object entities)
-        {
-            return entities.GetType().ToString().Replace("BaseModel.Data.", "").Replace("[]", "");
-        }
-
-        public static string GetEntityNameByType(Type type)
-        {
-            return type.ToString().Replace("BaseModel.Data.", "").Replace("[]", "");
-        }
-
         /// <summary>
         /// Separate parts of string to alphabets and enumerated numbers starting from the end
         /// </summary>

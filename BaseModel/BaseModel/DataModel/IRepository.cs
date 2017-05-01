@@ -174,14 +174,14 @@ namespace BaseModel.DataModel
         {
             if (typeof(TProjection) != typeof(TEntity) && projection == null)
                 throw new ArgumentException("Projection should not be null when its type is different from TEntity.");
-            var entityKeyProperties = ExpressionHelper.GetKeyProperties(repository.GetPrimaryKeyExpression);
-            var projectionKeyPropertyCount = entityKeyProperties.Count(p =>
+            var GuidProperties = ExpressionHelper.GetKeyProperties(repository.GetPrimaryKeyExpression);
+            var projectionKeyPropertyCount = GuidProperties.Count(p =>
             {
                 var properties = TypeDescriptor.GetProperties(typeof(TProjection));
                 var property = properties[p.Name];
                 return property != null;
             });
-            if (projectionKeyPropertyCount != entityKeyProperties.Count())
+            if (projectionKeyPropertyCount != GuidProperties.Count())
             {
                 var tprojectionName = typeof(TProjection).Name;
                 var message =

@@ -7,7 +7,7 @@ using System.ComponentModel.DataAnnotations;
 namespace BaseModel.Misc
 {
     public abstract class ProjectionBase<TEntity> : BindableBase, IProjection<TEntity>
-        where TEntity : class, IHaveGUID, new()
+        where TEntity : class, IGuidEntityKey, new()
     {
         public TEntity Entity { get; set; }
 
@@ -22,16 +22,16 @@ namespace BaseModel.Misc
         }
 
         [Key]
-        public Guid Guid
+        public Guid EntityKey
         {
-            get { return Entity.Guid; }
-            set { Entity.Guid = value; }
+            get { return Entity.EntityKey; }
+            set { Entity.EntityKey = value; }
         }
     }
 
     public abstract class ProjectionMasterDetailBase<TEntity, TProjection> : ProjectionBase<TEntity>, IProjectionMasterDetail<TEntity, TProjection>
-        where TEntity : class, IHaveGUID, new()
-        where TProjection : class, IHaveGUID, new()
+        where TEntity : class, IGuidEntityKey, new()
+        where TProjection : class, IGuidEntityKey, new()
     {
         protected virtual ObservableCollection<TProjection> detailEntities { get; set; }
         public virtual ObservableCollection<TProjection> DetailEntities

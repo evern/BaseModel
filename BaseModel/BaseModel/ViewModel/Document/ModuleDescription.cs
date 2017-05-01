@@ -12,10 +12,9 @@ namespace BaseModel.ViewModel.Document
         /// <summary>
         ///     Initializes a new instance of the ModuleDescription class.
         /// </summary>
-        protected ModuleDescription(object id, object parentId, string title, bool canNavigate, string documentType, object documentParameter = null, ImageSource image = null, bool treeViewIsExpanded = false)
+        protected ModuleDescription(object id, object parentId, string title, string documentType = "", object documentParameter = null, ImageSource image = null, bool treeViewIsExpanded = false)
         {
             ModuleTitle = title;
-            CanNavigate = canNavigate;
             DocumentType = documentType;
             DocumentParameter = documentParameter;
             Id = id;
@@ -32,7 +31,10 @@ namespace BaseModel.ViewModel.Document
         /// <summary>
         /// Specify whether the document is navigatable
         /// </summary>
-        public bool CanNavigate { get; private set; }
+        public bool CanNavigate
+        {
+            get { return DocumentType != string.Empty; }
+        }
 
         /// <summary>
         /// Contains the corresponding document view type.
