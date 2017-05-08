@@ -1,11 +1,45 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:common="clr-namespace:BluePrints.Common"
+                    xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
                     xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
                     xmlns:dxsc="clr-namespace:DevExpress.Xpf.SpellChecker;assembly=DevExpress.Xpf.SpellChecker.v16.2"
                     xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
-                    xmlns:misc="clr-namespace:BaseModel.Misc"
-                    xmlns:local="clr-namespace:BluePrints.Views">
+                    xmlns:misc="clr-namespace:BaseModel.Misc">
+    <Style x:Key="CollectionView.RootContainer" TargetType="FrameworkElement">
+        <Setter Property="dxmvvm:Interaction.BehaviorsTemplate">
+            <Setter.Value>
+                <DataTemplate>
+                    <ItemsControl>
+                        <dx:DXMessageBoxService />
+                        <dxmvvm:EventToCommand Event="Loaded" Command="{Binding OnLoadedCommand}" />
+                        <dx:WindowedDocumentUIService YieldToParent="True" />
+                        <dx:DialogService x:Name="BulkColumnEditService">
+                            <dx:DialogService.DialogStyle>
+                                <Style TargetType="dx:DXDialogWindow">
+                                    <Setter Property="SizeToContent" Value="WidthAndHeight" />
+                                    <Setter Property="MinWidth" Value="500" />
+                                    <Setter Property="MinHeight" Value="370" />
+                                </Style>
+                            </dx:DialogService.DialogStyle>
+                        </dx:DialogService>
+                        <dxmvvm:LayoutSerializationService />
+                    </ItemsControl>
+                </DataTemplate>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="dx:DXSerializer.StoreLayoutMode" Value="UI" />
+    </Style>
+    <Style x:Key="DefaultLightGridControlTemplate" TargetType="{x:Type dxg:GridControl}">
+        <Setter Property="ShowLoadingPanel" Value="{Binding DataContext.IsLoading, ElementName=userControl}" />
+        <Setter Property="ItemsSource" Value="{Binding DataContext.DisplayEntities, ElementName=userControl}" />
+        <Setter Property="ClipboardCopyMode" Value="ExcludeHeader" />
+        <Setter Property="SelectionMode" Value="Row" />
+        <Setter Property="CurrentItem" Value="{Binding DataContext.DisplaySelectedEntity, Mode=TwoWay, ElementName=userControl}" />
+        <Setter Property="SelectedItems" Value="{Binding DataContext.DisplaySelectedEntities, Mode=TwoWay, ElementName=userControl}" />
+        <Setter Property="ShowBorder" Value="False" />
+        <Setter Property="AutoExpandAllGroups" Value="False" />
+        <Setter Property="ShowAllTableValuesInCheckedFilterPopup" Value="False" />
+    </Style>
     <Style x:Key="DefaultGridControlTemplate" TargetType="{x:Type dxg:GridControl}">
         <Setter Property="ShowLoadingPanel" Value="{Binding DataContext.IsLoading, ElementName=userControl}" />
         <Setter Property="ItemsSource" Value="{Binding DataContext.DisplayEntities, ElementName=userControl}" />
@@ -16,14 +50,18 @@
         <Setter Property="ShowBorder" Value="False" />
         <Setter Property="AutoExpandAllGroups" Value="False" />
         <Setter Property="ShowAllTableValuesInCheckedFilterPopup" Value="False" />
+        <Setter Property="dxsc:SpellingSettings.CheckAsYouType" Value="True" />
+        <Setter Property="dxsc:SpellingSettings.ShowSpellCheckMenu" Value="True" />
+        <Setter Property="dxsc:SpellingSettings.SpellChecker"
+                Value="{Binding DataContext.SpellCheckerModule.SpellChecker, ElementName=userControl}" />
         <Setter Property="dxmvvm:Interaction.BehaviorsTemplate">
             <Setter.Value>
                 <DataTemplate>
                     <ItemsControl>
                         <dxmvvm:KeyToCommand Command="{Binding ShowPopUpCommand}" KeyGesture="Space"
                                              CommandParameter="{Binding ElementName=GridControl}" />
-                        <dxmvvm:EventToCommand Command="{Binding DataContext.LoadedCommand, ElementName=userControl}"
-                                               EventName="Loaded" />
+                        <!--<dxmvvm:EventToCommand Command="{Binding DataContext.LoadedCommand, ElementName=userControl}"
+                                               EventName="Loaded" />-->
                     </ItemsControl>
                 </DataTemplate>
             </Setter.Value>
@@ -97,11 +135,11 @@
         <Setter Property="AllowScrollAnimation" Value="True" />
     </Style>
     <Style x:Key="DefaultTreeListControlTemplate" TargetType="{x:Type dxg:TreeListControl}">
-        <Setter Property="ItemsSource" Value="{Binding Entities}" />
+        <Setter Property="ItemsSource" Value="{Binding DataContext.DisplayEntities, ElementName=userControl}" />
         <Setter Property="ClipboardCopyMode" Value="ExcludeHeader" />
         <Setter Property="SelectionMode" Value="Row" />
-        <Setter Property="CurrentItem" Value="{Binding SelectedEntity}" />
-        <Setter Property="SelectedItems" Value="{Binding SelectedEntities, Mode=TwoWay}" />
+        <Setter Property="CurrentItem" Value="{Binding DataContext.DisplaySelectedEntity, Mode=TwoWay, ElementName=userControl}" />
+        <Setter Property="SelectedItems" Value="{Binding DataContext.DisplaySelectedEntities, Mode=TwoWay, ElementName=userControl}" />
         <Setter Property="ShowBorder" Value="False" />
         <Setter Property="ShowLoadingPanel" Value="{Binding DataContext.IsLoading, ElementName=userControl}" />
     </Style>

@@ -20,6 +20,9 @@ namespace BaseModel.Helpers
             //    return null;
 
             numericFieldLength = 0;
+            if (stringToExtractNumbers == null || stringToExtractNumbers == string.Empty)
+                return null;
+
             var stack = new Stack<char>();
             int? returnValue = null;
             bool isLeadingZeros = false;

@@ -6,18 +6,18 @@
     xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
     xmlns:dxlc="http://schemas.devexpress.com/winfx/2008/xaml/layoutcontrol"
     xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
-    Height="100" Width="300">
+    Height="200" Width="300">
     <dxlc:LayoutControl Orientation="Vertical">
         <dxlc:LayoutGroup Name="LayoutGroupMain" View="Group" Header="Edit Value" Orientation="Vertical">
-            <dxlc:LayoutGroup Height="40" Name="LayoutGroupContent" View="Group" Orientation="Horizontal">
-                <dxlc:LayoutItem Height="25" Label="Value:">
+            <dxlc:LayoutGroup Height="80" Name="LayoutGroupContent" View="Group" Orientation="Horizontal">
+                <dxlc:LayoutItem Height="50" Label="Value:">
                     <dxe:ComboBoxEdit x:Name="cmbContent" IsTextEditable="False"
                                       DisplayMember="{Binding ComboBoxDisplayMember}"
                                       SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
                                       ItemsSource="{Binding SourceObjects}" />
                 </dxlc:LayoutItem>
             </dxlc:LayoutGroup>
-            <dxlc:LayoutGroup Height="25" HorizontalAlignment="Right" Name="LayoutGroupButtons" View="Group"
+            <dxlc:LayoutGroup Height="50" HorizontalAlignment="Right" Name="LayoutGroupButtons" View="Group"
                               Orientation="Horizontal" />
         </dxlc:LayoutGroup>
     </dxlc:LayoutControl>

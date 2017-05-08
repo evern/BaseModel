@@ -11,16 +11,18 @@ namespace BaseModel.ViewModel.Document
     /// </summary>
     public class DocumentInfo
     {
-        public DocumentInfo(object parameter, string documentType, string title)
+        public DocumentInfo(object id, object parameter, string documentType, string title)
         {
             this.Parameter = parameter;
             this.DocumentType = documentType;
             this.Title = title;
+            this.Id = id;
         }
 
         public object Parameter { get; set; }
         public string DocumentType { get; set; }
-        //Title used to display on tab and searching for document, should be unique
         public string Title { get; set; }
+        //Id used for searching document, should be unique
+        public object Id { get; set; }
     }
 }

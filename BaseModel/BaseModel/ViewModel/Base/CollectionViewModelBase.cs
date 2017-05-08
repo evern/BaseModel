@@ -59,6 +59,7 @@ namespace BaseModel.ViewModel.Base
         /// Save projection associated entity, e.g. save user address to another table when user is saved
         /// Undo/Redo manager should be tied to main entity CollectionViewModel and this will be used to handle associated entity save
         /// Only called when main entity is successfully saved
+        /// Any associating changes to the collection must be placed here so undo/redo will be in effect
         /// </summary>
         public Action<TProjection, bool> OnAfterEntitySavedCallBack;
 
@@ -342,7 +343,7 @@ namespace BaseModel.ViewModel.Base
 
         public override void Refresh()
         {
-            ISupportUndoRedo<TEntity> ISupportUndoRedoViewModel = this as ISupportUndoRedo<TEntity>;
+            ISupportUndoRedo<TProjection> ISupportUndoRedoViewModel = this as ISupportUndoRedo<TProjection>;
             if (ISupportUndoRedoViewModel != null)
                 ISupportUndoRedoViewModel.EntitiesUndoRedoManager.Clear();
 
@@ -501,8 +502,10 @@ namespace BaseModel.ViewModel.Base
                 Repository.UnitOfWork.SaveChanges();
                 var primaryKey = Repository.GetPrimaryKey(entity);
                 Repository.SetProjectionPrimaryKey(projectionEntity, primaryKey);
-                OnEntitySaved(primaryKey, projectionEntity, entity, isNewEntity);
+
+                //Any associating changes to the collection must be placed here so undo/redo will be in effect
                 OnAfterEntitySavedCallBack?.Invoke(projectionEntity, isNewEntity);
+                OnEntitySaved(primaryKey, projectionEntity, entity, isNewEntity);
             }
             catch (DbException e)
             {

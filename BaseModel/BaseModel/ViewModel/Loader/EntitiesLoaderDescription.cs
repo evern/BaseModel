@@ -11,8 +11,8 @@ namespace BaseModel.ViewModel.Loader
 
     public class EntitiesLoaderDescription<TEntity, TProjection, TPrimaryKey, TUnitOfWork> :
         IEntitiesLoaderDescription<TProjection>
-        where TEntity : class
-        where TProjection : class
+        where TEntity : class, new()
+        where TProjection : class, new()
         where TUnitOfWork : IUnitOfWork
     {
         private readonly ICollectionViewModelsWrapper owner;

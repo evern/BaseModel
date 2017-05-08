@@ -36,8 +36,8 @@ namespace BaseModel.ViewModel.Base
     public partial class CollectionViewModel<TEntity, TProjection, TPrimaryKey, TUnitOfWork> :
         CollectionViewModelBase<TEntity, TProjection, TPrimaryKey, TUnitOfWork>, ISupportUndoRedo<TProjection>,
         ICollectionViewModel<TProjection>
-        where TEntity : class
-        where TProjection : class
+        where TEntity : class, new()
+        where TProjection : class, new()
         where TUnitOfWork : IUnitOfWork
     {
         #region Call Backs
@@ -205,8 +205,7 @@ namespace BaseModel.ViewModel.Base
             else
             {
                 if (entityProperty.MessageType == EntityMessageType.Changed)
-                    DataUtils.SetNestedValue(entityProperty.PropertyName, entityProperty.ChangedEntity,
-                        entityProperty.NewValue);
+                    DataUtils.SetNestedValue(entityProperty.PropertyName, entityProperty.ChangedEntity, entityProperty.NewValue);
 
                 Save(entityProperty.ChangedEntity);
             }
@@ -533,8 +532,9 @@ namespace BaseModel.ViewModel.Base
                     if (!IsContinueNewRowFromViewCallBack(e, projection))
                         return;
 
-                EntitiesUndoRedoManager.AddUndo(projection, null, null, null, EntityMessageType.Added);
                 Save(projection);
+                //add undo must be after so that Guid is populated
+                EntitiesUndoRedoManager.AddUndo(projection, null, null, null, EntityMessageType.Added);
                 EntitiesUndoRedoManager.UnpauseActionId();
             }
         }
@@ -742,7 +742,7 @@ namespace BaseModel.ViewModel.Base
         {
             return Entities != null && Entities.Count > 0 && !IsLoading;
         }
-
+        
         /// <summary>
         /// Deletes a collection of entities from the repository.
         /// Since CollectionViewModelBase is a POCO view model, an the instance of this class will also expose the DeleteCommand property that can be used as a binding source in views.
@@ -763,9 +763,7 @@ namespace BaseModel.ViewModel.Base
         /// <param name="projectionEntity">An entity to edit.</param>
         public void BulkSave(IEnumerable<TProjection> entities)
         {
-            EntitiesUndoRedoManager.PauseActionId();
             BaseBulkSave(entities);
-            EntitiesUndoRedoManager.UnpauseActionId();
         }
         #endregion
 
@@ -968,23 +966,13 @@ namespace BaseModel.ViewModel.Base
             var entityProperties = typeof(TEntity).GetProperties();
             var gridView = sourceGridControl.View;
 
+            List<TProjection> pasteProjections = new List<TProjection>();
             if (gridView.ActiveEditor == null && gridView.GetType() == typeof(TableViewEx))
             {
                 var gridTableView = gridView as TableViewEx;
                 foreach (var Row in RowData)
                 {
-                    var newEntity = CreateEntity();
-                    //have to do a callback here because TProjection is not new() constrained yet
-                    TProjection projection;
-                    if (newEntity is TProjection)
-                        projection = newEntity as TProjection;
-                    else
-                    {
-                        if (CreateNewProjectionFromNewEntityCallBack != null)
-                            projection = CreateNewProjectionFromNewEntityCallBack();
-                        else
-                            return;
-                    }
+                    TProjection projection = new TProjection();
 
                     var ColumnStrings = Row.Split('\t');
                     for (var i = 0; i < ColumnStrings.Count(); i++)
@@ -1131,10 +1119,10 @@ namespace BaseModel.ViewModel.Base
                         if (OnBeforePasteWithValidation != null)
                         {
                             if (OnBeforePasteWithValidation(projection))
-                                Save(projection);
+                                pasteProjections.Add(projection);
                         }
                         else
-                            Save(projection);
+                            pasteProjections.Add(projection);
                     else
                     {
                         errorMessage += " , paste operation will be terminated";
@@ -1143,6 +1131,12 @@ namespace BaseModel.ViewModel.Base
                         break;
                     }
                 }
+
+                EntitiesUndoRedoManager.PauseActionId();
+                pasteProjections.ForEach(x => EntitiesUndoRedoManager.AddUndo(x, null, null, null, EntityMessageType.Added));
+                EntitiesUndoRedoManager.UnpauseActionId();
+
+                BulkSave(pasteProjections);
 
                 PasteListener?.Invoke(PasteStatus.Stop);
                 e.Handled = true;
@@ -1153,32 +1147,33 @@ namespace BaseModel.ViewModel.Base
 
         public virtual void CleanUpCallBacks()
         {
-            this.AdditionalValidateRowCallBack = null;
-            this.ApplyEntityPropertiesToProjectionCallBack = null;
-            this.ApplyProjectionPropertiesToEntityCallBack = null;
-            this.CanBulkDeleteCallBack = null;
-            this.CanFillDownCallBack = null;
-            this.CreateNewProjectionFromNewEntityCallBack = null;
-            this.ExistingRowAddUndoAndSaveCallBack = null;
-            this.IsContinueNewRowFromViewCallBack = null;
-            this.IsContinueSaveCallBack = null;
-            this.IsValidFromViewCallBack = null;
-            this.OnAfterEntitiesDeletedCallBack = null;
-            this.OnAfterEntitySavedCallBack = null;
-            this.OnAfterTreelistExistingRowAddUndoAndSaveCallBack = null;
-            this.OnBeforeBulkEditSaveCallBack = null;
-            this.OnBeforeEntitiesDeleteCallBack = null;
-            this.OnBeforeEntityDeleteCallBack = null;
-            this.OnFillDownCompletedCallBack = null;
-            this.OnSelectedEntitiesChangedCallBack = null;
-            this.SetParentAssociationCallBack = null;
-            this.ValidateBulkEditCallBack = null;
-            this.ValidateFillDownCallBack = null;
+            //Sometimes save happens when view is closing on ExistingRowAddUndoAndSave
+            //this.AdditionalValidateRowCallBack = null;
+            //this.ApplyEntityPropertiesToProjectionCallBack = null;
+            //this.ApplyProjectionPropertiesToEntityCallBack = null;
+            //this.CanBulkDeleteCallBack = null;
+            //this.CanFillDownCallBack = null;
+            //this.CreateNewProjectionFromNewEntityCallBack = null;
+            //this.ExistingRowAddUndoAndSaveCallBack = null;
+            //this.IsContinueNewRowFromViewCallBack = null;
+            //this.IsContinueSaveCallBack = null;
+            //this.IsValidFromViewCallBack = null;
+            //this.OnAfterEntitiesDeletedCallBack = null;
+            //this.OnAfterEntitySavedCallBack = null;
+            //this.OnAfterTreelistExistingRowAddUndoAndSaveCallBack = null;
+            //this.OnBeforeBulkEditSaveCallBack = null;
+            //this.OnBeforeEntitiesDeleteCallBack = null;
+            //this.OnBeforeEntityDeleteCallBack = null;
+            //this.OnFillDownCompletedCallBack = null;
+            //this.OnSelectedEntitiesChangedCallBack = null;
+            //this.SetParentAssociationCallBack = null;
+            //this.ValidateBulkEditCallBack = null;
+            //this.ValidateFillDownCallBack = null;
 
-            //Entities view model call backs
-            this.OnEntitiesLoadedCallBack = null;
-            this.OnBeforeEntitiesChangedCallBack = null;
-            this.OnAfterEntitiesChangedCallBack = null;
+            ////Entities view model call backs
+            //this.OnEntitiesLoadedCallBack = null;
+            //this.OnBeforeEntitiesChangedCallBack = null;
+            //this.OnAfterEntitiesChangedCallBack = null;
         }
     }
 }

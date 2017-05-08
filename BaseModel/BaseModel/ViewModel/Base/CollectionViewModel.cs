@@ -14,7 +14,7 @@ namespace BaseModel.ViewModel.Base
     /// <typeparam name="TUnitOfWork">A unit of work type.</typeparam>
     public partial class CollectionViewModel<TEntity, TPrimaryKey, TUnitOfWork> :
         CollectionViewModel<TEntity, TEntity, TPrimaryKey, TUnitOfWork>
-        where TEntity : class
+        where TEntity : class, new()
         where TUnitOfWork : IUnitOfWork
     {
         /// <summary>
@@ -76,8 +76,8 @@ namespace BaseModel.ViewModel.Base
     /// <typeparam name="TUnitOfWork">A unit of work type.</typeparam>
     public partial class CollectionViewModel<TEntity, TProjection, TPrimaryKey, TUnitOfWork> :
         CollectionViewModelBase<TEntity, TProjection, TPrimaryKey, TUnitOfWork>
-        where TEntity : class
-        where TProjection : class
+        where TEntity : class, new()
+        where TProjection : class, new()
         where TUnitOfWork : IUnitOfWork
     {
         /// <summary>

@@ -12,13 +12,14 @@ using System.Windows;
 using System.Windows.Threading;
 using BaseModel.Misc;
 using BaseModel.ViewModel.Base;
+using BaseModel.ViewModel.Document;
 
 namespace BaseModel.ViewModel.Loader
 {
     public abstract class CollectionViewModelsWrapper<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey,
         TMainEntityUnitOfWork> : ICollectionViewModelsWrapper, IDocumentContent, ISupportParameter, ISupportViewRestoration
-        where TMainEntity : class, IGuidEntityKey
-        where TMainProjectionEntity : class, IGuidEntityKey
+        where TMainEntity : class, IGuidEntityKey, new()
+        where TMainProjectionEntity : class, IGuidEntityKey, new()
         where TMainEntityUnitOfWork : IUnitOfWork
         
     {
@@ -164,8 +165,9 @@ namespace BaseModel.ViewModel.Loader
             if (sender != null && sender == MainViewModel)
                 return;
 
-            if(!IsSingleMainEntityRefreshIdentified(key, changedType, messageType, sender))
-                mainThreadDispatcher.BeginInvoke(new Action(() => FullRefreshWithoutClearingUndoRedo()));
+            //if(!IsSingleMainEntityRefreshIdentified(key, changedType, messageType, sender))
+            //    mainThreadDispatcher.BeginInvoke(new Action(() => FullRefreshWithoutClearingUndoRedo()));
+            IsSingleMainEntityRefreshIdentified(key, changedType, messageType, sender);
         }
 
         protected virtual bool IsSingleMainEntityRefreshIdentified(object key, Type changedType, EntityMessageType messageType, object sender)
@@ -188,7 +190,6 @@ namespace BaseModel.ViewModel.Loader
                 {
                     //MessageBoxService.ShowMessage(string.Format(CommonResources.Notify_View_Removed,
                     //    StringFormatUtils.GetEntityNameByType(changedType)));
-
                     mainThreadDispatcher.BeginInvoke(new Action(() => FullRefresh()));
                     return;
                 }
@@ -234,7 +235,17 @@ namespace BaseModel.ViewModel.Loader
 
         private Guid RestoreSelectedEntityGuid;
         private List<Guid> RestoreSelectedEntitiesGuids = new List<Guid>();
-        public TMainProjectionEntity DisplaySelectedEntity { get; set; }
+        TMainProjectionEntity displaySelectedEntity;
+        public TMainProjectionEntity DisplaySelectedEntity
+        {
+            get { return displaySelectedEntity;  }
+            set
+            {
+                displaySelectedEntity = value;
+                OnDisplaySelectedEntityChanged(value);
+            }
+        }
+
         public ObservableCollection<TMainProjectionEntity> DisplaySelectedEntities { get; set; }
         public Action OnSelectedEntitiesChangedCallBack;
         private BackgroundWorker refreshBackgroundWorker;
@@ -262,6 +273,11 @@ namespace BaseModel.ViewModel.Loader
         public virtual void RefreshSelectedEntity()
         {
             this.RaisePropertyChanged(x => x.DisplaySelectedEntity);
+        }
+
+        public virtual void OnDisplaySelectedEntityChanged(TMainProjectionEntity entity)
+        {
+            
         }
 
         public virtual bool CanFullRefresh()

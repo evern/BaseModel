@@ -13,13 +13,13 @@ namespace BaseModel.ViewModel.Document
         /// Creates and shows a document based upon custom parameter selection from CollectionViewModelWrapper
         /// </summary>
         /// <param name="documentManagerService">An instance of the IDocumentManager interface used to create and show the document.</param>
-        /// <param name="customDocumentInfo">A custom document info to search and show document</param>
+        /// <param name="documentInfo">A custom document info to search and show document</param>
         /// <param name="parentViewModel">An object that is passed to the view model of the created view.</param>
         public static IDocument ShowExistingEntityDocument(
-            this IDocumentManagerService documentManagerService, DocumentInfo customDocumentInfo, object parentViewModel)
+            this IDocumentManagerService documentManagerService, DocumentInfo documentInfo, object parentViewModel)
         {
-            var document = FindCustomDocument(documentManagerService, customDocumentInfo.Title) ??
-                                 CreateCustomDocument(documentManagerService, customDocumentInfo, parentViewModel);
+            var document = FindDocument(documentManagerService, documentInfo.Id) ??
+                                 CreateDocument(documentManagerService, documentInfo, parentViewModel);
             if (document != null)
                 document.Show();
 
@@ -46,18 +46,16 @@ namespace BaseModel.ViewModel.Document
         /// </summary>
         /// <param name="documentManagerService">An instance of the IDocumentManager interface used to find a document.</param>
         /// <param name="title">A document title.</param>
-        public static IDocument FindCustomDocument(
-            this IDocumentManagerService documentManagerService, string title = "")
+        public static IDocument FindDocument(
+            this IDocumentManagerService documentManagerService, object id)
         {
             if (documentManagerService == null)
                 return null;
             foreach (var document in documentManagerService.Documents)
-                if (title != string.Empty)
+                if (id != null)
                 {
-                    //BaseModel Customization Start
-                    if (document.Title != null && document.Title.ToString() == title)
+                    if (document.Id != null && document.Id.ToString() == id.ToString())
                         return document;
-                    //BaseModel Customization End
                 }
 
             return null;
@@ -67,14 +65,15 @@ namespace BaseModel.ViewModel.Document
         {
         }
 
-        private static IDocument CreateCustomDocument(IDocumentManagerService documentManagerService, DocumentInfo customDocumentInfo, object parentViewModel)
+        private static IDocument CreateDocument(IDocumentManagerService documentManagerService, DocumentInfo documentInfo, object parentViewModel)
         {
             if (documentManagerService == null)
                 return null;
 
             IDocument document;
-            document = documentManagerService.CreateDocument(customDocumentInfo.DocumentType, customDocumentInfo.Parameter, parentViewModel);
-            document.Title = customDocumentInfo.Title;
+            document = documentManagerService.CreateDocument(documentInfo.DocumentType, documentInfo.Parameter, parentViewModel);
+            document.Title = documentInfo.Title;
+            document.Id = documentInfo.Id;
             document.DestroyOnClose = true;
 
             return document;

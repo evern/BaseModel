@@ -67,16 +67,17 @@ namespace BaseModel.Misc
             RemoveRange(list);
         }
 
-        private void InsertRange(IEnumerable<T> list)
+        public void InsertRange(IEnumerable<T> list)
         {
             if (list == null)
                 throw new ArgumentNullException("list");
 
             _suppressNotification = true;
-
             foreach (var item in list)
                 Insert(0, item);
             _suppressNotification = false;
+
+            OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
         }
 
         public void InvokeCollectionChanged()
@@ -95,6 +96,7 @@ namespace BaseModel.Misc
                 Remove(list[i]);
 
             _suppressNotification = false;
+            OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
         }
     }
 }

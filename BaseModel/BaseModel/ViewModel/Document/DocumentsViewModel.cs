@@ -118,30 +118,10 @@ namespace BaseModel.ViewModel.Document
         }
 
         /// <summary>
-        /// Navigates to a document.
-        /// Since DocumentsViewModel is a POCO view model, an instance of this class will also expose the ShowCommand property that can be used as a binding source in views.
-        /// </summary>
-        /// <param name="module">A navigation list entry specifying a document what to be opened.</param>
-        public void Show(TModule module)
-        {
-            ShowCore(module);
-        }
-
-        public IDocument ShowCore(TModule module)
-        {
-            if (module == null || DocumentManagerService == null)
-                return null;
-            var document = DocumentManagerService.FindDocumentByIdOrCreate(module.DocumentType,
-                x => CreateDocument(module));
-            document.Show();
-            return document;
-        }
-
-        /// <summary>
         /// Finalizes the DocumentsViewModel initialization and opens the default document.
         /// Since DocumentsViewModel is a POCO view model, an instance of this class will also expose the OnLoadedCommand property that can be used as a binding source in views.
         /// </summary>
-        public abstract void OnLoaded(TModule module);
+        public abstract void OnLoaded();
 
         protected IGroupedDocumentManagerService GroupedDocumentManagerService
         {
@@ -170,7 +150,6 @@ namespace BaseModel.ViewModel.Document
 
         protected bool IsLoaded { get; set; }
 
-        #region Custom Implementation
         /// <summary>
         /// Navigates to a document.
         /// Since DocumentsViewModel is a POCO view model, an instance of this class will also expose the NavigateCommand property that can be used as a binding source in views.
@@ -186,10 +165,13 @@ namespace BaseModel.ViewModel.Document
         {
             if (module == null || DocumentManagerService == null)
                 return null;
-            var document = DocumentManagerService.FindDocumentByIdOrCreate(module.ModuleTitle,
-                x => NavigateToDocument(module));
 
-            document.Show();
+            DocumentInfo documentInfo = new DocumentInfo(module.Id, module.DocumentParameter, module.DocumentType, module.ModuleTitle);
+            var document = DocumentManagerService.ShowExistingEntityDocument(documentInfo, this);
+            //var document = DocumentManagerService.FindDocumentByIdOrCreate(module.ModuleTitle,
+            //    x => NavigateToDocument(module));
+
+            //document.Show();
             return document;
         }
 
@@ -207,7 +189,6 @@ namespace BaseModel.ViewModel.Document
             SelectedModule = ActiveModule;
         }
 
-        #endregion
 
         private IDocument CreateDocument(TModule module)
         {

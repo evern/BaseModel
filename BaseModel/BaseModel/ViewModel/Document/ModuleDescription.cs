@@ -12,28 +12,34 @@ namespace BaseModel.ViewModel.Document
         /// <summary>
         ///     Initializes a new instance of the ModuleDescription class.
         /// </summary>
-        protected ModuleDescription(object id, object parentId, string title, string documentType = "", object documentParameter = null, ImageSource image = null, bool treeViewIsExpanded = false)
+        protected ModuleDescription(object id, object parentId, string title, string documentType = null, object documentParameter = null, ImageSource image = null, string navigationTitle = null, bool treeViewIsExpanded = false)
         {
             ModuleTitle = title;
-            DocumentType = documentType;
+            DocumentType = documentType == null ? string.Empty : documentType;
             DocumentParameter = documentParameter;
             Id = id;
             ParentId = parentId;
             Image = Image;
             TreeViewIsExpanded = treeViewIsExpanded;
+            NavigationTitle = (navigationTitle == string.Empty || navigationTitle == null) ? ModuleTitle : navigationTitle;
         }
 
         /// <summary>
-        /// The navigation list entry display text.
+        /// The navigation list entry display text, also used for document searching
         /// </summary>
         public string ModuleTitle { get; private set; }
+
+        /// <summary>
+        /// The tab display title, usually follows ModuleTitle
+        /// </summary>
+        public string NavigationTitle { get; private set; }
 
         /// <summary>
         /// Specify whether the document is navigatable
         /// </summary>
         public bool CanNavigate
         {
-            get { return DocumentType != string.Empty; }
+            get { return DocumentType != null && DocumentType != string.Empty; }
         }
 
         /// <summary>

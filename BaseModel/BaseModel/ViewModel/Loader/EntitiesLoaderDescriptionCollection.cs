@@ -21,8 +21,8 @@ namespace BaseModel.ViewModel.Loader
         Func<TUnitOfWork, IRepository<TEntity, TPrimaryKey>> getRepositoryFunc,
         Func<Func<IRepositoryQuery<TEntity>, IQueryable<TProjection>>> projectionFunc = null, 
         Action<TProjection> compulsoryEntityAssignmentFunc = null, bool suppressNotification = false)
-        where TEntity : class
-        where TProjection : class
+        where TEntity : class, new()
+        where TProjection : class, new()
         where TUnitOfWork : IUnitOfWork
         {
             Action<object, Type, EntityMessageType, object> OnAfterEntitiesChanged = null;
