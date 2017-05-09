@@ -614,34 +614,45 @@ namespace BaseModel.ViewModel.Base
         {
             var info = GridPopupMenuBase.GetGridMenuInfo((DependencyObject)button) as GridMenuInfo;
             object valueToFill;
+            object nextValueInSequence;
 
             if (isUp)
-                valueToFill = DataUtils.GetNestedValue(info.Column.FieldName,
-                    SelectedEntities[selectedentities.Count - 1]);
+            {
+                valueToFill = DataUtils.GetNestedValue(info.Column.FieldName, SelectedEntities[selectedentities.Count - 1]);
+                nextValueInSequence = DataUtils.GetNestedValue(info.Column.FieldName, SelectedEntities[selectedentities.Count - 2]);
+            }
             else
+            {
                 valueToFill = DataUtils.GetNestedValue(info.Column.FieldName, SelectedEntities[0]);
+                nextValueInSequence = DataUtils.GetNestedValue(info.Column.FieldName, SelectedEntities[1]);
+            }
 
             EntitiesUndoRedoManager.PauseActionId();
             var bulkSaveEntities = new List<TProjection>();
+
+            long? enumerationDifferences = null;
             long? enumerator = null;
             int? numericIndex = null;
             int numericFieldLength = 0;
-            if (valueToFill != null && valueToFill.GetType() == typeof(string))
-            {
-                string stringValueToFill = valueToFill.ToString();
-                numericIndex = StringFormatUtils.GetNumericIndex(stringValueToFill, out numericFieldLength);
-                if (numericIndex != null)
-                {
-                    enumerator = Int64.Parse(stringValueToFill.Substring(numericIndex.Value, stringValueToFill.Length - numericIndex.Value));
-                }
-            }
+            EnumerationType enumerationType;
+            if (valueToFill != null && valueToFill.GetType() == typeof(string) && nextValueInSequence != null)
+                enumerationType = getEnumerateType(valueToFill.ToString(), nextValueInSequence.ToString(), out enumerationDifferences, out enumerator, out numericIndex, out numericFieldLength);
+            else
+                enumerationType = EnumerationType.None;
 
-            if(!isUp)
+            if (!isUp)
             {
                 for (int i = 1; i < SelectedEntities.Count; i++)
                 {
-                    if (enumerator != null)
-                        enumerator++;
+                    if(enumerationType == EnumerationType.Increase)
+                        enumerator += enumerationDifferences;
+                    else
+                    {
+                        enumerator -= enumerationDifferences;
+                        if (enumerator < 0)
+                            enumerator = 0;
+                    }
+
 
                     TProjection seletedEntity = SelectedEntities[i];
                     setEntityProperty(seletedEntity, info, valueToFill, numericIndex, enumerator, numericFieldLength);
@@ -652,8 +663,14 @@ namespace BaseModel.ViewModel.Base
             {
                 for (int i = SelectedEntities.Count - 2; i >= 0; i--)
                 {
-                    if (enumerator != null && enumerator > 0)
-                        enumerator--;
+                    if (enumerationType == EnumerationType.Increase)
+                        enumerator += enumerationDifferences;
+                    else
+                    {
+                        enumerator -= enumerationDifferences;
+                        if (enumerator < 0)
+                            enumerator = 0;
+                    }
 
                     TProjection seletedEntity = SelectedEntities[i];
                     setEntityProperty(seletedEntity, info, valueToFill, numericIndex, enumerator, numericFieldLength);
@@ -667,7 +684,55 @@ namespace BaseModel.ViewModel.Base
             OnFillDownCompletedCallBack?.Invoke();
         }
 
-        void setEntityProperty(TProjection editEntity, GridMenuInfo info, object valueToFill, int? numericIndex, long? enumerator, int numericFieldLength)
+        private EnumerationType getEnumerateType(string value, string nextvalue, out long? differences, out long? startEnumeration, out int? numericIndex, out int numericFieldLength)
+        {
+            long? nextEnumerator = null;
+            int? nextNumericIndex = null;
+            int nextNumericFieldLength = 0;
+
+            differences = null;
+            numericIndex = StringFormatUtils.GetNumericIndex(value, out numericFieldLength);
+            if (numericIndex != null)
+                startEnumeration = Int64.Parse(value.Substring(numericIndex.Value, value.Length - numericIndex.Value));
+            else
+            {
+                startEnumeration = null;
+                return EnumerationType.None;
+            }
+
+            nextNumericIndex = StringFormatUtils.GetNumericIndex(nextvalue, out nextNumericFieldLength);
+            if (nextNumericIndex != null)
+            {
+                if (numericIndex == nextNumericIndex)
+                    nextEnumerator = Int64.Parse(nextvalue.Substring(nextNumericIndex.Value, nextvalue.Length - nextNumericIndex.Value));
+                else
+                    return EnumerationType.None;
+            }
+
+            if (startEnumeration < nextEnumerator)
+            {
+                if (startEnumeration != null && nextEnumerator != null)
+                {
+                    differences = (long)nextEnumerator - (long)startEnumeration;
+                    return EnumerationType.Increase;
+                }
+                else
+                    return EnumerationType.None;
+
+            }
+            else
+            {
+                if (startEnumeration != null && nextEnumerator != null)
+                {
+                    differences = (long)startEnumeration - (long)nextEnumerator;
+                    return EnumerationType.Decrease;
+                }
+                else
+                    return EnumerationType.None;
+            }
+        }
+
+        private void setEntityProperty(TProjection editEntity, GridMenuInfo info, object valueToFill, int? numericIndex, long? enumerator, int numericFieldLength)
         {
             if (numericIndex != null && enumerator != null)
             {
@@ -896,47 +961,46 @@ namespace BaseModel.ViewModel.Base
                     if (
                         BulkColumnEditDialogService.ShowDialog(MessageButton.OKCancel, "Type in text for bulk edit",
                             "BulkEditStrings", bulkEditStringsViewModel) == MessageResult.OK)
-                        if (bulkEditStringsViewModel.EditValue != null)
-                            newValue = bulkEditStringsViewModel.EditValue;
+                        
+                        newValue = bulkEditStringsViewModel.EditValue;
                 }
 
-                if (newValue != null)
-                    foreach (var selectedProjection in SelectedEntities)
+                foreach (var selectedProjection in SelectedEntities)
+                {
+                    if (ValidateBulkEditCallBack != null &&
+                        !ValidateBulkEditCallBack(selectedProjection, info.Column.FieldName, newValue))
+                        continue;
+
+                    if (newValue != null && newValue.GetType() == typeof(decimal) && operation != Arithmetic.None)
                     {
-                        if (ValidateBulkEditCallBack != null &&
-                            !ValidateBulkEditCallBack(selectedProjection, info.Column.FieldName, newValue))
-                            continue;
+                        var currentValue =
+                            (decimal)DataUtils.GetNestedValue(info.Column.FieldName, selectedProjection);
+                        var currentOldValue = currentValue;
 
-                        if (newValue.GetType() == typeof(decimal) && operation != Arithmetic.None)
-                        {
-                            var currentValue =
-                                (decimal)DataUtils.GetNestedValue(info.Column.FieldName, selectedProjection);
-                            var currentOldValue = currentValue;
+                        if (operation == Arithmetic.Add)
+                            currentValue = currentValue + (decimal)newValue;
+                        else if (operation == Arithmetic.Subtract)
+                            currentValue = currentValue - (decimal)newValue;
+                        else if (operation == Arithmetic.Multiply)
+                            currentValue = currentValue * (decimal)newValue;
+                        else if (operation == Arithmetic.Divide && (decimal)newValue > 0)
+                            currentValue = currentValue / (decimal)newValue;
 
-                            if (operation == Arithmetic.Add)
-                                currentValue = currentValue + (decimal)newValue;
-                            else if (operation == Arithmetic.Subtract)
-                                currentValue = currentValue - (decimal)newValue;
-                            else if (operation == Arithmetic.Multiply)
-                                currentValue = currentValue * (decimal)newValue;
-                            else if (operation == Arithmetic.Divide && (decimal)newValue > 0)
-                                currentValue = currentValue / (decimal)newValue;
-
-                            DataUtils.SetNestedValue(info.Column.FieldName, selectedProjection, currentValue);
-                            EntitiesUndoRedoManager.AddUndo(selectedProjection, info.Column.FieldName, currentOldValue,
-                                currentValue, EntityMessageType.Changed);
-                        }
-                        else
-                        {
-                            oldValue = DataUtils.GetNestedValue(info.Column.FieldName, selectedProjection);
-                            DataUtils.SetNestedValue(info.Column.FieldName, selectedProjection, newValue);
-                            EntitiesUndoRedoManager.AddUndo(selectedProjection, info.Column.FieldName, oldValue,
-                                newValue, EntityMessageType.Changed);
-                        }
-
-                        OnBeforeBulkEditSaveCallBack?.Invoke(selectedProjection, info.Column.FieldName);
-                        SaveEntities.Add(selectedProjection);
+                        DataUtils.SetNestedValue(info.Column.FieldName, selectedProjection, currentValue);
+                        EntitiesUndoRedoManager.AddUndo(selectedProjection, info.Column.FieldName, currentOldValue,
+                            currentValue, EntityMessageType.Changed);
                     }
+                    else
+                    {
+                        oldValue = DataUtils.GetNestedValue(info.Column.FieldName, selectedProjection);
+                        DataUtils.SetNestedValue(info.Column.FieldName, selectedProjection, newValue);
+                        EntitiesUndoRedoManager.AddUndo(selectedProjection, info.Column.FieldName, oldValue,
+                            newValue, EntityMessageType.Changed);
+                    }
+
+                    OnBeforeBulkEditSaveCallBack?.Invoke(selectedProjection, info.Column.FieldName);
+                    SaveEntities.Add(selectedProjection);
+                }
 
                 BulkSave(SaveEntities);
             }

@@ -16,4 +16,11 @@ namespace BaseModel.Misc
         Start,
         Stop
     }
+
+    public enum EnumerationType
+    {
+        None,
+        Decrease,
+        Increase
+    }
 }
