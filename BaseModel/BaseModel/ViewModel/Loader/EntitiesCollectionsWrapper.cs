@@ -165,9 +165,11 @@ namespace BaseModel.ViewModel.Loader
             if (sender != null && sender == MainViewModel)
                 return;
 
-            //if(!IsSingleMainEntityRefreshIdentified(key, changedType, messageType, sender))
-            //    mainThreadDispatcher.BeginInvoke(new Action(() => FullRefreshWithoutClearingUndoRedo()));
-            IsSingleMainEntityRefreshIdentified(key, changedType, messageType, sender);
+            if (!IsSingleMainEntityRefreshIdentified(key, changedType, messageType, sender))
+                this.RaisePropertiesChanged();
+            //mainThreadDispatcher.BeginInvoke(new Action(() => FullRefreshWithoutClearingUndoRedo()));
+            //this.RaisePropertiesChanged();
+            //IsSingleMainEntityRefreshIdentified(key, changedType, messageType, sender);
         }
 
         protected virtual bool IsSingleMainEntityRefreshIdentified(object key, Type changedType, EntityMessageType messageType, object sender)
