@@ -15,15 +15,15 @@ namespace BaseModel.DataModel.EntityFramework
         private readonly string ModifiedColumnName;
         private readonly string ModifiedByColumnName;
         private readonly List<string> ApplicableContext;
-        private readonly Guid? UserGuid;
+        private readonly Func<Guid> GetGuidFunc;
 
-        public CreatedAndUpdatedDateInterceptor(string createdColumnName, string createdByColumnName, string modifiedColumnName, string modifiedByColumnName, Guid? userGuid = null, List<string> applicableContext = null)
+        public CreatedAndUpdatedDateInterceptor(string createdColumnName, string createdByColumnName, string modifiedColumnName, string modifiedByColumnName, Func<Guid> getGuidFunc = null, List<string> applicableContext = null)
         {
             CreatedColumnName = createdColumnName;
             CreatedByColumnName = createdByColumnName;
             ModifiedColumnName = modifiedColumnName;
             ModifiedByColumnName = modifiedByColumnName;
-            UserGuid = userGuid;
+            GetGuidFunc = getGuidFunc;
             ApplicableContext = applicableContext;
         }
 
@@ -53,7 +53,7 @@ namespace BaseModel.DataModel.EntityFramework
                 .Select(
                     clause =>
                         clause.UpdateIfMatch(CreatedByColumnName,
-                            DbExpression.FromGuid(UserGuid == null ? Guid.Empty : (Guid)UserGuid)))
+                            DbExpression.FromGuid(GetGuidFunc == null ? Guid.Empty : GetGuidFunc())))
                 .ToList();
 
             return new DbInsertCommandTree(
@@ -73,7 +73,7 @@ namespace BaseModel.DataModel.EntityFramework
             {
                 setClauses = updateCommand.SetClauses.Select(clause => clause
                             .UpdateIfMatch(ModifiedColumnName, DbExpression.FromDateTime(now)))
-                            .Select(clause => clause.UpdateIfMatch(ModifiedByColumnName, DbExpression.FromGuid(UserGuid == null ? Guid.Empty : (Guid)UserGuid))).ToList();
+                            .Select(clause => clause.UpdateIfMatch(ModifiedByColumnName, DbExpression.FromGuid(GetGuidFunc == null ? Guid.Empty : GetGuidFunc()))).ToList();
             }
             else
             {
@@ -84,7 +84,7 @@ namespace BaseModel.DataModel.EntityFramework
 
                 setClauses.Add(DbExpressionBuilder.SetClause(
                     updateCommand.Target.VariableType.Variable(updateCommand.Target.VariableName).Property(ModifiedByColumnName),
-                    DbExpression.FromGuid(UserGuid == null ? Guid.Empty : (Guid)UserGuid)));
+                    DbExpression.FromGuid(GetGuidFunc == null ? Guid.Empty : GetGuidFunc())));
             }
 
             return new DbUpdateCommandTree(

@@ -36,8 +36,14 @@ namespace BaseModel.Misc
         protected virtual ObservableCollection<TProjection> detailEntities { get; set; }
         public virtual ObservableCollection<TProjection> DetailEntities
         {
-            get { return detailEntities; }
-            set { detailEntities = value; }
+            get { return GetProperty(() => detailEntities); }
+            set { SetProperty(() => detailEntities, value); }
+        }
+
+        public virtual bool IsExpanded
+        {
+            get { return GetProperty(() => IsExpanded); }
+            set { SetProperty(() => IsExpanded, value); }
         }
 
         public ProjectionMasterDetailBase()

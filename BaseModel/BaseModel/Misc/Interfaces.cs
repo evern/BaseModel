@@ -16,6 +16,27 @@ namespace BaseModel.Misc
         Guid EntityKey { get; set; }
     }
 
+    public interface IHaveCreatedDate
+    {
+        DateTime EntityCreatedDate { get; set; }
+    }
+
+    public interface IHaveExpandState
+    {
+        bool IsExpanded { get; set; }
+    }
+
+    public interface IHaveSortOrder
+    {
+        int SortOrder { get; set; }
+        int? OldSortOrder { get; set; }
+    }
+
+    public interface IGuidParentEntityKey
+    {
+        Guid? ParentEntityKey { get; set; }
+    }
+
     public interface IOriginalGuidEntityKey
     {
         Guid OriginalEntityKey { get; set; }
@@ -27,7 +48,7 @@ namespace BaseModel.Misc
         TEntity Entity { get; set; }
     }
 
-    public interface IProjectionMasterDetail<TEntity, TProjection> : IProjection<TEntity>
+    public interface IProjectionMasterDetail<TEntity, TProjection> : IProjection<TEntity>, IHaveExpandState
         where TEntity : class, IGuidEntityKey, new()
         where TProjection : class, IGuidEntityKey, new()
     {

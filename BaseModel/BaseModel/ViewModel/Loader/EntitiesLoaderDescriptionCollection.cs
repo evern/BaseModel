@@ -50,8 +50,7 @@ namespace BaseModel.ViewModel.Loader
                 getRepositoryFunc, 
                 null, 
                 OnBeforeAffectingOrCompulsoryEntitiesChanged, 
-                OnAfterEntitiesChanged, 
-                null, 
+                OnAfterEntitiesChanged,  
                 projectionFunc, 
                 compulsoryEntityAssignmentFunc));
         }

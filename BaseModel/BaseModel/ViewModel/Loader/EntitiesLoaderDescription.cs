@@ -26,7 +26,6 @@ namespace BaseModel.ViewModel.Loader
 
         private IEntitiesViewModel<TProjection> collectionViewModel;
         readonly Func<IEnumerable<TProjection>, bool> isContinueLoadingCallBack;
-        readonly Action<IEnumerable<TProjection>> onEntitiesRefreshedCallBack;
         readonly Action<object, Type, EntityMessageType, object> collectionViewModelChangedCallBack;
         readonly Func<object, Type, EntityMessageType, object, bool> collectionViewModelBeforeChangedCallBack;
 
@@ -45,7 +44,6 @@ namespace BaseModel.ViewModel.Loader
             Func<IEnumerable<TProjection>, bool> isContinueLoadingCallBack = null,
             Func<object, Type, EntityMessageType, object, bool> collectionViewModelBeforeChangedCallBack = null,
             Action<object, Type, EntityMessageType, object> collectionViewModelChangedCallBack = null,
-            Action<IEnumerable<TProjection>> collectionViewModelRefreshedCallBack = null,
             Func<Func<IRepositoryQuery<TEntity>, IQueryable<TProjection>>> constructProjectionCallBackFunc = null,
             Action<TProjection> compulsoryEntityAssignmentFunc = null)
         {
@@ -55,7 +53,6 @@ namespace BaseModel.ViewModel.Loader
             this.getRepositoryFunc = getRepositoryFunc;
             this.constructProjectionCallBackFunc = constructProjectionCallBackFunc;
             this.isContinueLoadingCallBack = isContinueLoadingCallBack;
-            this.onEntitiesRefreshedCallBack = collectionViewModelRefreshedCallBack;
             this.collectionViewModelChangedCallBack = collectionViewModelChangedCallBack;
             this.collectionViewModelBeforeChangedCallBack = collectionViewModelBeforeChangedCallBack;
             this.compulsoryEntityAssignmentFunc = compulsoryEntityAssignmentFunc;
@@ -111,14 +108,8 @@ namespace BaseModel.ViewModel.Loader
             if (collectionViewModel != null)
             {
                 collectionViewModel.OnEntitiesLoadedCallBack = null;
-                collectionViewModel.OnEntitiesLoadedCallBack = OnEntitiesSubsequentLoading;
                 owner.InvokeEntitiesLoaderDescriptionLoading();
             }
-        }
-
-        private void OnEntitiesSubsequentLoading(IEnumerable<TProjection> loadedEntities)
-        {
-            onEntitiesRefreshedCallBack?.Invoke(loadedEntities);
         }
 
         public bool IsCompulsory

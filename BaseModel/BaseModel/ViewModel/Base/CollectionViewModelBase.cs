@@ -78,6 +78,11 @@ namespace BaseModel.ViewModel.Base
         /// Process the collection after entities are deleted, e.g. renumbering/renaming remaining entities
         /// </summary>
         public Action<IEnumerable<TEntity>> OnAfterEntitiesDeletedCallBack;
+
+        /// <summary>
+        /// Process the collection after projections are deleted, e.g. renumbering/renaming remaining entities
+        /// </summary>
+        public Action<IEnumerable<TProjection>> OnAfterProjectionsDeletedCallBack;
         #endregion
 
         /// <summary>
@@ -280,11 +285,14 @@ namespace BaseModel.ViewModel.Base
                 foreach (var entityWithTag in entitiesWithTag)
                 {
                     var findPrimaryKey = primaryKeysWithTag.First(x => x.Key == entityWithTag.Key).Value;
-                    OnEntityDeleted(findPrimaryKey, entityWithTag.Value, true);
+                    OnEntityDeleted(findPrimaryKey, entityWithTag.Value);
                 }
 
                 var entitiesDeleted = entitiesWithTag.Select(x => x.Value).ToList();
                 OnAfterEntitiesDeletedCallBack?.Invoke(entitiesDeleted);
+
+                var projectionsDeleted = projectionEntitiesWithTag.Select(x => x.Value).ToList();
+                OnAfterProjectionsDeletedCallBack?.Invoke(projectionsDeleted);
             }
             catch (DbException e)
             {
@@ -330,7 +338,7 @@ namespace BaseModel.ViewModel.Base
                     var projectionEntity = projectionEntitiesWithTag.First(x => x.Key == entityWithTag.Key).Value;
                     var isNewEntity = isNewEntityWithTag.First(x => x.Key == entityWithTag.Key).Value;
                     Repository.SetProjectionPrimaryKey(projectionEntity, primaryKey);
-                    OnEntitySaved(primaryKey, projectionEntity, entityWithTag.Value, isNewEntity, true);
+                    OnEntitySaved(primaryKey, projectionEntity, entityWithTag.Value, isNewEntity);
                 }
             }
             catch (DbException e)

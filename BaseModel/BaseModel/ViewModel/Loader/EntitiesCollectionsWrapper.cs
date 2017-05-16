@@ -112,8 +112,7 @@ namespace BaseModel.ViewModel.Loader
             mainEntityLoaderDescription =
                 new EntitiesLoaderDescription
                     <TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey, TMainEntityUnitOfWork>(this, 0,
-                        unitOfWorkFactory, getRepositoryFunc, OnMainViewModelLoaded, OnBeforeAffectingOrCompulsoryEntitiesChanged, 
-                        null, OnMainViewModelRefreshed, 
+                        unitOfWorkFactory, getRepositoryFunc, OnMainViewModelLoaded, OnBeforeAffectingOrCompulsoryEntitiesChanged, OnAfterAffectingEntitiesChanged, 
                         ConstructMainViewModelProjection);
         }
 
@@ -221,13 +220,11 @@ namespace BaseModel.ViewModel.Loader
         }
 
         #region ISupportParameter
-
         object ISupportParameter.Parameter
         {
             get { return null; }
             set { OnParameterChanged(value); }
         }
-
         #endregion
 
         #region Presentation
@@ -414,7 +411,7 @@ namespace BaseModel.ViewModel.Loader
             IPOCOViewModel viewModel = this as IPOCOViewModel;
             if(viewModel != null)
             {
-                this.RaisePropertiesChanged();
+                viewModel.RaisePropertiesChanged();
                 if (isForceGridRefresh && ForceGridRefresh != null)
                     ForceGridRefresh();
                 restoreViewState();

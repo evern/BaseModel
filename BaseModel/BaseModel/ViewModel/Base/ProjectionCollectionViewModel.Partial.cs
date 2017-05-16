@@ -508,13 +508,13 @@ namespace BaseModel.ViewModel.Base
             EntitiesUndoRedoManager.PauseActionId();
             EntitiesUndoRedoManager.AddUndo(projection, e.Column.FieldName, e.OldValue, e.Value,
                 EntityMessageType.Changed);
+
             EntitiesUndoRedoManager.UnpauseActionId();
 
             Save(projection);
 
             OnAfterTreelistExistingRowAddUndoAndSaveCallBack?.Invoke(e);
         }
-
 
         /// <summary>
         /// Remembers an entity added for undoing
@@ -794,7 +794,7 @@ namespace BaseModel.ViewModel.Base
         /// <param name="projectionEntity">Entities to delete.</param>
         public virtual bool CanBulkDelete()
         {
-            return Entities != null && Entities.Count > 0 && !IsLoading &&
+            return Entities != null && Entities.Count > 0 && !IsLoading && SelectedEntities != null && SelectedEntities.Count > 0 && 
                    (CanBulkDeleteCallBack == null || CanBulkDeleteCallBack(selectedentities));
         }
 
@@ -807,7 +807,7 @@ namespace BaseModel.ViewModel.Base
         {
             return Entities != null && Entities.Count > 0 && !IsLoading;
         }
-        
+
         /// <summary>
         /// Deletes a collection of entities from the repository.
         /// Since CollectionViewModelBase is a POCO view model, an the instance of this class will also expose the DeleteCommand property that can be used as a binding source in views.
