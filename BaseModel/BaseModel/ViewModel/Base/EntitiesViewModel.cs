@@ -418,12 +418,11 @@ namespace BaseModel.ViewModel.Base
 
         #endregion
 
-        //BaseModel Customization Start
+
         public Action<IEnumerable<TProjection>> OnEntitiesLoadedCallBack { get; set; }
         public Func<object, Type, EntityMessageType, object, bool> OnBeforeEntitiesChangedCallBack { get; set; }
         public Action<object, Type, EntityMessageType, object> OnAfterEntitiesChangedCallBack { get; set; }
         public bool IsPersistentView { get; set; }
-        //BaseModel Customization End
     }
 
     /// <summary>

@@ -24,7 +24,7 @@ namespace BaseModel.ViewModel.Loader
 
         readonly Func<Func<IRepositoryQuery<TEntity>, IQueryable<TProjection>>> constructProjectionCallBackFunc;
 
-        private IEntitiesViewModel<TProjection> collectionViewModel;
+        private CollectionViewModel<TEntity, TProjection, TPrimaryKey, TUnitOfWork> collectionViewModel;
         readonly Func<IEnumerable<TProjection>, bool> isContinueLoadingCallBack;
         readonly Action<object, Type, EntityMessageType, object> collectionViewModelChangedCallBack;
         readonly Func<object, Type, EntityMessageType, object, bool> collectionViewModelBeforeChangedCallBack;
@@ -70,6 +70,8 @@ namespace BaseModel.ViewModel.Loader
             collectionViewModel.OnEntitiesLoadedCallBack = OnEntitiesFirstLoaded;
             collectionViewModel.OnAfterEntitiesChangedCallBack = collectionViewModelChangedCallBack;
             collectionViewModel.OnBeforeEntitiesChangedCallBack = collectionViewModelBeforeChangedCallBack;
+            collectionViewModel.OnAfterDeletedSendMessage = owner.OnAfterDeletedSendMessage;
+            collectionViewModel.OnAfterSavedSendMessage = owner.OnAfterSavedSendMessage;
             collectionViewModel.Entities.ToList();
         }
 

@@ -83,6 +83,16 @@ namespace BaseModel.ViewModel.Base
         /// Process the collection after projections are deleted, e.g. renumbering/renaming remaining entities
         /// </summary>
         public Action<IEnumerable<TProjection>> OnAfterProjectionsDeletedCallBack;
+
+        /// <summary>
+        /// Used for sending SignalR messages after deletion
+        /// </summary>
+        public Action<string, string, string, string> OnAfterDeletedSendMessage;
+
+        /// <summary>
+        /// Used for sending SignalR messages after saving
+        /// </summary>
+        public Action<string, string, string, string> OnAfterSavedSendMessage;
         #endregion
 
         /// <summary>
@@ -172,6 +182,7 @@ namespace BaseModel.ViewModel.Base
         protected virtual void OnEntityDeleted(TPrimaryKey primaryKey, TEntity entity, bool willPerformBulkRefresh = false)
         {
             Messenger.Default.Send(new EntityMessage<TEntity, TPrimaryKey>(primaryKey, EntityMessageType.Deleted, this, string.Empty, willPerformBulkRefresh));
+            OnAfterDeletedSendMessage?.Invoke(typeof(TEntity).ToString(), primaryKey.ToString(), EntityMessageType.Deleted.ToString(), ToString());
         }
 
         protected virtual void OnEntitySaved(TPrimaryKey primaryKey, TProjection projectionEntity, TEntity entity,
@@ -183,6 +194,9 @@ namespace BaseModel.ViewModel.Base
             {
                 Messenger.Default.Send(new EntityMessage<TEntity, TPrimaryKey>(primaryKey,
     isNewEntity ? EntityMessageType.Added : EntityMessageType.Changed, this, string.Empty, willPerformBulkRefresh));
+
+                OnAfterSavedSendMessage?.Invoke(typeof(TEntity).ToString(), primaryKey.ToString(),
+                isNewEntity ? EntityMessageType.Added.ToString() : EntityMessageType.Changed.ToString(), ToString());
             }
             catch(Exception e)
             {

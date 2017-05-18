@@ -26,9 +26,7 @@ namespace BaseModel.ViewModel.Loader
         protected bool isSubEntitiesAdded;
         protected EntitiesLoaderDescriptionCollection loaderCollection = null;
 
-        protected
-            EntitiesLoaderDescription<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey, TMainEntityUnitOfWork>
-            mainEntityLoaderDescription;
+        protected EntitiesLoaderDescription<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey, TMainEntityUnitOfWork> mainEntityLoaderDescription;
 
         public CollectionViewModel<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey, TMainEntityUnitOfWork> MainViewModel { get; set; }
         public bool SuppressNotification { get; set; }
@@ -119,13 +117,14 @@ namespace BaseModel.ViewModel.Loader
         protected virtual Func<IRepositoryQuery<TMainEntity>, IQueryable<TMainProjectionEntity>>
             ConstructMainViewModelProjection()
         {
-            throw new NotImplementedException(
-                "Override this method to define how main view model should be constructed.");
+            throw new NotImplementedException("Override this method to define how main view model should be constructed.");
         }
 
         protected virtual bool OnMainViewModelLoaded(IEnumerable<TMainProjectionEntity> entities)
         {
-            MainViewModel = (CollectionViewModel<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey, TMainEntityUnitOfWork>) mainEntityLoaderDescription.GetViewModel();
+            MainViewModel = (CollectionViewModel<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey, TMainEntityUnitOfWork>)mainEntityLoaderDescription.GetViewModel();
+            MainViewModel.OnAfterSavedSendMessage = this.OnAfterSavedSendMessage;
+            MainViewModel.OnAfterDeletedSendMessage = this.OnAfterDeletedSendMessage;
             AssignCallBacksAndRaisePropertyChange(entities);
             return true;
         }
@@ -529,6 +528,16 @@ namespace BaseModel.ViewModel.Loader
 
             PersistentLayoutHelper.ResetLayout(ViewName);
         }
+
+        public virtual void OnAfterDeletedSendMessage(string entityName, string key, string messageType, string sender)
+        {
+            
+        }
+
+        public virtual void OnAfterSavedSendMessage(string entityName, string key, string messageType, string sender)
+        {
+            
+        }
         #endregion
     }
 
@@ -543,6 +552,10 @@ namespace BaseModel.ViewModel.Loader
         void OnAfterAffectingEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender);
 
         void OnAfterCompulsoryEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender);
+
+        void OnAfterDeletedSendMessage(string entityName, string key, string messageType, string sender);
+
+        void OnAfterSavedSendMessage(string entityName, string key, string messageType, string sender);
 
         Type MainEntityType { get; }
 
