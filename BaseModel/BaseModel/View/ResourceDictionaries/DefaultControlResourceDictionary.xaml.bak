@@ -2,7 +2,7 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
                     xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
-                    xmlns:dxsc="clr-namespace:DevExpress.Xpf.SpellChecker;assembly=DevExpress.Xpf.SpellChecker.v16.2"
+                    xmlns:dxsc="clr-namespace:DevExpress.Xpf.SpellChecker;assembly=DevExpress.Xpf.SpellChecker.v17.1"
                     xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
                     xmlns:misc="clr-namespace:BaseModel.Misc">
     <Style x:Key="CollectionView.RootContainer" TargetType="FrameworkElement">
@@ -54,6 +54,7 @@
         <Setter Property="dxsc:SpellingSettings.ShowSpellCheckMenu" Value="True" />
         <Setter Property="dxsc:SpellingSettings.SpellChecker"
                 Value="{Binding DataContext.SpellCheckerModule.SpellChecker, ElementName=userControl}" />
+        <Setter Property="dx:ScrollBarExtensions.ScrollBarMode" Value="TouchOverlap" />
         <Setter Property="dxmvvm:Interaction.BehaviorsTemplate">
             <Setter.Value>
                 <DataTemplate>
@@ -101,14 +102,17 @@
                                                EventName="CellValueChanged" />
                         <dxmvvm:EventToCommand PassEventArgsToCommand="True"
                                                Command="{Binding NewRowAddUndoAndSaveCommand}" EventName="RowUpdated" />
-                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" Command="{Binding ValidateCellCommand}"
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True"
+                                               Command="{Binding ValidateCellCommand}"
                                                EventName="ValidateCell" />
-                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" Command="{Binding ValidateRowCommand}"
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True"
+                                               Command="{Binding ValidateRowCommand}"
                                                EventName="ValidateRow" />
                         <dxmvvm:EventToCommand PassEventArgsToCommand="True"
                                                Command="{Binding PastingFromClipboardCommand}"
                                                EventName="PastingFromClipboard" />
-                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" Command="{Binding ShownEditorCommand}"
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True"
+                                               Command="{Binding ShownEditorCommand}"
                                                EventName="ShownEditor" />
                         <dxmvvm:KeyToCommand KeyGesture="CTRL+Z" Command="{Binding UndoCommand}" />
                         <dxmvvm:KeyToCommand KeyGesture="CTRL+Y" Command="{Binding RedoCommand}" />
@@ -139,9 +143,11 @@
                                                EventName="CellValueChanged" />
                         <dxmvvm:EventToCommand PassEventArgsToCommand="True"
                                                Command="{Binding NewRowAddUndoAndSaveCommand}" EventName="RowUpdated" />
-                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" Command="{Binding ValidateCellCommand}"
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True"
+                                               Command="{Binding ValidateCellCommand}"
                                                EventName="ValidateCell" />
-                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" Command="{Binding ValidateRowCommand}"
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True"
+                                               Command="{Binding ValidateRowCommand}"
                                                EventName="ValidateRow" />
                         <!--<dxmvvm:KeyToCommand KeyGesture="Delete" Command="{Binding BulkDeleteCommand}"  />-->
                         <dxmvvm:KeyToCommand KeyGesture="CTRL+Z" Command="{Binding UndoCommand}" />

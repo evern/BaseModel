@@ -564,7 +564,7 @@ namespace BaseModel.ViewModel.Base
             IsValidFromViewCallBack?.Invoke(e);
         }
 
-        public Func<GridRowValidationEventArgs, bool> AdditionalValidateRowCallBack { get; set; }
+        public Action<GridRowValidationEventArgs> AdditionalValidateRowCallBack { get; set; }
 
         public virtual void ValidateRow(GridRowValidationEventArgs e)
         {

@@ -30,7 +30,7 @@ namespace BaseModel.Misc
 
             foreach(GridColumn gridColumn in gridControl.Columns)
             {
-                gridColumn.FilterPopupMode = FilterPopupMode.CheckedList;
+                gridColumn.FilterPopupMode = FilterPopupMode.Excel;
             }
         }
 

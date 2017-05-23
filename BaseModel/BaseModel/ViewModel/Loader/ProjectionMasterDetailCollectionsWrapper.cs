@@ -90,6 +90,7 @@ namespace BaseModel.ViewModel.Loader
 
         private void ApplyProjectionPropertiesToEntity(TMainProjectionEntity projectionEntity, TMainEntity entity)
         {
+            OnBeforeApplyProjectionPropertiesToEntity(projectionEntity, entity);
             DataUtils.ShallowCopy(entity, projectionEntity.Entity);
 
             IHaveCreatedDate iHaveCreatedDateEntity = entity as IHaveCreatedDate;
@@ -102,7 +103,12 @@ namespace BaseModel.ViewModel.Loader
 
                 iHaveCreatedDateEntity.EntityCreatedDate = iHaveCreatedDateProjectionEntity.EntityCreatedDate;
             }
-        } 
+        }
+
+        protected virtual void OnBeforeApplyProjectionPropertiesToEntity(TMainProjectionEntity projectionEntity, TMainEntity entity)
+        {
+
+        }
         #endregion
 
         private List<Guid> RestoreExpandedGuids = new List<Guid>();
