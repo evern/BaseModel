@@ -127,11 +127,12 @@ namespace BaseModel.ViewModel.Loader
                     var childEntities = MainViewModel.Entities.Where(x => x.Entity.ParentEntityKey != null).AsEnumerable();
                     foreach (var parentEntity in parentEntities)
                     {
-                        var parentCOMMODITY_GROUP_DIRECTPOCO = new TMainProjectionEntity();
-                        DataUtils.ShallowCopy(parentCOMMODITY_GROUP_DIRECTPOCO.Entity, parentEntity.Entity);
+                        var parentEntityPOCO = new TMainProjectionEntity();
+                        DataUtils.ShallowCopy(parentEntityPOCO, parentEntity);
+                        DataUtils.ShallowCopy(parentEntityPOCO.Entity, parentEntity.Entity);
 
-                        parentCOMMODITY_GROUP_DIRECTPOCO.IsExpanded = RestoreExpandedGuids.Any(x => x == parentEntity.EntityKey);
-                        displayEntities.Add(parentCOMMODITY_GROUP_DIRECTPOCO);
+                        parentEntityPOCO.IsExpanded = RestoreExpandedGuids.Any(x => x == parentEntity.EntityKey);
+                        displayEntities.Add(parentEntityPOCO);
                     }
 
                     foreach (var displayEntity in displayEntities)
