@@ -115,6 +115,7 @@
     <Compile Include="ViewModel\Loader\ProjectionMasterDetailCollectionsWrapper.cs" />
     <Compile Include="ViewModel\Loader\EntitiesTreeCollectionWrapper.cs" />
     <Compile Include="ViewModel\Loader\ProjectionTreeCollectionWrapper.cs" />
+    <Compile Include="ViewModel\Services\TableViewService.cs" />
     <Compile Include="ViewModel\UndoRedo\EntitiesUndoRedoManager.cs" />
     <Compile Include="ViewModel\UndoRedo\ISupportUndoRedo.cs" />
     <Compile Include="ViewModel\UndoRedo\UndoRedoEntityInfo.cs" />

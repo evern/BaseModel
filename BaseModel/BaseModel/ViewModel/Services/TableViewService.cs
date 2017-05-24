@@ -1,0 +1,37 @@
+﻿using DevExpress.Mvvm.UI;
+using DevExpress.Xpf.Grid;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows;
+
+namespace BaseModel.ViewModel.Services
+{
+    public interface ITableViewService
+    {
+        void ExportToXls(string exportPath);
+    }
+
+    public class TableViewService : ServiceBase, ITableViewService
+    {
+        public TableView TableView
+        {
+            get { return (TableView)GetValue(TableViewProperty); }
+            set { SetValue(TableViewProperty, value); }
+        }
+
+        // Using a DependencyProperty as the backing store for Camera.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty TableViewProperty =
+            DependencyProperty.Register("TableView", typeof(TableView), typeof(TableViewService), new PropertyMetadata(null));
+
+        public void ExportToXls(string exportPath)
+        {
+            if (this.TableView != null)
+            {
+                TableView.ExportToXlsx(exportPath);
+            }
+        }
+    }
+}

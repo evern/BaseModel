@@ -21,6 +21,7 @@ using System.Windows;
 using System.Windows.Threading;
 using BaseModel.Misc;
 using BaseModel.ViewModel.Dialogs;
+using BaseModel.ViewModel.Services;
 
 namespace BaseModel.ViewModel.Base
 {

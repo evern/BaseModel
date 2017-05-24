@@ -4,6 +4,7 @@
                     xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
                     xmlns:dxsc="clr-namespace:DevExpress.Xpf.SpellChecker;assembly=DevExpress.Xpf.SpellChecker.v17.1"
                     xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
+                    xmlns:services="clr-namespace:BaseModel.ViewModel.Services"
                     xmlns:misc="clr-namespace:BaseModel.Misc">
     <Style x:Key="CollectionView.RootContainer" TargetType="FrameworkElement">
         <Setter Property="dxmvvm:Interaction.BehaviorsTemplate">
@@ -23,6 +24,12 @@
                             </dx:DialogService.DialogStyle>
                         </dx:DialogService>
                         <dxmvvm:LayoutSerializationService />
+                        <dxmvvm:FolderBrowserDialogService 
+                            Description="Choose Folder"
+                            ShowNewFolderButton="True" 
+                            RootFolder="Desktop"
+                            RestorePreviouslySelectedDirectory="True"/>
+                        <services:TableViewService TableView="{Binding ElementName=tableView}" />
                     </ItemsControl>
                 </DataTemplate>
             </Setter.Value>

@@ -13,6 +13,7 @@ using System.Windows.Threading;
 using BaseModel.Misc;
 using BaseModel.ViewModel.Base;
 using BaseModel.ViewModel.Document;
+using BaseModel.ViewModel.Services;
 
 namespace BaseModel.ViewModel.Loader
 {
@@ -500,9 +501,27 @@ namespace BaseModel.ViewModel.Loader
             MainViewModel.SetNestedValueWithUndo(entity, propertyName, newValue);
             this.RaisePropertyChanged(x => x.DisplaySelectedEntity);
         }
+
+        protected virtual string ExportExcelFilename()
+        {
+            return "grid_export.xlsx";
+        }
+
+        public void ExportToExcel()
+        {
+            string ResultPath = string.Empty;
+            if (FolderBrowserDialogService.ShowDialog())
+            {
+                ResultPath = FolderBrowserDialogService.ResultPath;
+                TableViewService.ExportToXls(ResultPath + "\\" + ExportExcelFilename());
+            }
+        }
         #endregion
 
         #region Services
+        protected virtual ITableViewService TableViewService { get { return this.GetService<ITableViewService>(); } }
+        protected virtual IFolderBrowserDialogService FolderBrowserDialogService { get { return this.GetService<IFolderBrowserDialogService>(); } }
+
         protected IMessageBoxService MessageBoxService
         {
             get { return this.GetRequiredService<IMessageBoxService>(); }
