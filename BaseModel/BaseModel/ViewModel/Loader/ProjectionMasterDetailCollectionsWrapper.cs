@@ -45,7 +45,14 @@ namespace BaseModel.ViewModel.Loader
                 var masterRowHandle = grid.GetMasterRowHandle();
                 var masterEntity = (TMainProjectionEntity)masterGrid.GetRow(masterRowHandle);
                 if (OnBeforeParentAssigned(masterEntity, projectionEntity))
-                    projectionEntity.Entity.ParentEntityKey = masterEntity.EntityKey;
+                {
+                    IOriginalGuidEntityKey masterEntityOriginalKey = masterEntity as IOriginalGuidEntityKey;
+                    if (masterEntityOriginalKey == null)
+                        projectionEntity.Entity.ParentEntityKey = masterEntity.EntityKey;
+                    else
+                        projectionEntity.Entity.ParentEntityKey = masterEntityOriginalKey.OriginalEntityKey;
+                }
+
             }
 
             return true;
@@ -135,13 +142,22 @@ namespace BaseModel.ViewModel.Loader
                         displayEntities.Add(parentEntityPOCO);
                     }
 
+                    //foreach added parent
                     foreach (var displayEntity in displayEntities)
                     {
-                        var currentChildEntities = childEntities.Where(y => y.Entity.ParentEntityKey == displayEntity.EntityKey);
+                        IOriginalGuidEntityKey displayEntityWithOriginalKey = displayEntity as IOriginalGuidEntityKey;
+
+                        IEnumerable<TMainProjectionEntity> currentChildEntities;
+                        if (displayEntityWithOriginalKey == null)
+                            currentChildEntities = childEntities.Where(y => y.Entity.ParentEntityKey == displayEntity.EntityKey);
+                        else
+                            currentChildEntities = childEntities.Where(y => y.Entity.ParentEntityKey == displayEntityWithOriginalKey.OriginalEntityKey);
+
                         foreach (var childCOMMODITY_GROUP_DIRECT in currentChildEntities)
                         {
                             var childCOMMODITY_GROUP_DIRECTPOCO = new TMainProjectionEntity();
-                            childCOMMODITY_GROUP_DIRECTPOCO.EntityKey = childCOMMODITY_GROUP_DIRECT.EntityKey;
+                            //childCOMMODITY_GROUP_DIRECTPOCO.EntityKey = childCOMMODITY_GROUP_DIRECT.EntityKey;
+                            DataUtils.ShallowCopy(childCOMMODITY_GROUP_DIRECTPOCO, childCOMMODITY_GROUP_DIRECT);
                             DataUtils.ShallowCopy(childCOMMODITY_GROUP_DIRECTPOCO.Entity, childCOMMODITY_GROUP_DIRECT.Entity);
                             displayEntity.DetailEntities.Add(childCOMMODITY_GROUP_DIRECTPOCO);
                         }
