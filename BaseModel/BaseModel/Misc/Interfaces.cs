@@ -42,6 +42,11 @@ namespace BaseModel.Misc
         Guid OriginalEntityKey { get; set; }
     }
 
+    public interface IEntityNumber
+    {
+        string EntityNumber { get; set; }
+    }
+
     public interface IProjection<TEntity> : IGuidEntityKey
         where TEntity : class, new()
     {

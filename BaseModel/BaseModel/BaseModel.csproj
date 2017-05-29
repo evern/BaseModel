@@ -114,6 +114,7 @@
     <Compile Include="ViewModel\Loader\EntitiesLoaderDescriptionCollection.cs" />
     <Compile Include="ViewModel\Loader\ProjectionMasterDetailCollectionsWrapper.cs" />
     <Compile Include="ViewModel\Loader\EntitiesTreeCollectionWrapper.cs" />
+    <Compile Include="ViewModel\Loader\EntitiesAutoNumberCollectionWrapper.cs" />
     <Compile Include="ViewModel\Loader\ProjectionTreeCollectionWrapper.cs" />
     <Compile Include="ViewModel\Services\TableViewService.cs" />
     <Compile Include="ViewModel\UndoRedo\EntitiesUndoRedoManager.cs" />

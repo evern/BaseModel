@@ -1,5 +1,7 @@
-﻿using System;
+﻿using BaseModel.Misc;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace BaseModel.Helpers
 {
@@ -63,6 +65,77 @@ namespace BaseModel.Helpers
             }
             return stringPortionOnly += enumeratorString;
         }
-    }
 
+
+        /// <summary>
+        /// Parse string into string only value and number only value.
+        /// </summary>
+        /// <param name="fullStringValue">String to parse.</param>
+        /// <param name="numericFieldlength">Length of number value.</param>
+        /// <param name="numberComponent">Parsed number value.</param>
+        /// <returns></returns>
+        public static string ParseStringIntoComponents(string fullStringValue, out int numericFieldlength, out long numberComponent)
+        {
+            int numberLength = 0;
+            int? numericIndex = StringFormatUtils.GetNumericIndex(fullStringValue, out numberLength);
+            if (fullStringValue == null || fullStringValue == string.Empty)
+            {
+                numberComponent = 0;
+                numericFieldlength = 0;
+                return string.Empty;
+            }
+
+            string stringOnlyValue = fullStringValue.Substring(0, fullStringValue.Length - numberLength);
+            numberComponent = Int64.Parse(fullStringValue.Substring(numericIndex.Value, fullStringValue.Length - numericIndex.Value));
+            numericFieldlength = numberLength;
+
+            return stringOnlyValue;
+        }
+
+        public static string GetNewRegisterNumber(IEnumerable<IEntityNumber> originalEntities, IEnumerable<IEntityNumber> unsavedEntities, string duplicateInternalNumber, IEnumerable<IEntityNumber> insertSelectedEntities)
+        {
+            if (duplicateInternalNumber != string.Empty && duplicateInternalNumber != null)
+            {
+                string stringValueToFill = duplicateInternalNumber;
+                int numericFieldLength = 0;
+                long valueToFillNumberOnly = 0;
+                string valueToFillStringOnly = ParseStringIntoComponents(duplicateInternalNumber, out numericFieldLength, out valueToFillNumberOnly);
+
+                List<IEntityNumber> allEntities = new List<IEntityNumber>(originalEntities);
+                allEntities.AddRange(unsavedEntities);
+
+                List<string> originalEntitiesSimilarNames =
+                originalEntities.Where(x => x.EntityNumber != null).Select(x => x.EntityNumber).ToList();
+
+                List<string> allEntitiesSimilarNames =
+                allEntities.Where(x => x.EntityNumber != null).Select(x => x.EntityNumber).ToList();
+
+                List<string> unsavedEntitiesSimilarNames =
+                unsavedEntities.Where(x => x.EntityNumber != null).Select(x => x.EntityNumber).ToList();
+
+                List<string> insertSelectedEntitiesSimilarNames = insertSelectedEntities.Where(x => x.EntityNumber != null).Select(x => x.EntityNumber).ToList();
+
+                do
+                {
+                    valueToFillNumberOnly += 1;
+                    string nextName = StringFormatUtils.AppendStringWithEnumerator(valueToFillStringOnly, valueToFillNumberOnly, numericFieldLength);
+
+                    bool isExistsInInsert = insertSelectedEntitiesSimilarNames.Any(x => x == nextName);
+                    bool isExistsInUnsaved = unsavedEntitiesSimilarNames.Any(x => x == nextName);
+
+                    //when current name exists in unsaved it means that nextName is not safe to be used
+                    if (isExistsInUnsaved)
+                        continue;
+                    //when current name exists in insert it means that nextName is not safe to be used
+                    else if (isExistsInInsert)
+                        continue;
+                    else
+                        return nextName;
+
+                } while (valueToFillNumberOnly < 1000000);
+            }
+
+            return string.Empty;
+        }
+    }
 }
