@@ -61,9 +61,14 @@ namespace BaseModel.ViewModel.Base
         public Func<RowEventArgs, TProjection, bool> IsContinueNewRowFromViewCallBack;
 
         /// <summary>
-        /// Additional validation from view
+        /// Additional validation for cell
         /// </summary>
-        public Func<GridCellValidationEventArgs, bool> IsValidFromViewCallBack;
+        public Action<GridCellValidationEventArgs> AdditionalValidateCellCallBack;
+
+        /// <summary>
+        /// Additional validation for row
+        /// </summary>
+        public Action<GridRowValidationEventArgs> AdditionalValidateRowCallBack { get; set; }
 
         /// <summary>
         /// Allows only certain fields to be edited in existing row
@@ -562,10 +567,8 @@ namespace BaseModel.ViewModel.Base
                 e.ErrorContent = constraintName + " is not unique";
             }
 
-            IsValidFromViewCallBack?.Invoke(e);
+            AdditionalValidateCellCallBack?.Invoke(e);
         }
-
-        public Action<GridRowValidationEventArgs> AdditionalValidateRowCallBack { get; set; }
 
         public virtual void ValidateRow(GridRowValidationEventArgs e)
         {

@@ -231,6 +231,7 @@ namespace BaseModel.ViewModel.Loader
         public Action StoreActiveCell { get; set; }
         public Action RestoreActiveCell { get; set; }
         public Action ForceGridRefresh { get; set; }
+        public Action PostEditor { get; set; }
 
         private Guid RestoreSelectedEntityGuid;
         private List<Guid> RestoreSelectedEntitiesGuids = new List<Guid>();
