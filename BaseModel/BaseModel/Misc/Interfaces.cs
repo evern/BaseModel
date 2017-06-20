@@ -64,7 +64,6 @@ namespace BaseModel.Misc
     {
         Action StoreActiveCell { get; set; }
         Action RestoreActiveCell { get; set; }
-        Action PostEditor { get; set; }
         //Raise Properties changed doesn't refresh column data, call this method instead
         Action ForceGridRefresh { get; set; }
     }

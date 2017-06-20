@@ -263,9 +263,9 @@ namespace BaseModel.ViewModel.Base
         /// <param name="entity">The entity to be validated</param>
         /// <param name="errorMessage">Error message to notify the user of conflicting constraints</param>
         /// <returns>Returns true if no other entity contains similar constraint member values</returns>
-        public bool IsValidEntity(TProjection entity, ref string errorMessage)
+        public bool IsValidEntity(TProjection entity, string errorMessage)
         {
-            if (!isRequiredAttributesHasValue(entity, ref errorMessage))
+            if (!isRequiredAttributesHasValue(entity, errorMessage))
                 return false;
 
             return IsUniqueEntityConstraintValues(entity, ref errorMessage);
@@ -406,7 +406,7 @@ namespace BaseModel.ViewModel.Base
         /// <param name="entity">The entity to be validated</param>
         /// <param name="errorMessage">Error mesasage formatted with key property info</param>
         /// <returns></returns>
-        private bool isRequiredAttributesHasValue(TProjection entity, ref string errorMessage)
+        private bool isRequiredAttributesHasValue(TProjection entity, string errorMessage)
         {
             IEnumerable<string> requiredPropertyStrings;
             if (typeof(TProjection) == typeof(TEntity))
@@ -573,7 +573,7 @@ namespace BaseModel.ViewModel.Base
         public virtual void ValidateRow(GridRowValidationEventArgs e)
         {
             var errorMessage = string.Empty;
-            if (!IsValidEntity((TProjection)e.Row, ref errorMessage))
+            if (!IsValidEntity((TProjection)e.Row, errorMessage))
             {
                 e.IsValid = false;
                 e.ErrorType = DevExpress.XtraEditors.DXErrorProvider.ErrorType.Critical;
@@ -592,13 +592,13 @@ namespace BaseModel.ViewModel.Base
         public bool CanFillDown(object button)
         {
             var info = GridPopupMenuBase.GetGridMenuInfo((DependencyObject)button) as GridMenuInfo;
-            return Entities != null && Entities.Count > 1 && !IsLoading && info != null && info.Column != null && !info.Column.ReadOnly && (CanFillDownCallBack == null || CanFillDownCallBack(SelectedEntities, info));
+            return SelectedEntities != null && SelectedEntities.Count > 1 && Entities != null && Entities.Count > 1 && !IsLoading && info != null && info.Column != null && !info.Column.ReadOnly && (CanFillDownCallBack == null || CanFillDownCallBack(SelectedEntities, info));
         }
 
         public bool CanFillUp(object button)
         {
             var info = GridPopupMenuBase.GetGridMenuInfo((DependencyObject)button) as GridMenuInfo;
-            return Entities != null && Entities.Count > 1 && !IsLoading && info != null && info.Column != null && !info.Column.ReadOnly && (CanFillDownCallBack == null || CanFillDownCallBack(SelectedEntities, info));
+            return SelectedEntities != null && SelectedEntities.Count > 1 && Entities != null && Entities.Count > 1 && !IsLoading && info != null && info.Column != null && !info.Column.ReadOnly && (CanFillDownCallBack == null || CanFillDownCallBack(SelectedEntities, info));
         }
 
         public Func<TProjection, string, object, bool> ValidateFillDownCallBack;
@@ -1027,188 +1027,20 @@ namespace BaseModel.ViewModel.Base
         public virtual void PastingFromClipboard(PastingFromClipboardEventArgs e)
         {
             PasteListener?.Invoke(PasteStatus.Start);
+            CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, MessageBoxService);
+            List<TProjection> pasteProjections = copyPasteHelper.PastingFromClipboard(e);
 
-            var PasteString = Clipboard.GetText();
-            var RowData = PasteString.Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-            var sourceGridControl = (GridControl)e.Source;
-            var entityProperties = typeof(TEntity).GetProperties();
-            var gridView = sourceGridControl.View;
-
-            List<TProjection> pasteProjections = new List<TProjection>();
-            if (gridView.ActiveEditor == null && gridView.GetType() == typeof(TableViewEx))
+            if(pasteProjections.Count > 0)
             {
-                var gridTableView = gridView as TableViewEx;
-                foreach (var Row in RowData)
-                {
-                    TProjection projection = new TProjection();
-
-                    var ColumnStrings = Row.Split('\t');
-                    for (var i = 0; i < ColumnStrings.Count(); i++)
-                        try
-                        {
-                            var copyColumn = gridTableView.VisibleColumns[i];
-
-                            if (copyColumn.ReadOnly)
-                                continue;
-
-                            var columnName = copyColumn.FieldName;
-                            var columnPropertyInfo = DataUtils.GetNestedPropertyInfo(columnName, projection);
-                            if (columnPropertyInfo != null)
-                                if (columnPropertyInfo.PropertyType == typeof(Guid?) ||
-                                    columnPropertyInfo.PropertyType == typeof(Guid))
-                                {
-                                    var copyColumnEditSettings =
-                                        copyColumn.ActualEditSettings as ComboBoxEditSettings;
-                                    if (copyColumnEditSettings != null)
-                                    {
-                                        var copyColumnValueMember = copyColumnEditSettings.ValueMember;
-                                        var copyColumnDisplayMember = copyColumnEditSettings.DisplayMember;
-                                        var copyColumnItemsSource =
-                                            copyColumnEditSettings.ItemsSource as IEnumerable<object>;
-                                        Guid? itemValue = null;
-                                        foreach (var copyColumnItem in copyColumnItemsSource)
-                                        {
-                                            var itemDisplayMemberPropertyInfo =
-                                                copyColumnItem.GetType().GetProperty(copyColumnDisplayMember);
-                                            var itemValueMemberPropertyInfo =
-                                                copyColumnItem.GetType().GetProperty(copyColumnValueMember);
-                                            if (itemDisplayMemberPropertyInfo.GetValue(copyColumnItem).ToString() ==
-                                                ColumnStrings[i])
-                                                itemValue = (Guid)itemValueMemberPropertyInfo.GetValue(copyColumnItem);
-                                        }
-
-                                        if (itemValue != null)
-                                            DataUtils.SetNestedValue(columnName, projection, itemValue);
-                                        else
-                                            continue;
-                                    }
-                                    else if (ColumnStrings[i] != Guid.Empty.ToString())
-                                    {
-                                        var newGuid = new Guid(ColumnStrings[i]);
-                                        DataUtils.SetNestedValue(columnName, projection, newGuid);
-                                    }
-                                }
-                                else if (columnPropertyInfo.PropertyType == typeof(string))
-                                    DataUtils.SetNestedValue(columnName, projection, ColumnStrings[i]);
-                                else if (columnPropertyInfo.PropertyType.BaseType == typeof(Enum))
-                                {
-                                    var enumValues = Enum.GetValues(columnPropertyInfo.PropertyType);
-                                    foreach (var enumValue in enumValues)
-                                    {
-                                        var fieldInfo = enumValue.GetType().GetField(enumValue.ToString());
-                                        if (fieldInfo == null)
-                                            return;
-
-                                        var descriptionAttributes =
-                                            fieldInfo.GetCustomAttributes(typeof(DisplayAttribute), false) as
-                                                DisplayAttribute[];
-                                        if (descriptionAttributes == null || descriptionAttributes.Count() == 0)
-                                            return;
-
-                                        var descriptionAttribute = descriptionAttributes.First();
-                                        if (ColumnStrings[i] == descriptionAttribute.Name)
-                                        {
-                                            DataUtils.SetNestedValue(columnName, projection, enumValue);
-                                            continue;
-                                        }
-                                    }
-                                }
-                                else if (columnPropertyInfo.PropertyType == typeof(decimal) ||
-                                         columnPropertyInfo.PropertyType == typeof(decimal?)
-                                         || columnPropertyInfo.PropertyType == typeof(int) ||
-                                         columnPropertyInfo.PropertyType == typeof(int?)
-                                         || columnPropertyInfo.PropertyType == typeof(double) ||
-                                         columnPropertyInfo.PropertyType == typeof(double?))
-                                {
-                                    var rgx = new Regex("[^0-9a-z\\.]");
-                                    var cleanColumnString = rgx.Replace(ColumnStrings[i], string.Empty);
-
-                                    if (columnPropertyInfo.PropertyType == typeof(decimal) ||
-                                        columnPropertyInfo.PropertyType == typeof(decimal?))
-                                    {
-                                        decimal getDecimal;
-                                        if (decimal.TryParse(cleanColumnString, out getDecimal))
-                                        {
-                                            if (columnName.Contains('%') || columnName.ToUpper().Contains("PERCENT"))
-                                                getDecimal /= 100;
-
-                                            DataUtils.SetNestedValue(columnName, projection, getDecimal);
-                                        }
-                                        else
-                                            return;
-                                    }
-                                    else if (columnPropertyInfo.PropertyType == typeof(int) ||
-                                             columnPropertyInfo.PropertyType == typeof(int?))
-                                    {
-                                        int getInt;
-                                        if (int.TryParse(cleanColumnString, out getInt))
-                                            DataUtils.SetNestedValue(columnName, projection, getInt);
-                                        else
-                                            return;
-                                    }
-                                    else if (columnPropertyInfo.PropertyType == typeof(double) ||
-                                             columnPropertyInfo.PropertyType == typeof(double?))
-                                    {
-                                        double getDouble;
-                                        if (double.TryParse(cleanColumnString, out getDouble))
-                                        {
-                                            if (columnName.Contains('%') || columnName.ToUpper().Contains("PERCENT"))
-                                                getDouble /= 100;
-
-                                            DataUtils.SetNestedValue(columnName, projection, getDouble);
-                                        }
-                                        else
-                                            return;
-                                    }
-                                    else
-                                        return;
-                                }
-                                else if (columnPropertyInfo.PropertyType == typeof(DateTime?) ||
-                                         columnPropertyInfo.PropertyType == typeof(DateTime))
-                                {
-                                    DateTime getDateTime;
-                                    if (DateTime.TryParse(ColumnStrings[i], out getDateTime))
-                                        DataUtils.SetNestedValue(columnName, projection, getDateTime);
-                                    else
-                                        continue;
-                                }
-                                else
-                                    continue;
-                            else
-                                continue;
-                        }
-                        catch
-                        {
-                            return;
-                        }
-
-                    var errorMessage = "Duplicate exists on constraint field named: ";
-                    if (IsValidEntity(projection, ref errorMessage))
-                        if (OnBeforePasteWithValidation != null)
-                        {
-                            if (OnBeforePasteWithValidation(projection))
-                                pasteProjections.Add(projection);
-                        }
-                        else
-                            pasteProjections.Add(projection);
-                    else
-                    {
-                        errorMessage += " , paste operation will be terminated";
-                        MessageBoxService.ShowMessage(errorMessage, CommonResource.Exception_UpdateErrorCaption,
-                            MessageButton.OK);
-                        break;
-                    }
-                }
-
                 EntitiesUndoRedoManager.PauseActionId();
                 pasteProjections.ForEach(x => EntitiesUndoRedoManager.AddUndo(x, null, null, null, EntityMessageType.Added));
                 EntitiesUndoRedoManager.UnpauseActionId();
 
                 BulkSave(pasteProjections);
-
-                PasteListener?.Invoke(PasteStatus.Stop);
                 e.Handled = true;
             }
+
+            PasteListener?.Invoke(PasteStatus.Stop);
         }
 
         #endregion

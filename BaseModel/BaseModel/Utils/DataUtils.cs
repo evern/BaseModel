@@ -1,12 +1,213 @@
 ﻿using BaseModel.Attributes;
+using BaseModel.Misc;
+using DevExpress.Mvvm;
+using DevExpress.Xpf.Editors.Settings;
+using DevExpress.Xpf.Grid;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
+using System.Windows;
 
 namespace BaseModel.Data.Helpers
-{
+{   
+    public class CopyPasteHelper<TProjection>
+        where TProjection : new()
+    {
+        readonly Func<TProjection, string, bool> isValidProjectionFunc;
+        readonly Func<TProjection, bool> onBeforePasteWithValidationFunc;
+        readonly IMessageBoxService messageBoxService;
+
+        public CopyPasteHelper(Func<TProjection, string, bool> isValidProjectionFunc = null, Func<TProjection, bool> onBeforePasteWithValidationFunc = null, IMessageBoxService messageBoxService = null)
+        {
+            this.isValidProjectionFunc = isValidProjectionFunc;
+            this.onBeforePasteWithValidationFunc = onBeforePasteWithValidationFunc;
+            this.messageBoxService = messageBoxService;
+        }
+
+        public List<TProjection> PastingFromClipboard(PastingFromClipboardEventArgs e)
+        {
+            var PasteString = Clipboard.GetText();
+            var RowData = PasteString.Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            var sourceGridControl = (GridControl)e.Source;
+            var gridView = sourceGridControl.View;
+
+            List<TProjection> pasteProjections = new List<TProjection>();
+            if (gridView.ActiveEditor == null && gridView.GetType() == typeof(TableViewEx))
+            {
+                var gridTableView = gridView as TableViewEx;
+                foreach (var Row in RowData)
+                {
+                    TProjection projection = new TProjection();
+
+                    var ColumnStrings = Row.Split('\t');
+                    for (var i = 0; i < ColumnStrings.Count(); i++)
+                        try
+                        {
+                            var copyColumn = gridTableView.VisibleColumns[i];
+
+                            if (copyColumn.ReadOnly)
+                                continue;
+
+                            var columnName = copyColumn.FieldName;
+                            var columnPropertyInfo = DataUtils.GetNestedPropertyInfo(columnName, projection);
+                            if (columnPropertyInfo != null)
+                                if (columnPropertyInfo.PropertyType == typeof(Guid?) ||
+                                    columnPropertyInfo.PropertyType == typeof(Guid))
+                                {
+                                    var copyColumnEditSettings =
+                                        copyColumn.ActualEditSettings as ComboBoxEditSettings;
+                                    if (copyColumnEditSettings != null)
+                                    {
+                                        var copyColumnValueMember = copyColumnEditSettings.ValueMember;
+                                        var copyColumnDisplayMember = copyColumnEditSettings.DisplayMember;
+                                        var copyColumnItemsSource =
+                                            copyColumnEditSettings.ItemsSource as IEnumerable<object>;
+                                        Guid? itemValue = null;
+                                        foreach (var copyColumnItem in copyColumnItemsSource)
+                                        {
+                                            var itemDisplayMemberPropertyInfo =
+                                                copyColumnItem.GetType().GetProperty(copyColumnDisplayMember);
+                                            var itemValueMemberPropertyInfo =
+                                                copyColumnItem.GetType().GetProperty(copyColumnValueMember);
+                                            if (itemDisplayMemberPropertyInfo.GetValue(copyColumnItem).ToString() ==
+                                                ColumnStrings[i])
+                                                itemValue = (Guid)itemValueMemberPropertyInfo.GetValue(copyColumnItem);
+                                        }
+
+                                        if (itemValue != null)
+                                            DataUtils.SetNestedValue(columnName, projection, itemValue);
+                                        else
+                                            continue;
+                                    }
+                                    else if (ColumnStrings[i] != Guid.Empty.ToString())
+                                    {
+                                        var newGuid = new Guid(ColumnStrings[i]);
+                                        DataUtils.SetNestedValue(columnName, projection, newGuid);
+                                    }
+                                }
+                                else if (columnPropertyInfo.PropertyType == typeof(string))
+                                    DataUtils.SetNestedValue(columnName, projection, ColumnStrings[i]);
+                                else if (columnPropertyInfo.PropertyType.BaseType == typeof(Enum))
+                                {
+                                    var enumValues = Enum.GetValues(columnPropertyInfo.PropertyType);
+                                    foreach (var enumValue in enumValues)
+                                    {
+                                        var fieldInfo = enumValue.GetType().GetField(enumValue.ToString());
+                                        if (fieldInfo == null)
+                                            return pasteProjections;
+
+                                        var descriptionAttributes =
+                                            fieldInfo.GetCustomAttributes(typeof(DisplayAttribute), false) as
+                                                DisplayAttribute[];
+                                        if (descriptionAttributes == null || descriptionAttributes.Count() == 0)
+                                            return pasteProjections;
+
+                                        var descriptionAttribute = descriptionAttributes.First();
+                                        if (ColumnStrings[i] == descriptionAttribute.Name)
+                                        {
+                                            DataUtils.SetNestedValue(columnName, projection, enumValue);
+                                            continue;
+                                        }
+                                    }
+                                }
+                                else if (columnPropertyInfo.PropertyType == typeof(decimal) ||
+                                         columnPropertyInfo.PropertyType == typeof(decimal?)
+                                         || columnPropertyInfo.PropertyType == typeof(int) ||
+                                         columnPropertyInfo.PropertyType == typeof(int?)
+                                         || columnPropertyInfo.PropertyType == typeof(double) ||
+                                         columnPropertyInfo.PropertyType == typeof(double?))
+                                {
+                                    var rgx = new Regex("[^0-9a-z\\.]");
+                                    var cleanColumnString = rgx.Replace(ColumnStrings[i], string.Empty);
+
+                                    if (columnPropertyInfo.PropertyType == typeof(decimal) ||
+                                        columnPropertyInfo.PropertyType == typeof(decimal?))
+                                    {
+                                        decimal getDecimal;
+                                        if (decimal.TryParse(cleanColumnString, out getDecimal))
+                                        {
+                                            if (columnName.Contains('%') || columnName.ToUpper().Contains("PERCENT"))
+                                                getDecimal /= 100;
+
+                                            DataUtils.SetNestedValue(columnName, projection, getDecimal);
+                                        }
+                                        else
+                                            return pasteProjections;
+                                    }
+                                    else if (columnPropertyInfo.PropertyType == typeof(int) ||
+                                             columnPropertyInfo.PropertyType == typeof(int?))
+                                    {
+                                        int getInt;
+                                        if (int.TryParse(cleanColumnString, out getInt))
+                                            DataUtils.SetNestedValue(columnName, projection, getInt);
+                                        else
+                                            return pasteProjections;
+                                    }
+                                    else if (columnPropertyInfo.PropertyType == typeof(double) ||
+                                             columnPropertyInfo.PropertyType == typeof(double?))
+                                    {
+                                        double getDouble;
+                                        if (double.TryParse(cleanColumnString, out getDouble))
+                                        {
+                                            if (columnName.Contains('%') || columnName.ToUpper().Contains("PERCENT"))
+                                                getDouble /= 100;
+
+                                            DataUtils.SetNestedValue(columnName, projection, getDouble);
+                                        }
+                                        else
+                                            return pasteProjections;
+                                    }
+                                    else
+                                        return pasteProjections;
+                                }
+                                else if (columnPropertyInfo.PropertyType == typeof(DateTime?) ||
+                                         columnPropertyInfo.PropertyType == typeof(DateTime))
+                                {
+                                    DateTime getDateTime;
+                                    if (DateTime.TryParse(ColumnStrings[i], out getDateTime))
+                                        DataUtils.SetNestedValue(columnName, projection, getDateTime);
+                                    else
+                                        continue;
+                                }
+                                else
+                                    continue;
+                            else
+                                continue;
+                        }
+                        catch
+                        {
+                            return pasteProjections;
+                        }
+
+                    var errorMessage = "Duplicate exists on constraint field named: ";
+                    if (isValidProjectionFunc(projection, errorMessage))
+                        if (onBeforePasteWithValidationFunc != null)
+                        {
+                            if (onBeforePasteWithValidationFunc(projection))
+                                pasteProjections.Add(projection);
+                        }
+                        else
+                            pasteProjections.Add(projection);
+                    else
+                    {
+                        if(messageBoxService != null)
+                        {
+                            errorMessage += " , paste operation will be terminated";
+                            messageBoxService.ShowMessage(errorMessage, CommonResource.Exception_UpdateErrorCaption, MessageButton.OK);
+                        }
+
+                        break;
+                    }
+                }
+            }
+
+            return pasteProjections;
+        }
+    }
+
     public static class MorphUtils<TFromEntity, TToEntity>
     {
         public static TToEntity ShallowCopy(TToEntity copyObject, TFromEntity objectToCopy,
@@ -36,6 +237,22 @@ namespace BaseModel.Data.Helpers
 
     public static class DataUtils
     {
+        public static bool? IsNewEntity<TEntity>(TEntity entity)
+            where TEntity : IHaveCreatedDate
+        {
+            IHaveCreatedDate iHaveCreatedDateProjectionEntity = entity as IHaveCreatedDate;
+            if (iHaveCreatedDateProjectionEntity != null)
+            {
+                //workaround for created because Save() only sets the projection primary key, this is used for property redo where the interceptor only tampers with UPDATED and CREATED is left as null
+                if (iHaveCreatedDateProjectionEntity.EntityCreatedDate.Date.Year == 1)
+                    return true;
+                else
+                    return false;
+            }
+
+            return null;
+        }
+
         public static object ShallowCopy(object copyObject, object objectToCopy, bool copyVirtualProperties = false)
         {
             if (copyObject == null || objectToCopy == null)

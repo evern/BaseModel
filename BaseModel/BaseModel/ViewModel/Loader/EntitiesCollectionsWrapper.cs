@@ -14,6 +14,8 @@ using BaseModel.Misc;
 using BaseModel.ViewModel.Base;
 using BaseModel.ViewModel.Document;
 using BaseModel.ViewModel.Services;
+using DevExpress.Xpf.Grid;
+using DevExpress.Xpf.Editors;
 
 namespace BaseModel.ViewModel.Loader
 {
@@ -231,7 +233,6 @@ namespace BaseModel.ViewModel.Loader
         public Action StoreActiveCell { get; set; }
         public Action RestoreActiveCell { get; set; }
         public Action ForceGridRefresh { get; set; }
-        public Action PostEditor { get; set; }
 
         private Guid RestoreSelectedEntityGuid;
         private List<Guid> RestoreSelectedEntitiesGuids = new List<Guid>();
@@ -557,6 +558,57 @@ namespace BaseModel.ViewModel.Loader
         public virtual void OnAfterSavedSendMessage(string entityName, string key, string messageType, string sender)
         {
             
+        }
+        #endregion
+
+        #region View Behavior
+        /// <summary>
+        /// Influence column(s) when changes happens in other column
+        /// </summary>
+        public void CellValueChanging(CellValueChangedEventArgs e)
+        {
+            if (e.RowHandle == GridControl.AutoFilterRowHandle)
+                return;
+
+            CellValueAnyRowChanging(e);
+            if(!e.Handled)
+            {
+                if (e.RowHandle == DataControlBase.NewItemRowHandle)
+                    CellValueNewRowChanging(e);
+                else
+                    CellValueExistingRowChanging(e);
+            }
+
+            CellValueChangingImmediatePost(e);
+        }
+
+        protected virtual void CellValueAnyRowChanging(CellValueChangedEventArgs e)
+        {
+        }
+
+        protected virtual void CellValueNewRowChanging(CellValueChangedEventArgs e)
+        {
+
+        }
+
+        protected virtual void CellValueExistingRowChanging(CellValueChangedEventArgs e)
+        {
+
+        }
+
+        private void CellValueChangingImmediatePost(CellValueChangedEventArgs e)
+        {
+            TableView tableView = e.Source as TableView;
+            //only post editor if editing row is not new row or else new row will be committed immediately
+            if (tableView != null && e.RowHandle != GridControl.NewItemRowHandle)
+            {
+                if(tableView.ActiveEditor != null)
+                {
+                    Type activeEditorType = tableView.ActiveEditor.GetType();
+                    if (activeEditorType == typeof(ComboBoxEdit) || activeEditorType == typeof(CheckEdit))
+                        tableView.PostEditor();
+                }
+            }
         }
         #endregion
     }

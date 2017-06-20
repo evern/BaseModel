@@ -120,6 +120,9 @@
                         <dxmvvm:EventToCommand PassEventArgsToCommand="True"
                                                Command="{Binding ShownEditorCommand}"
                                                EventName="ShownEditor" />
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" 
+                                               Command="{Binding DataContext.CellValueChangingCommand, ElementName=userControl}"
+                                               EventName="CellValueChanging" />
                         <dxmvvm:KeyToCommand KeyGesture="CTRL+Z" Command="{Binding UndoCommand}" />
                         <dxmvvm:KeyToCommand KeyGesture="CTRL+Y" Command="{Binding RedoCommand}" />
                     </ItemsControl>

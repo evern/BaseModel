@@ -1,4 +1,6 @@
-﻿using DevExpress.Mvvm.POCO;
+﻿using BaseModel.Data.Helpers;
+using DevExpress.Mvvm.POCO;
+using DevExpress.Xpf.Grid;
 using System.Collections.Generic;
 
 namespace BaseModel.ViewModel.Dialogs

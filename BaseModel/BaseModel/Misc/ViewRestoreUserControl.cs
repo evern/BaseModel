@@ -30,7 +30,6 @@ namespace BaseModel.Misc
                 viewRestoration.StoreActiveCell = this.StoreFocusedCell;
                 viewRestoration.RestoreActiveCell = this.RestoreFocusedCell;
                 viewRestoration.ForceGridRefresh = this.ForceGridRefresh;
-                viewRestoration.PostEditor = this.PostEditor;
             }
 
             foreach(GridColumn gridColumn in gridControl.Columns)
@@ -51,11 +50,6 @@ namespace BaseModel.Misc
                     //gridControl.SelectedItem = gridControl.GetRow(tableView.FocusedRowHandle);
                 }));
             }
-        }
-
-        protected virtual void PostEditor()
-        {
-            tableView.PostEditor();
         }
 
         protected virtual void ForceGridRefresh()
