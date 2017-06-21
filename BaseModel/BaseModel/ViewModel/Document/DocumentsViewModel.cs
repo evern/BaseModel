@@ -170,9 +170,32 @@ namespace BaseModel.ViewModel.Document
             var document = DocumentManagerService.ShowExistingEntityDocument(documentInfo, this);
             //var document = DocumentManagerService.FindDocumentByIdOrCreate(module.ModuleTitle,
             //    x => NavigateToDocument(module));
-
             //document.Show();
             return document;
+        }
+
+        IDocument preloadDocument;
+        protected void startPreloading(TModule module)
+        {
+            if (module == null || DocumentManagerService == null)
+                return;
+
+            DocumentInfo documentInfo = new DocumentInfo(module.Id, module.DocumentParameter, module.DocumentType, module.ModuleTitle);
+            var document = DocumentManagerService.ShowExistingEntityDocument(documentInfo, this);
+            //var document = DocumentManagerService.FindDocumentByIdOrCreate(module.ModuleTitle,
+            //    x => NavigateToDocument(module));
+            //document.Show();
+            document.Hide();
+            preloadDocument = document;
+        }
+
+        protected void ClosePreloadDocument()
+        {
+            if (preloadDocument != null)
+            {
+                preloadDocument.Close();
+                preloadDocument = null;
+            }
         }
 
         private IDocument NavigateToDocument(TModule module)
