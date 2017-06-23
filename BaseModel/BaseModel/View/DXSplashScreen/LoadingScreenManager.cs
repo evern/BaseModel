@@ -19,6 +19,11 @@ namespace BaseModel.View
             DXSplashScreen.Show<LoadingScreen>();
         }
 
+        public static string DefaultState
+        {
+            get { return "Loading..."; }
+        }
+
         public static int MaxProgress { get; set; }
         public static int CurrentProgress { get; set; }
 
@@ -26,6 +31,13 @@ namespace BaseModel.View
         {
             if (DXSplashScreen.IsActive)
                 DXSplashScreen.Close();
+
+            DXSplashScreen.SetState(DefaultState);
+        }
+
+        public static void SetMessage(string message)
+        {
+            DXSplashScreen.SetState(message);
         }
 
         public static void ResetCurrentProgress()

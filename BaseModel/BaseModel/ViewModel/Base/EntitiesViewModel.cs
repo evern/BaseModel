@@ -118,11 +118,8 @@ namespace BaseModel.ViewModel.Base
                 if (!owner.IsLoaded)
                     return;
 
-                if (message.Sender == owner && message.WillPerformBulkRefresh)
-                    return;
-
                 if (owner.OnBeforeEntitiesChangedCallBack != null && !owner.OnBeforeEntitiesChangedCallBack(message.PrimaryKey, typeof(TEntity),
-                        message.MessageType, message.Sender))
+                        message.MessageType, message.Sender, message.WillPerformBulkRefresh))
                     return;
 
                 switch (message.MessageType)
@@ -138,7 +135,7 @@ namespace BaseModel.ViewModel.Base
                         break;
                 }
 
-                owner.OnAfterEntitiesChangedCallBack?.Invoke(message.PrimaryKey, typeof(TEntity), message.MessageType, message.Sender);
+                owner.OnAfterEntitiesChangedCallBack?.Invoke(message.PrimaryKey, typeof(TEntity), message.MessageType, message.Sender, message.WillPerformBulkRefresh);
             }
 
             private void OnEntityAdded(TPrimaryKey primaryKey)
@@ -153,6 +150,7 @@ namespace BaseModel.ViewModel.Base
             {
                 var existingProjectionEntity = FindLocalProjectionByKey(primaryKey);
                 var projectionEntity = FindActualProjectionByKey(primaryKey);
+
                 if (projectionEntity == null)
                 {
                     if (!owner.IsPersistentView)
@@ -165,6 +163,7 @@ namespace BaseModel.ViewModel.Base
                     owner.RestoreSelectedEntity(existingProjectionEntity, projectionEntity);
                     return;
                 }
+
                 OnEntityAdded(primaryKey);
             }
 
@@ -325,6 +324,7 @@ namespace BaseModel.ViewModel.Base
 
         protected virtual void RestoreSelectedEntity(TProjection existingProjectionEntity, TProjection projectionEntity)
         {
+            OnMappingAdditionalChangedEntitiesProperties?.Invoke(existingProjectionEntity, projectionEntity);
         }
 
         protected virtual Expression<Func<TEntity, bool>> GetFilterExpression()
@@ -420,8 +420,9 @@ namespace BaseModel.ViewModel.Base
 
 
         public Action<IEnumerable<TProjection>> OnEntitiesLoadedCallBack { get; set; }
-        public Func<object, Type, EntityMessageType, object, bool> OnBeforeEntitiesChangedCallBack { get; set; }
-        public Action<object, Type, EntityMessageType, object> OnAfterEntitiesChangedCallBack { get; set; }
+        public Func<object, Type, EntityMessageType, object, bool, bool> OnBeforeEntitiesChangedCallBack { get; set; }
+        public Action<object, Type, EntityMessageType, object, bool> OnAfterEntitiesChangedCallBack { get; set; }
+        public Action<TProjection, TProjection> OnMappingAdditionalChangedEntitiesProperties { get; set; }
         public bool IsPersistentView { get; set; }
     }
 
@@ -448,8 +449,8 @@ namespace BaseModel.ViewModel.Base
 
         //BaseModel Customization Start
         Action<IEnumerable<TProjection>> OnEntitiesLoadedCallBack { get; set; }
-        Func<object, Type, EntityMessageType, object, bool> OnBeforeEntitiesChangedCallBack { get; set; }
-        Action<object, Type, EntityMessageType, object> OnAfterEntitiesChangedCallBack { get; set; }
+        Func<object, Type, EntityMessageType, object, bool, bool> OnBeforeEntitiesChangedCallBack { get; set; }
+        Action<object, Type, EntityMessageType, object, bool> OnAfterEntitiesChangedCallBack { get; set; }
         //BaseModel Customization End
     }
 }

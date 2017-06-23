@@ -256,16 +256,15 @@ namespace BaseModel.ViewModel.Base
         #endregion
 
         #region Data Operations
-
         /// <summary>
         /// Determine whether other entities in the collection shares any common combination of unique constraints
         /// </summary>
         /// <param name="entity">The entity to be validated</param>
         /// <param name="errorMessage">Error message to notify the user of conflicting constraints</param>
         /// <returns>Returns true if no other entity contains similar constraint member values</returns>
-        public bool IsValidEntity(TProjection entity, string errorMessage)
+        public bool IsValidEntity(TProjection entity, ref string errorMessage)
         {
-            if (!isRequiredAttributesHasValue(entity, errorMessage))
+            if (!isRequiredAttributesHasValue(entity, ref errorMessage))
                 return false;
 
             return IsUniqueEntityConstraintValues(entity, ref errorMessage);
@@ -406,7 +405,7 @@ namespace BaseModel.ViewModel.Base
         /// <param name="entity">The entity to be validated</param>
         /// <param name="errorMessage">Error mesasage formatted with key property info</param>
         /// <returns></returns>
-        private bool isRequiredAttributesHasValue(TProjection entity, string errorMessage)
+        private bool isRequiredAttributesHasValue(TProjection entity, ref string errorMessage)
         {
             IEnumerable<string> requiredPropertyStrings;
             if (typeof(TProjection) == typeof(TEntity))
@@ -573,7 +572,7 @@ namespace BaseModel.ViewModel.Base
         public virtual void ValidateRow(GridRowValidationEventArgs e)
         {
             var errorMessage = string.Empty;
-            if (!IsValidEntity((TProjection)e.Row, errorMessage))
+            if (!IsValidEntity((TProjection)e.Row, ref errorMessage))
             {
                 e.IsValid = false;
                 e.ErrorType = DevExpress.XtraEditors.DXErrorProvider.ErrorType.Critical;

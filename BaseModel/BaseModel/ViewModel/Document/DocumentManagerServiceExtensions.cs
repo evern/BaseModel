@@ -18,8 +18,10 @@ namespace BaseModel.ViewModel.Document
         public static IDocument ShowExistingEntityDocument(
             this IDocumentManagerService documentManagerService, DocumentInfo documentInfo, object parentViewModel)
         {
-            var document = FindDocument(documentManagerService, documentInfo.Id) ??
-                                 CreateDocument(documentManagerService, documentInfo, parentViewModel);
+            var document = FindDocument(documentManagerService, documentInfo.Id);
+            if(document == null)
+                document = CreateDocument(documentManagerService, documentInfo, parentViewModel);
+
             if (document != null)
                 document.Show();
 

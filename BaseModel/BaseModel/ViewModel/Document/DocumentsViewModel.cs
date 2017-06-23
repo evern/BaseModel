@@ -32,6 +32,8 @@ namespace BaseModel.ViewModel.Document
             this.unitOfWorkFactory = unitOfWorkFactory;
             Modules = new RangeObservableCollection<TModule>();
             Modules.AddRange(CreateModules());
+
+            //Modules.AddRange(CreateModules());
             //foreach (var module in Modules)
             //    Messenger.Default.Register<NavigateMessage<TModule>>(this, module, x => Show(x.Token));
             //Messenger.Default.Register<DestroyOrphanedDocumentsMessage>(this, x => DestroyOrphanedDocuments());

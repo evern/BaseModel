@@ -136,7 +136,41 @@ namespace BaseModel.ViewModel.Loader
         {
             MainViewModel.SelectedEntities = this.DisplaySelectedEntities;
             MainViewModel.AfterBulkOperationRefreshCallBack = this.FullRefreshWithoutClearingUndoRedo;
+            MainViewModel.ApplyProjectionPropertiesToEntityCallBack = ApplyProjectionPropertiesToEntity;
             RefreshView();
+        }
+
+        protected void ApplyProjectionPropertiesToEntity(TMainProjectionEntity projectionEntity, TMainEntity entity)
+        {
+            OnBeforeApplyProjectionPropertiesToEntity(projectionEntity, entity);
+            IProjection<TMainEntity> projection = projectionEntity as IProjection<TMainEntity>;
+            if(projection != null)
+            {
+                IHaveCreatedDate iHaveCreatedDateProjectionEntity = projection.Entity as IHaveCreatedDate;
+                if (iHaveCreatedDateProjectionEntity != null)
+                {
+                    //workaround for created because Save() only sets the projection primary key, this is used for property redo where the interceptor only tampers with UPDATED and CREATED is left as null
+                    if (iHaveCreatedDateProjectionEntity.EntityCreatedDate.Date.Year == 1)
+                        iHaveCreatedDateProjectionEntity.EntityCreatedDate = DateTime.Now;
+                }
+
+                DataUtils.ShallowCopy(entity, projection.Entity);
+            }
+            else
+            {
+                IHaveCreatedDate iHaveCreatedDateEntity = entity as IHaveCreatedDate;
+                if (iHaveCreatedDateEntity != null)
+                {
+                    //workaround for created because Save() only sets the projection primary key, this is used for property redo where the interceptor only tampers with UPDATED and CREATED is left as null
+                    if (iHaveCreatedDateEntity.EntityCreatedDate.Date.Year == 1)
+                        iHaveCreatedDateEntity.EntityCreatedDate = DateTime.Now;
+                }
+            }
+        }
+
+        protected virtual void OnBeforeApplyProjectionPropertiesToEntity(TMainProjectionEntity projectionEntity, TMainEntity entity)
+        {
+
         }
 
         IEnumerable<IEntitiesLoaderDescription> compulsoryLoaders { get; set; }
@@ -151,36 +185,36 @@ namespace BaseModel.ViewModel.Loader
             }
         }
 
-        public virtual bool OnBeforeAffectingOrCompulsoryEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender)
+        public virtual bool OnBeforeAffectingOrCompulsoryEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender, bool isBulkRefresh)
         {
             onMessageSender = sender;
             if (sender != null && sender == MainViewModel)
                 return true;
 
-            mainThreadDispatcher.BeginInvoke(new Action(() => StoreViewState()));
+                //mainThreadDispatcher.BeginInvoke(new Action(() => StoreViewState()));
             return true;
         }
 
-        public virtual void OnAfterAffectingEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender)
+        public virtual void OnAfterAffectingEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender, bool isBulkRefresh)
         {
             if (sender != null && sender == MainViewModel)
                 return;
 
-            if (!IsSingleMainEntityRefreshIdentified(key, changedType, messageType, sender))
+            if (!IsSingleMainEntityRefreshIdentified(key, changedType, messageType, sender, isBulkRefresh))
                 this.RaisePropertiesChanged();
             //mainThreadDispatcher.BeginInvoke(new Action(() => FullRefreshWithoutClearingUndoRedo()));
             //this.RaisePropertiesChanged();
             //IsSingleMainEntityRefreshIdentified(key, changedType, messageType, sender);
         }
 
-        protected virtual bool IsSingleMainEntityRefreshIdentified(object key, Type changedType, EntityMessageType messageType, object sender)
+        protected virtual bool IsSingleMainEntityRefreshIdentified(object key, Type changedType, EntityMessageType messageType, object sender, bool isBulkRefresh)
         {
             return DoNotAutoRefresh;
             //Override this method to check if a single main entity can be refreshed by sending a message
             //return false;
         }
 
-        public virtual void OnAfterCompulsoryEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender)
+        public virtual void OnAfterCompulsoryEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender, bool isBulkRefresh)
         {
             if (SuppressNotification)
                 return;
@@ -619,11 +653,11 @@ namespace BaseModel.ViewModel.Loader
 
         void InitializeAndLoadEntitiesLoaderDescription();
 
-        bool OnBeforeAffectingOrCompulsoryEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender);
+        bool OnBeforeAffectingOrCompulsoryEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender, bool isBulkRefresh);
 
-        void OnAfterAffectingEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender);
+        void OnAfterAffectingEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender, bool isBulkRefresh);
 
-        void OnAfterCompulsoryEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender);
+        void OnAfterCompulsoryEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender, bool isBulkRefresh);
 
         void OnAfterDeletedSendMessage(string entityName, string key, string messageType, string sender);
 

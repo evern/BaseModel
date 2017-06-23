@@ -28,7 +28,6 @@ namespace BaseModel.ViewModel.Loader
         {
             MainViewModel.OnBeforeEntitiesDeleteCallBack = EntitiesBeforeDeletion;
             MainViewModel.IsContinueNewRowFromViewCallBack = NewRowAddUndoAndSave;
-            MainViewModel.ApplyProjectionPropertiesToEntityCallBack = ApplyProjectionPropertiesToEntity;
 
             MainViewModel.SetParentViewModel(this);
             base.AssignCallBacksAndRaisePropertyChange(entities);
@@ -94,28 +93,6 @@ namespace BaseModel.ViewModel.Loader
                 MainViewModel.Delete(childrenEntity);
             }
         }
-
-        private void ApplyProjectionPropertiesToEntity(TMainProjectionEntity projectionEntity, TMainEntity entity)
-        {
-            OnBeforeApplyProjectionPropertiesToEntity(projectionEntity, entity);
-            DataUtils.ShallowCopy(entity, projectionEntity.Entity);
-
-            IHaveCreatedDate iHaveCreatedDateEntity = entity as IHaveCreatedDate;
-            IHaveCreatedDate iHaveCreatedDateProjectionEntity = projectionEntity.Entity as IHaveCreatedDate;
-            if (iHaveCreatedDateEntity != null && iHaveCreatedDateProjectionEntity != null)
-            {
-                //workaround for created because Save() only sets the projection primary key, this is used for property redo where the interceptor only tampers with UPDATED and CREATED is left as null
-                if (iHaveCreatedDateEntity.EntityCreatedDate.Date.Year == 1)
-                    iHaveCreatedDateProjectionEntity.EntityCreatedDate = DateTime.Now;
-
-                iHaveCreatedDateEntity.EntityCreatedDate = iHaveCreatedDateProjectionEntity.EntityCreatedDate;
-            }
-        }
-
-        protected virtual void OnBeforeApplyProjectionPropertiesToEntity(TMainProjectionEntity projectionEntity, TMainEntity entity)
-        {
-
-        }
         #endregion
 
         private List<Guid> RestoreExpandedGuids = new List<Guid>();
@@ -169,7 +146,7 @@ namespace BaseModel.ViewModel.Loader
         }
 
         #region View Refresh
-        public override void OnAfterAffectingEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender)
+        public override void OnAfterAffectingEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender, bool isBulkRefresh)
         {
             mainThreadDispatcher.BeginInvoke(new Action(() => refreshDisplayEntities()));
         }

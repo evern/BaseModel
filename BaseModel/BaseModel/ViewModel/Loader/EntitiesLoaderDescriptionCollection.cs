@@ -25,8 +25,8 @@ namespace BaseModel.ViewModel.Loader
         where TProjection : class, new()
         where TUnitOfWork : IUnitOfWork
         {
-            Action<object, Type, EntityMessageType, object> OnAfterEntitiesChanged = null;
-            Func<object, Type, EntityMessageType, object, bool> OnBeforeAffectingOrCompulsoryEntitiesChanged = null;
+            Action<object, Type, EntityMessageType, object, bool> OnAfterEntitiesChanged = null;
+            Func<object, Type, EntityMessageType, object, bool, bool> OnBeforeAffectingOrCompulsoryEntitiesChanged = null;
             int loadOrder = this.Count() + 1;
 
             //Entities either affect MainEntities before it is loaded or after it is loaded

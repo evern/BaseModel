@@ -16,11 +16,12 @@ namespace BaseModel.Data.Helpers
     public class CopyPasteHelper<TProjection>
         where TProjection : new()
     {
-        readonly Func<TProjection, string, bool> isValidProjectionFunc;
+        public delegate bool IsValidProjectionFunc(TProjection projection, ref string errorMessage);
+        readonly IsValidProjectionFunc isValidProjectionFunc;
         readonly Func<TProjection, bool> onBeforePasteWithValidationFunc;
         readonly IMessageBoxService messageBoxService;
 
-        public CopyPasteHelper(Func<TProjection, string, bool> isValidProjectionFunc = null, Func<TProjection, bool> onBeforePasteWithValidationFunc = null, IMessageBoxService messageBoxService = null)
+        public CopyPasteHelper(IsValidProjectionFunc isValidProjectionFunc = null, Func<TProjection, bool> onBeforePasteWithValidationFunc = null, IMessageBoxService messageBoxService = null)
         {
             this.isValidProjectionFunc = isValidProjectionFunc;
             this.onBeforePasteWithValidationFunc = onBeforePasteWithValidationFunc;
@@ -183,7 +184,7 @@ namespace BaseModel.Data.Helpers
                         }
 
                     var errorMessage = "Duplicate exists on constraint field named: ";
-                    if (isValidProjectionFunc(projection, errorMessage))
+                    if (isValidProjectionFunc(projection, ref errorMessage))
                         if (onBeforePasteWithValidationFunc != null)
                         {
                             if (onBeforePasteWithValidationFunc(projection))

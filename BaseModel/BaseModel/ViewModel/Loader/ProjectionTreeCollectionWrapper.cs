@@ -20,24 +20,24 @@ namespace BaseModel.ViewModel.Loader
         where TMainEntityUnitOfWork : IUnitOfWork
     {
         #region Call Backs
-        protected override void AssignCallBacksAndRaisePropertyChange(IEnumerable<TMainProjectionEntity> entities)
-        {
-            MainViewModel.ApplyProjectionPropertiesToEntityCallBack = ApplyProjectionPropertiesToEntity;
-            base.AssignCallBacksAndRaisePropertyChange(entities);
-        }
+        //protected override void AssignCallBacksAndRaisePropertyChange(IEnumerable<TMainProjectionEntity> entities)
+        //{
+        //    MainViewModel.ApplyProjectionPropertiesToEntityCallBack = ApplyProjectionPropertiesToEntity;
+        //    base.AssignCallBacksAndRaisePropertyChange(entities);
+        //}
 
-        private void ApplyProjectionPropertiesToEntity(TMainProjectionEntity projectionEntity, TMainEntity entity)
-        {
-            DataUtils.ShallowCopy(entity, projectionEntity.Entity);
+        //private void ApplyProjectionPropertiesToEntity(TMainProjectionEntity projectionEntity, TMainEntity entity)
+        //{
+        //    DataUtils.ShallowCopy(entity, projectionEntity.Entity);
 
-            IHaveCreatedDate iHaveCreatedDateProjectionEntity = projectionEntity.Entity as IHaveCreatedDate;
-            if (iHaveCreatedDateProjectionEntity != null)
-            {
-                //workaround for created because Save() only sets the projection primary key, this is used for property redo where the interceptor only tampers with UPDATED and CREATED is left as null
-                if (iHaveCreatedDateProjectionEntity.EntityCreatedDate.Date.Year == 1)
-                    iHaveCreatedDateProjectionEntity.EntityCreatedDate = DateTime.Now;
-            }
-        }
+        //    IHaveCreatedDate iHaveCreatedDateProjectionEntity = projectionEntity.Entity as IHaveCreatedDate;
+        //    if (iHaveCreatedDateProjectionEntity != null)
+        //    {
+        //        //workaround for created because Save() only sets the projection primary key, this is used for property redo where the interceptor only tampers with UPDATED and CREATED is left as null
+        //        if (iHaveCreatedDateProjectionEntity.EntityCreatedDate.Date.Year == 1)
+        //            iHaveCreatedDateProjectionEntity.EntityCreatedDate = DateTime.Now;
+        //    }
+        //}
         #endregion
     }
 }
