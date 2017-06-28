@@ -101,6 +101,7 @@
     <Compile Include="ViewModel\Base\EntitiesViewModel.cs" />
     <Compile Include="ViewModel\Base\ProjectionCollectionViewModel.Partial.cs" />
     <Compile Include="ViewModel\Base\ReadOnlyCollectionViewModel.cs" />
+    <Compile Include="ViewModel\Dialogs\BasicMessageBoxViewModel.cs" />
     <Compile Include="ViewModel\Dialogs\BulkEditEnumsViewModel.cs" />
     <Compile Include="ViewModel\Dialogs\BulkEditNumbersViewModel.cs" />
     <Compile Include="ViewModel\Dialogs\BulkEditStringsViewModel.cs" />
@@ -120,6 +121,9 @@
     <Compile Include="ViewModel\UndoRedo\EntitiesUndoRedoManager.cs" />
     <Compile Include="ViewModel\UndoRedo\ISupportUndoRedo.cs" />
     <Compile Include="ViewModel\UndoRedo\UndoRedoEntityInfo.cs" />
+    <Compile Include="View\BasicMessageBox.xaml.cs">
+      <DependentUpon>BasicMessageBox.xaml</DependentUpon>
+    </Compile>
     <Compile Include="View\BulkEditEnums.xaml.cs">
       <DependentUpon>BulkEditEnums.xaml</DependentUpon>
     </Compile>
@@ -143,6 +147,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <Page Include="View\BasicMessageBox.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="View\BulkEditEnums.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

@@ -261,6 +261,11 @@ namespace BaseModel.ViewModel.UndoRedo
             _PauseActionId = false;
         }
 
+        public bool IsPaused()
+        {
+            return _PauseActionId;
+        }
+
         public bool IsInUndoRedoOperation()
         {
             return _IsInUndoRedoOperation;
