@@ -181,14 +181,14 @@ namespace BaseModel.DataModel
                 var property = properties[p.Name];
                 return property != null;
             });
-            if (projectionKeyPropertyCount != GuidProperties.Count())
-            {
-                var tprojectionName = typeof(TProjection).Name;
-                var message =
-                    string.Format("Projection type {0} should have the same primary key as its corresponding entity",
-                        tprojectionName);
-                throw new ArgumentException(message, tprojectionName);
-            }
+            //if (projectionKeyPropertyCount != GuidProperties.Count())
+            //{
+            //    var tprojectionName = typeof(TProjection).Name;
+            //    var message =
+            //        string.Format("Projection type {0} should have the same primary key as its corresponding entity",
+            //            tprojectionName);
+            //    throw new ArgumentException(message, tprojectionName);
+            //}
         }
 
         /// <summary>
@@ -330,6 +330,20 @@ namespace BaseModel.DataModel
             //return GetProjectionValue(result,
             //    (TEntity x) => x != null ? repository.Reload(x) : null,
             //    (TProjection x) => x);
+        }
+
+        public static TProjection FindActualProjectionByExpression<TEntity, TProjection, TPrimaryKey>(
+            this IRepository<TEntity, TPrimaryKey> repository,
+            Func<IRepositoryQuery<TEntity>, IQueryable<TProjection>> projection, Expression<Func<TEntity, bool>> predicate)
+            where TEntity : class
+        {
+            var result =
+                repository.GetFilteredEntities(predicate, projection)
+                    .Take(1)
+                    .ToArray()
+                    .FirstOrDefault(); //WCF incorrect FirstOrDefault implementation workaround
+
+            return result;
         }
 
         private static TProjectionResult GetProjectionValue<TEntity, TProjection, TEntityResult, TProjectionResult>(

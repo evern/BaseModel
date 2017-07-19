@@ -32,6 +32,11 @@ namespace BaseModel.Misc
         int? OldSortOrder { get; set; }
     }
 
+    public interface ICanUpdate
+    {
+        void Update();
+    }
+
     public interface IGuidParentEntityKey
     {
         Guid? ParentEntityKey { get; set; }
@@ -39,7 +44,8 @@ namespace BaseModel.Misc
 
     public interface IOriginalGuidEntityKey
     {
-        Guid OriginalEntityKey { get; set; }
+        Guid OriginalEntityKey { get; }
+        void SetOriginalEntityKey(Guid newGuid);
     }
 
     public interface IEntityNumber

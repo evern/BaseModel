@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Linq.Expressions;
 
 namespace BaseModel.ViewModel.Base
 {
@@ -41,14 +42,9 @@ namespace BaseModel.ViewModel.Base
         public Action<TPrimaryKey, TProjection, TEntity, bool> ApplyEntityPropertiesToProjectionCallBack;
 
         /// <summary>
-        /// Projection entity does not support new() directive and must be instantiated with a call back
-        /// </summary>
-        public Func<TProjection> CreateNewProjectionFromNewEntityCallBack;
-
-        /// <summary>
         /// Apply additional entity property before saving, e.g. Set project guid for an area
         /// </summary>
-        public Action<TProjection> SetParentAssociationCallBack;
+        public Func<TProjection, bool> OnBeforeEntitySavedIsContinueCallBack;
 
         /// <summary>
         /// Validate if entity should be saved
@@ -330,10 +326,16 @@ namespace BaseModel.ViewModel.Base
                 projectionEntitiesWithTag.Add(new KeyValuePair<int, TProjection>(i, projectionEntitiesList[i]));
 
             LoadingScreenManager.ShowLoadingScreen(projectionEntitiesWithTag.Count);
+            bool isContinueSave = true;
             foreach (var projectionEntityWithTag in projectionEntitiesWithTag)
             {
                 bool isNewEntity;
-                SetParentAssociationCallBack?.Invoke(projectionEntityWithTag.Value);
+                if (OnBeforeEntitySavedIsContinueCallBack != null)
+                    isContinueSave = OnBeforeEntitySavedIsContinueCallBack(projectionEntityWithTag.Value);
+
+                if (!isContinueSave)
+                    continue;
+
                 var findOrAddNewEntity = Repository.FindExistingOrAddNewEntity(projectionEntityWithTag.Value,
                     (p, e) => { ApplyProjectionPropertiesToEntity(p, e); }, out isNewEntity);
                 entitiesWithTag.Add(new KeyValuePair<int, TEntity>(projectionEntityWithTag.Key, findOrAddNewEntity));
@@ -341,6 +343,9 @@ namespace BaseModel.ViewModel.Base
                 OnBeforeEntitySaved(findOrAddNewEntity);
                 LoadingScreenManager.Progress();
             }
+
+            if (!isContinueSave)
+                return;
 
             try
             {
@@ -483,6 +488,11 @@ namespace BaseModel.ViewModel.Base
             DocumentManagerService.ShowExistingEntityDocument<TProjection, TPrimaryKey>(this, primaryKey);
         }
 
+        public virtual TProjection FindActualProjectionByExpression(Expression<Func<TEntity, bool>> predicate)
+        {
+            return ChangeTrackerWithKey.FindActualProjectionByExpression(predicate);
+        }
+
         public virtual TEntity InstantiateEntity(TEntity entity)
         {
             newEntityInitializer?.Invoke(entity);
@@ -509,7 +519,9 @@ namespace BaseModel.ViewModel.Base
         public virtual void Save(TProjection projectionEntity)
         {
             bool isNewEntity;
-            SetParentAssociationCallBack?.Invoke(projectionEntity);
+            if (OnBeforeEntitySavedIsContinueCallBack != null)
+                if (!OnBeforeEntitySavedIsContinueCallBack(projectionEntity))
+                    return;
 
             var entity = Repository.FindExistingOrAddNewEntity(projectionEntity,
                 (p, e) => { ApplyProjectionPropertiesToEntity(p, e); }, out isNewEntity);

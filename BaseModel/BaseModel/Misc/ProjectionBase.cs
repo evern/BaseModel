@@ -6,7 +6,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace BaseModel.Misc
 {
-    public abstract class ProjectionBase<TEntity> : BindableBase, IProjection<TEntity>
+    public abstract class ProjectionBase<TEntity> : BindableBase, IProjection<TEntity>, IHaveEntity<TEntity>, ICanUpdate
         where TEntity : class, IGuidEntityKey, new()
     {
         public TEntity Entity { get; set; }
@@ -27,6 +27,16 @@ namespace BaseModel.Misc
             get { return Entity.EntityKey; }
             set { Entity.EntityKey = value; }
         }
+
+        public virtual void Update()
+        {
+            RaisePropertiesChanged();
+        }
+    }
+
+    public interface IHaveEntity<TEntity>
+    {
+        TEntity Entity { get; set; }
     }
 
     public abstract class ProjectionMasterDetailBase<TEntity, TProjection> : ProjectionBase<TEntity>, IProjectionMasterDetail<TEntity, TProjection>

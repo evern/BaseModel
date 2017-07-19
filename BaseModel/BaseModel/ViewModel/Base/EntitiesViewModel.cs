@@ -113,6 +113,11 @@ namespace BaseModel.ViewModel.Base
                 return null;
             }
 
+            public TProjection FindActualProjectionByExpression(Expression<Func<TEntity, bool>> predicate)
+            {
+                return Repository.FindActualProjectionByExpression(owner.Projection, predicate);
+            }
+
             private void OnMessage(EntityMessage<TEntity, TPrimaryKey> message)
             {
                 if (!owner.IsLoaded)
@@ -159,6 +164,7 @@ namespace BaseModel.ViewModel.Base
                 }
                 if (existingProjectionEntity != null)
                 {
+                    owner.OnBeforeAssignRepositoryToExistingProjection?.Invoke(existingProjectionEntity, projectionEntity);
                     Entities[Entities.IndexOf(existingProjectionEntity)] = projectionEntity;
                     owner.RestoreSelectedEntity(existingProjectionEntity, projectionEntity);
                     return;
@@ -422,6 +428,7 @@ namespace BaseModel.ViewModel.Base
         public Action<IEnumerable<TProjection>> OnEntitiesLoadedCallBack { get; set; }
         public Func<object, Type, EntityMessageType, object, bool, bool> OnBeforeEntitiesChangedCallBack { get; set; }
         public Action<object, Type, EntityMessageType, object, bool> OnAfterEntitiesChangedCallBack { get; set; }
+        public Action<TProjection, TProjection> OnBeforeAssignRepositoryToExistingProjection { get; set; }
         public Action<TProjection, TProjection> OnMappingAdditionalChangedEntitiesProperties { get; set; }
         public bool IsPersistentView { get; set; }
     }
@@ -451,6 +458,7 @@ namespace BaseModel.ViewModel.Base
         Action<IEnumerable<TProjection>> OnEntitiesLoadedCallBack { get; set; }
         Func<object, Type, EntityMessageType, object, bool, bool> OnBeforeEntitiesChangedCallBack { get; set; }
         Action<object, Type, EntityMessageType, object, bool> OnAfterEntitiesChangedCallBack { get; set; }
+        Action<TProjection, TProjection> OnBeforeAssignRepositoryToExistingProjection { get; set; }
         //BaseModel Customization End
     }
 }

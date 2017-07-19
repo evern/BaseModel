@@ -3,6 +3,7 @@ using BaseModel.Misc;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Editors.Settings;
 using DevExpress.Xpf.Grid;
+using DevExpress.Xpf.Grid.LookUp;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -58,14 +59,18 @@ namespace BaseModel.Data.Helpers
                                 if (columnPropertyInfo.PropertyType == typeof(Guid?) ||
                                     columnPropertyInfo.PropertyType == typeof(Guid))
                                 {
-                                    var copyColumnEditSettings =
-                                        copyColumn.ActualEditSettings as ComboBoxEditSettings;
-                                    if (copyColumnEditSettings != null)
+                                    Type editSettingsType = copyColumn.ActualEditSettings.GetType();
+                                    object editSettings = null;
+                                    if(editSettingsType == typeof(ComboBoxEditSettings))
+                                        editSettings = copyColumn.ActualEditSettings as ComboBoxEditSettings;
+                                    else if (editSettingsType == typeof(LookUpEditSettings))
+                                        editSettings = copyColumn.ActualEditSettings as LookUpEditSettingsBase;
+
+                                    if (editSettings != null)
                                     {
-                                        var copyColumnValueMember = copyColumnEditSettings.ValueMember;
-                                        var copyColumnDisplayMember = copyColumnEditSettings.DisplayMember;
-                                        var copyColumnItemsSource =
-                                            copyColumnEditSettings.ItemsSource as IEnumerable<object>;
+                                        var copyColumnValueMember = (string)editSettings.GetType().GetProperty("ValueMember").GetValue(editSettings);
+                                        var copyColumnDisplayMember = (string)editSettings.GetType().GetProperty("DisplayMember").GetValue(editSettings);
+                                        var copyColumnItemsSource = (IEnumerable<object>)editSettings.GetType().GetProperty("ItemsSource").GetValue(editSettings);
                                         Guid? itemValue = null;
                                         foreach (var copyColumnItem in copyColumnItemsSource)
                                         {
@@ -73,9 +78,12 @@ namespace BaseModel.Data.Helpers
                                                 copyColumnItem.GetType().GetProperty(copyColumnDisplayMember);
                                             var itemValueMemberPropertyInfo =
                                                 copyColumnItem.GetType().GetProperty(copyColumnValueMember);
-                                            if (itemDisplayMemberPropertyInfo.GetValue(copyColumnItem).ToString() ==
-                                                ColumnStrings[i])
+                                            if (itemDisplayMemberPropertyInfo.GetValue(copyColumnItem).ToString().ToUpper() ==
+                                                ColumnStrings[i].ToUpper())
+                                            {
                                                 itemValue = (Guid)itemValueMemberPropertyInfo.GetValue(copyColumnItem);
+                                                break;
+                                            }
                                         }
 
                                         if (itemValue != null)
@@ -178,8 +186,9 @@ namespace BaseModel.Data.Helpers
                             else
                                 continue;
                         }
-                        catch
+                        catch(Exception ex)
                         {
+                            string s = ex.ToString();
                             return pasteProjections;
                         }
 

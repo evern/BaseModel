@@ -135,7 +135,7 @@ namespace BaseModel.ViewModel.Loader
         protected virtual void AssignCallBacksAndRaisePropertyChange(IEnumerable<TMainProjectionEntity> entities)
         {
             MainViewModel.SelectedEntities = this.DisplaySelectedEntities;
-            MainViewModel.AfterBulkOperationRefreshCallBack = this.FullRefreshWithoutClearingUndoRedo;
+            //MainViewModel.AfterBulkOperationRefreshCallBack = this.FullRefreshWithoutClearingUndoRedo;
             MainViewModel.ApplyProjectionPropertiesToEntityCallBack = ApplyProjectionPropertiesToEntity;
             RefreshView();
         }
@@ -556,6 +556,7 @@ namespace BaseModel.ViewModel.Loader
 
         #region Services
         protected virtual ITableViewService TableViewService { get { return this.GetService<ITableViewService>(); } }
+        protected virtual ITreeViewService TreeViewService { get { return this.GetService<ITreeViewService>(); } }
         protected virtual IFolderBrowserDialogService FolderBrowserDialogService { get { return this.GetService<IFolderBrowserDialogService>(); } }
 
         protected IMessageBoxService MessageBoxService

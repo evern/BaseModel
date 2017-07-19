@@ -22,6 +22,7 @@ using System.Windows.Threading;
 using BaseModel.Misc;
 using BaseModel.ViewModel.Dialogs;
 using BaseModel.ViewModel.Services;
+using DevExpress.Xpf.Grid.LookUp;
 
 namespace BaseModel.ViewModel.Base
 {
@@ -907,12 +908,20 @@ namespace BaseModel.ViewModel.Base
                 if (columnPropertyInfo.PropertyType == typeof(Guid) || columnPropertyInfo.PropertyType == typeof(Guid?) ||
                     columnPropertyInfo.PropertyType.BaseType == typeof(Enum))
                 {
-                    var copyColumnEditSettings = info.Column.ActualEditSettings as ComboBoxEditSettings;
-                    if (copyColumnEditSettings != null)
+                    Type editSettingsType = info.Column.ActualEditSettings.GetType();
+                    object editSettings = null;
+                    if (editSettingsType == typeof(ComboBoxEditSettings))
+                        editSettings = info.Column.ActualEditSettings as ComboBoxEditSettings;
+                    else if (editSettingsType == typeof(LookUpEditSettings))
+                        editSettings = info.Column.ActualEditSettings as LookUpEditSettingsBase;
+
+                    if (editSettings != null)
                     {
+                        var copyColumnDisplayMember = (string)editSettings.GetType().GetProperty("DisplayMember").GetValue(editSettings);
+                        var copyColumnItemsSource = (IEnumerable<object>)editSettings.GetType().GetProperty("ItemsSource").GetValue(editSettings);
+
                         var bulkEditEnumsViewModel =
-                            BulkEditEnumsViewModel.Create((IEnumerable<object>)copyColumnEditSettings.ItemsSource,
-                                copyColumnEditSettings.DisplayMember);
+                            BulkEditEnumsViewModel.Create(copyColumnItemsSource, copyColumnDisplayMember);
                         if (BulkColumnEditDialogService.ShowDialog(MessageButton.OKCancel, "Select Item to assign",
                                 "BulkEditEnums", bulkEditEnumsViewModel) == MessageResult.OK)
                         {
@@ -926,7 +935,7 @@ namespace BaseModel.ViewModel.Base
                                 else
                                 {
                                     IGuidEntityKey entityWithGuid = bulkEditEnumsViewModel.SelectedItem as IGuidEntityKey;
-                                    if(entityWithGuid != null)
+                                    if (entityWithGuid != null)
                                     {
                                         newValue = entityWithGuid.EntityKey;
                                     }
@@ -1018,6 +1027,7 @@ namespace BaseModel.ViewModel.Base
         #region Data Operations
         public Func<TProjection, bool> OnBeforePasteWithValidation;
         public Action<PasteStatus> PasteListener;
+        public bool DisablePasting { get; set; }
 
         /// <summary>
         /// Converts clipboard text into entity values and saves to database
@@ -1025,6 +1035,9 @@ namespace BaseModel.ViewModel.Base
         /// <param name="e"></param>
         public virtual void PastingFromClipboard(PastingFromClipboardEventArgs e)
         {
+            if (DisablePasting)
+                return;
+
             PasteListener?.Invoke(PasteStatus.Start);
             CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, MessageBoxService);
             List<TProjection> pasteProjections = copyPasteHelper.PastingFromClipboard(e);

@@ -153,19 +153,21 @@ namespace BaseModel.ViewModel.Loader
 
         private void refreshDisplayEntities()
         {
-            displayEntities = null;
-            this.RaisePropertyChanged(x => x.DisplayEntities);
-            restoreViewState();
+            //displayEntities.RaisePropertiesChanged();
+            //displayEntities = null;
+            //this.RaisePropertyChanged(x => x.DisplayEntities);
+            //restoreViewState();
         }
 
         public Action<TMainProjectionEntity> SetIsRowExpanded;
         protected override void restoreViewState()
         {
             base.restoreViewState();
-            foreach (var entity in DisplayEntities)
-            {
-                SetIsRowExpanded?.Invoke(entity);
-            }
+            if(DisplayEntities != null)
+                foreach (var entity in DisplayEntities)
+                {
+                    SetIsRowExpanded?.Invoke(entity);
+                }
         }
 
         public void MasterRowExpanded(RowEventArgs e)
