@@ -350,7 +350,7 @@ namespace BaseModel.ViewModel.Loader
 
         //Delay to make sure entities are fully loaded before refreshing the view
         int viewRefreshDelay = 500;
-        protected void RefreshView(bool forceGridRefresh = false)
+        protected virtual void RefreshView(bool forceGridRefresh = false)
         {
             if(!refreshBackgroundWorker.IsBusy)
                 refreshBackgroundWorker.RunWorkerAsync(forceGridRefresh);
@@ -555,6 +555,7 @@ namespace BaseModel.ViewModel.Loader
         #endregion
 
         #region Services
+        protected virtual IGridControlService GridControlService { get { return this.GetService<IGridControlService>(); } }
         protected virtual ITableViewService TableViewService { get { return this.GetService<ITableViewService>(); } }
         protected virtual ITreeViewService TreeViewService { get { return this.GetService<ITreeViewService>(); } }
         protected virtual IFolderBrowserDialogService FolderBrowserDialogService { get { return this.GetService<IFolderBrowserDialogService>(); } }

@@ -32,6 +32,7 @@ namespace BaseModel.ViewModel.Loader
             MainViewModel.SetParentViewModel(this);
             base.AssignCallBacksAndRaisePropertyChange(entities);
         }
+
         #region Call Backs
         private bool NewRowAddUndoAndSave(RowEventArgs e, TMainProjectionEntity projectionEntity)
         {
@@ -153,11 +154,13 @@ namespace BaseModel.ViewModel.Loader
 
         private void refreshDisplayEntities()
         {
-            //displayEntities.RaisePropertiesChanged();
-            //displayEntities = null;
-            //this.RaisePropertyChanged(x => x.DisplayEntities);
-            //restoreViewState();
+            ////displayEntities.RaisePropertiesChanged();
+            displayEntities = null;
+            this.RaisePropertyChanged(x => x.DisplayEntities);
+            restoreViewState();
         }
+
+        protected abstract string expand_key_field_name { get; }
 
         public Action<TMainProjectionEntity> SetIsRowExpanded;
         protected override void restoreViewState()
@@ -166,7 +169,7 @@ namespace BaseModel.ViewModel.Loader
             if(DisplayEntities != null)
                 foreach (var entity in DisplayEntities)
                 {
-                    SetIsRowExpanded?.Invoke(entity);
+                    GridControlService.SetRowExpandedByColumnValue(expand_key_field_name, entity);
                 }
         }
 

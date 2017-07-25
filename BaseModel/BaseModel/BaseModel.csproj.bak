@@ -101,8 +101,10 @@
     <Compile Include="ViewModel\Base\EntitiesViewModel.cs" />
     <Compile Include="ViewModel\Base\ProjectionCollectionViewModel.Partial.cs" />
     <Compile Include="ViewModel\Base\ReadOnlyCollectionViewModel.cs" />
+    <Compile Include="ViewModel\Dialogs\BasicMessageBoxViewModel.cs" />
     <Compile Include="ViewModel\Dialogs\BulkEditEnumsViewModel.cs" />
     <Compile Include="ViewModel\Dialogs\BulkEditNumbersViewModel.cs" />
+    <Compile Include="ViewModel\Dialogs\BulkFindAndReplaceViewModel.cs" />
     <Compile Include="ViewModel\Dialogs\BulkEditStringsViewModel.cs" />
     <Compile Include="ViewModel\Dialogs\DialogCollectionViewModel.cs" />
     <Compile Include="ViewModel\Document\DocumentInfo.cs" />
@@ -114,10 +116,21 @@
     <Compile Include="ViewModel\Loader\EntitiesLoaderDescriptionCollection.cs" />
     <Compile Include="ViewModel\Loader\ProjectionMasterDetailCollectionsWrapper.cs" />
     <Compile Include="ViewModel\Loader\EntitiesTreeCollectionWrapper.cs" />
+    <Compile Include="ViewModel\Loader\EntitiesAutoNumberCollectionWrapper.cs" />
     <Compile Include="ViewModel\Loader\ProjectionTreeCollectionWrapper.cs" />
+    <Compile Include="ViewModel\Services\GridControlService.cs" />
+    <Compile Include="ViewModel\Services\TableViewService.cs" />
+    <Compile Include="ViewModel\Services\TextEditService.cs" />
+    <Compile Include="ViewModel\Services\TreeViewService.cs" />
     <Compile Include="ViewModel\UndoRedo\EntitiesUndoRedoManager.cs" />
     <Compile Include="ViewModel\UndoRedo\ISupportUndoRedo.cs" />
     <Compile Include="ViewModel\UndoRedo\UndoRedoEntityInfo.cs" />
+    <Compile Include="View\BasicMessageBox.xaml.cs">
+      <DependentUpon>BasicMessageBox.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="View\BulkFindAndReplace.xaml.cs">
+      <DependentUpon>BulkFindAndReplace.xaml</DependentUpon>
+    </Compile>
     <Compile Include="View\BulkEditEnums.xaml.cs">
       <DependentUpon>BulkEditEnums.xaml</DependentUpon>
     </Compile>
@@ -141,6 +154,14 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <Page Include="View\BasicMessageBox.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="View\BulkFindAndReplace.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="View\BulkEditEnums.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

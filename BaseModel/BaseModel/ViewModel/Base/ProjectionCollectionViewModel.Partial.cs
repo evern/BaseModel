@@ -903,6 +903,7 @@ namespace BaseModel.ViewModel.Base
             EntitiesUndoRedoManager.PauseActionId();
             try
             {
+                bool commence_bulk_edit = false;
                 TProjection firstSelectedEntity = SelectedEntities.First();
                 var columnPropertyInfo = DataUtils.GetNestedPropertyInfo(info.Column.FieldName, firstSelectedEntity);
                 if (columnPropertyInfo.PropertyType == typeof(Guid) || columnPropertyInfo.PropertyType == typeof(Guid?) ||
@@ -925,6 +926,7 @@ namespace BaseModel.ViewModel.Base
                         if (BulkColumnEditDialogService.ShowDialog(MessageButton.OKCancel, "Select Item to assign",
                                 "BulkEditEnums", bulkEditEnumsViewModel) == MessageResult.OK)
                         {
+                            commence_bulk_edit = true;
                             if (bulkEditEnumsViewModel.SelectedItem != null)
                             {
                                 if (columnPropertyInfo.PropertyType.BaseType == typeof(Enum))
@@ -957,6 +959,7 @@ namespace BaseModel.ViewModel.Base
                             "Choose number and operation to assign", "BulkEditNumbers", bulkEditNumbersViewModel) ==
                         MessageResult.OK)
                     {
+                        commence_bulk_edit = true;
                         newValue = bulkEditNumbersViewModel.EditValue;
                         if (bulkEditNumbersViewModel.SelectedOperation != null)
                         {
@@ -973,46 +976,49 @@ namespace BaseModel.ViewModel.Base
                     if (
                         BulkColumnEditDialogService.ShowDialog(MessageButton.OKCancel, "Type in text for bulk edit",
                             "BulkEditStrings", bulkEditStringsViewModel) == MessageResult.OK)
-                        
+                    {
+                        commence_bulk_edit = true;
                         newValue = bulkEditStringsViewModel.EditValue;
+                    }
                 }
 
-                foreach (var selectedProjection in SelectedEntities)
-                {
-                    if (ValidateBulkEditCallBack != null &&
-                        !ValidateBulkEditCallBack(selectedProjection, info.Column.FieldName, newValue))
-                        continue;
-
-                    if (newValue != null && newValue.GetType() == typeof(decimal) && operation != Arithmetic.None)
+                if(commence_bulk_edit)
+                    foreach (var selectedProjection in SelectedEntities)
                     {
-                        var currentValue =
-                            (decimal)DataUtils.GetNestedValue(info.Column.FieldName, selectedProjection);
-                        var currentOldValue = currentValue;
+                        if (ValidateBulkEditCallBack != null &&
+                            !ValidateBulkEditCallBack(selectedProjection, info.Column.FieldName, newValue))
+                            continue;
 
-                        if (operation == Arithmetic.Add)
-                            currentValue = currentValue + (decimal)newValue;
-                        else if (operation == Arithmetic.Subtract)
-                            currentValue = currentValue - (decimal)newValue;
-                        else if (operation == Arithmetic.Multiply)
-                            currentValue = currentValue * (decimal)newValue;
-                        else if (operation == Arithmetic.Divide && (decimal)newValue > 0)
-                            currentValue = currentValue / (decimal)newValue;
+                        if (newValue != null && newValue.GetType() == typeof(decimal) && operation != Arithmetic.None)
+                        {
+                            var currentValue =
+                                (decimal)DataUtils.GetNestedValue(info.Column.FieldName, selectedProjection);
+                            var currentOldValue = currentValue;
 
-                        DataUtils.SetNestedValue(info.Column.FieldName, selectedProjection, currentValue);
-                        EntitiesUndoRedoManager.AddUndo(selectedProjection, info.Column.FieldName, currentOldValue,
-                            currentValue, EntityMessageType.Changed);
+                            if (operation == Arithmetic.Add)
+                                currentValue = currentValue + (decimal)newValue;
+                            else if (operation == Arithmetic.Subtract)
+                                currentValue = currentValue - (decimal)newValue;
+                            else if (operation == Arithmetic.Multiply)
+                                currentValue = currentValue * (decimal)newValue;
+                            else if (operation == Arithmetic.Divide && (decimal)newValue > 0)
+                                currentValue = currentValue / (decimal)newValue;
+
+                            DataUtils.SetNestedValue(info.Column.FieldName, selectedProjection, currentValue);
+                            EntitiesUndoRedoManager.AddUndo(selectedProjection, info.Column.FieldName, currentOldValue,
+                                currentValue, EntityMessageType.Changed);
+                        }
+                        else
+                        {
+                            oldValue = DataUtils.GetNestedValue(info.Column.FieldName, selectedProjection);
+                            DataUtils.SetNestedValue(info.Column.FieldName, selectedProjection, newValue);
+                            EntitiesUndoRedoManager.AddUndo(selectedProjection, info.Column.FieldName, oldValue,
+                                newValue, EntityMessageType.Changed);
+                        }
+
+                        OnBeforeBulkEditSaveCallBack?.Invoke(selectedProjection, info.Column.FieldName);
+                        SaveEntities.Add(selectedProjection);
                     }
-                    else
-                    {
-                        oldValue = DataUtils.GetNestedValue(info.Column.FieldName, selectedProjection);
-                        DataUtils.SetNestedValue(info.Column.FieldName, selectedProjection, newValue);
-                        EntitiesUndoRedoManager.AddUndo(selectedProjection, info.Column.FieldName, oldValue,
-                            newValue, EntityMessageType.Changed);
-                    }
-
-                    OnBeforeBulkEditSaveCallBack?.Invoke(selectedProjection, info.Column.FieldName);
-                    SaveEntities.Add(selectedProjection);
-                }
 
                 BulkSave(SaveEntities);
             }
