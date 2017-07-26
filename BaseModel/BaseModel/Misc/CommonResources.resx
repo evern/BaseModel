@@ -123,8 +123,11 @@
   <data name="Confirmation_ResetLayout" xml:space="preserve">
     <value>Are you sure you want to reset layout? Reopen this view for the new layout to take effect.</value>
   </data>
+  <data name="Default_ZoomStep" xml:space="preserve">
+    <value>0.05</value>
+  </data>
   <data name="Exception_UpdateErrorCaption" xml:space="preserve">
-    <value>Update Error</value>
+    <value>Error</value>
   </data>
   <data name="Exception_ValidationErrorCaption" xml:space="preserve">
     <value>Validation Error</value>

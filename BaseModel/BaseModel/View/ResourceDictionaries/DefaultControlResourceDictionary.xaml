@@ -69,10 +69,12 @@
                                              CommandParameter="{Binding ElementName=GridControl}" />
                         <!--<dxmvvm:EventToCommand Command="{Binding DataContext.LoadedCommand, ElementName=userControl}"
                                                EventName="Loaded" />-->
+                        <dxmvvm:EventToCommand EventName="PreviewMouseWheel" Command="{Binding Grid_MouseWheelCommand}" PassEventArgsToCommand="True" />
                     </ItemsControl>
                 </DataTemplate>
             </Setter.Value>
         </Setter>
+        <Setter Property="LayoutTransform" Value="{Binding Zoom, Mode=OneWay}" />
     </Style>
     <Style x:Key="DefaultDetailGridControlTemplate" TargetType="{x:Type dxg:GridControl}">
         <Setter Property="ShowLoadingPanel" Value="{Binding DataContext.IsLoading, ElementName=userControl}" />

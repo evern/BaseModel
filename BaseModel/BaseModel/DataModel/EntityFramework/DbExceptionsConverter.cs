@@ -20,7 +20,7 @@ namespace BaseModel.DataModel.EntityFramework
             Exception originalException = exception;
             while (originalException.InnerException != null)
                 originalException = originalException.InnerException;
-            return new DbException(originalException.Message, CommonResource.Exception_UpdateErrorCaption, exception);
+            return new DbException(originalException.Message, CommonResources.Exception_UpdateErrorCaption, exception);
         }
 
         /// <summary>
@@ -37,7 +37,7 @@ namespace BaseModel.DataModel.EntityFramework
                     stringBuilder.AppendLine();
                 stringBuilder.Append(error.PropertyName + ": " + error.ErrorMessage);
             }
-            return new DbException(stringBuilder.ToString(), CommonResource.Exception_ValidationErrorCaption, exception);
+            return new DbException(stringBuilder.ToString(), CommonResources.Exception_ValidationErrorCaption, exception);
         }
     }
 }

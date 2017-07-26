@@ -16,6 +16,8 @@ using BaseModel.ViewModel.Document;
 using BaseModel.ViewModel.Services;
 using DevExpress.Xpf.Grid;
 using DevExpress.Xpf.Editors;
+using System.Windows.Input;
+using System.Windows.Media;
 
 namespace BaseModel.ViewModel.Loader
 {
@@ -38,6 +40,12 @@ namespace BaseModel.ViewModel.Loader
         //due to StoreViewState being called OnBeforeEntitiesChanged and OnMainViewModelRefreshed called OnEntitiesLoaded
         protected object onMessageSender;
         protected Dispatcher mainThreadDispatcher = Application.Current.Dispatcher;
+
+        public void CollectionViewModelWrapper()
+        {
+            bulk_refresh_dispatcher_timer = new DispatcherTimer();
+            bulk_refresh_dispatcher_timer.Interval = new TimeSpan(0, 0, 0, 3);
+        }
 
         public virtual void InvokeEntitiesLoaderDescriptionLoading()
         {
@@ -135,7 +143,7 @@ namespace BaseModel.ViewModel.Loader
         protected virtual void AssignCallBacksAndRaisePropertyChange(IEnumerable<TMainProjectionEntity> entities)
         {
             MainViewModel.SelectedEntities = this.DisplaySelectedEntities;
-            //MainViewModel.AfterBulkOperationRefreshCallBack = this.FullRefreshWithoutClearingUndoRedo;
+            //MainViewModel.AfterBulkOperationRefreshCallBack = this.FullRefresh;
             MainViewModel.ApplyProjectionPropertiesToEntityCallBack = ApplyProjectionPropertiesToEntity;
             RefreshView();
         }
@@ -195,13 +203,29 @@ namespace BaseModel.ViewModel.Loader
             return true;
         }
 
+        DispatcherTimer bulk_refresh_dispatcher_timer;
+        private void bulk_refresh_dispatcher_timer_tick(object sender, EventArgs e)
+        {
+            this.RaisePropertiesChanged();
+        }
+
         public virtual void OnAfterAffectingEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender, bool isBulkRefresh)
         {
             if (sender != null && sender == MainViewModel)
                 return;
 
             if (!IsSingleMainEntityRefreshIdentified(key, changedType, messageType, sender, isBulkRefresh))
-                this.RaisePropertiesChanged();
+            {
+                if(isBulkRefresh)
+                {
+                    bulk_refresh_dispatcher_timer.Tick -= bulk_refresh_dispatcher_timer_tick;
+                    bulk_refresh_dispatcher_timer.Tick += bulk_refresh_dispatcher_timer_tick;
+                    bulk_refresh_dispatcher_timer.Start();
+                }
+                else
+                    this.RaisePropertiesChanged();
+            }
+
             //mainThreadDispatcher.BeginInvoke(new Action(() => FullRefreshWithoutClearingUndoRedo()));
             //this.RaisePropertiesChanged();
             //IsSingleMainEntityRefreshIdentified(key, changedType, messageType, sender);
@@ -540,7 +564,7 @@ namespace BaseModel.ViewModel.Loader
 
         protected virtual string ExportExcelFilename()
         {
-            return "grid_export.xlsx";
+            return "grid_export.xls";
         }
 
         public void ExportToExcel()
@@ -580,7 +604,7 @@ namespace BaseModel.ViewModel.Loader
 
         public void ResetLayout()
         {
-            if (MessageBoxService.ShowMessage(CommonResource.Confirmation_ResetLayout, CommonResource.Confirmation_Caption, MessageButton.YesNo) != MessageResult.Yes)
+            if (MessageBoxService.ShowMessage(CommonResources.Confirmation_ResetLayout, CommonResources.Confirmation_Caption, MessageButton.YesNo) != MessageResult.Yes)
                 return;
 
             PersistentLayoutHelper.ResetLayout(ViewName);
@@ -598,6 +622,7 @@ namespace BaseModel.ViewModel.Loader
         #endregion
 
         #region View Behavior
+
         /// <summary>
         /// Influence column(s) when changes happens in other column
         /// </summary>

@@ -206,7 +206,7 @@ namespace BaseModel.Data.Helpers
                         if(messageBoxService != null)
                         {
                             errorMessage += " , paste operation will be terminated";
-                            messageBoxService.ShowMessage(errorMessage, CommonResource.Exception_UpdateErrorCaption, MessageButton.OK);
+                            messageBoxService.ShowMessage(errorMessage, CommonResources.Exception_UpdateErrorCaption, MessageButton.OK);
                         }
 
                         break;

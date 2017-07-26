@@ -23,6 +23,8 @@ using BaseModel.Misc;
 using BaseModel.ViewModel.Dialogs;
 using BaseModel.ViewModel.Services;
 using DevExpress.Xpf.Grid.LookUp;
+using System.Windows.Media;
+using System.Windows.Input;
 
 namespace BaseModel.ViewModel.Base
 {
@@ -106,6 +108,7 @@ namespace BaseModel.ViewModel.Base
                 unitOfWorkFactory, getRepositoryFunc, projection, newEntityInitializer, canCreateNewEntity,
                 ignoreSelectEntityMessage)
         {
+            InitZoom();
             SelectedEntities = new ObservableCollection<TProjection>();
             SelectedEntities.CollectionChanged += SelectedEntities_CollectionChanged;
         }
@@ -442,6 +445,33 @@ namespace BaseModel.ViewModel.Base
         #region Views
 
         public Func<EditorEventArgs, bool> BeforeShownEditor;
+
+        #region Grid Zooming
+        private double zoom_step => Double.Parse(CommonResources.Default_ZoomStep);
+
+        public ScaleTransform Zoom { get; private set; }
+        private void InitZoom()
+        {
+            Zoom = new ScaleTransform();
+        }
+
+        public void Grid_MouseWheel(MouseWheelEventArgs e)
+        {
+            if ((Keyboard.Modifiers | ModifierKeys.Control) == Keyboard.Modifiers)
+            {
+                if (e.Delta > 0 && Zoom.ScaleX < 3)
+                {
+                    Zoom.ScaleX += zoom_step;
+                    Zoom.ScaleY += zoom_step;
+                }
+                else if (e.Delta < 0 && Zoom.ScaleX > 0.7)
+                {
+                    Zoom.ScaleX -= zoom_step;
+                    Zoom.ScaleY -= zoom_step;
+                }
+            }
+        }
+        #endregion
 
         public virtual void ShownEditor(EditorEventArgs e)
         {

@@ -22,14 +22,14 @@ namespace BaseModel.Misc {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    internal class CommonResource {
+    internal class CommonResources {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
         private static global::System.Globalization.CultureInfo resourceCulture;
         
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal CommonResource() {
+        internal CommonResources() {
         }
         
         /// <summary>
@@ -39,7 +39,7 @@ namespace BaseModel.Misc {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("BaseModel.Misc.CommonResource", typeof(CommonResource).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("BaseModel.Misc.CommonResources", typeof(CommonResources).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -79,7 +79,16 @@ namespace BaseModel.Misc {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Update Error.
+        ///   Looks up a localized string similar to 0.05.
+        /// </summary>
+        internal static string Default_ZoomStep {
+            get {
+                return ResourceManager.GetString("Default_ZoomStep", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Error.
         /// </summary>
         internal static string Exception_UpdateErrorCaption {
             get {
