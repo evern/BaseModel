@@ -593,7 +593,10 @@ namespace BaseModel.ViewModel.Loader
             if (FolderBrowserDialogService.ShowDialog())
             {
                 ResultPath = FolderBrowserDialogService.ResultPath;
-                TableViewService.ExportToXls(ResultPath + "\\" + ExportExcelFilename());
+                bool result = TableViewService.ExportToXls(ResultPath + "\\" + ExportExcelFilename());
+
+                if (!result)
+                    MessageBoxService.ShowMessage("Export failed because the file is in use");
             }
         }
         #endregion

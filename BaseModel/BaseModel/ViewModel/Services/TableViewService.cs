@@ -12,7 +12,7 @@ namespace BaseModel.ViewModel.Services
 {
     public interface ITableViewService
     {
-        void ExportToXls(string exportPath);
+        bool ExportToXls(string exportPath);
     }
 
     public class TableViewService : ServiceBase, ITableViewService
@@ -27,13 +27,24 @@ namespace BaseModel.ViewModel.Services
         public static readonly DependencyProperty TableViewProperty =
             DependencyProperty.Register("TableView", typeof(TableView), typeof(TableViewService), new PropertyMetadata(null));
 
-        public void ExportToXls(string exportPath)
+        public bool ExportToXls(string exportPath)
         {
             if (this.TableView != null)
             {
-                TableView.ExportToXlsx(exportPath);
-                Process.Start(exportPath);
+                try
+                {
+                    TableView.ExportToXlsx(exportPath);
+                    Process.Start(exportPath);
+
+                    return true;
+                }
+                catch
+                {
+
+                }
             }
+
+            return false;
         }
     }
 }
