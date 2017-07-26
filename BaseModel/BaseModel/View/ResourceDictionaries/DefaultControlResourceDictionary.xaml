@@ -30,6 +30,7 @@
                             RootFolder="Desktop"
                             RestorePreviouslySelectedDirectory="True"/>
                         <services:TableViewService TableView="{Binding ElementName=tableView}" />
+                        <services:GridControlService GridControl="{Binding ElementName=GridControl}" />
                     </ItemsControl>
                 </DataTemplate>
             </Setter.Value>

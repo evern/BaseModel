@@ -18,6 +18,7 @@ using DevExpress.Xpf.Grid;
 using DevExpress.Xpf.Editors;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Timers;
 
 namespace BaseModel.ViewModel.Loader
 {
@@ -41,10 +42,11 @@ namespace BaseModel.ViewModel.Loader
         protected object onMessageSender;
         protected Dispatcher mainThreadDispatcher = Application.Current.Dispatcher;
 
+        DispatcherTimer bulk_refresh_dispatcher_timer;
+        Timer post_loaded_dispatcher_timer;
         public void CollectionViewModelWrapper()
         {
-            bulk_refresh_dispatcher_timer = new DispatcherTimer();
-            bulk_refresh_dispatcher_timer.Interval = new TimeSpan(0, 0, 0, 3);
+
         }
 
         public virtual void InvokeEntitiesLoaderDescriptionLoading()
@@ -136,6 +138,9 @@ namespace BaseModel.ViewModel.Loader
             MainViewModel = (CollectionViewModel<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey, TMainEntityUnitOfWork>)mainEntityLoaderDescription.GetViewModel();
             MainViewModel.OnAfterSavedSendMessage = this.OnAfterSavedSendMessage;
             MainViewModel.OnAfterDeletedSendMessage = this.OnAfterDeletedSendMessage;
+            bulk_refresh_dispatcher_timer = new DispatcherTimer();
+            bulk_refresh_dispatcher_timer.Interval = new TimeSpan(0, 0, 0, 3);
+
             AssignCallBacksAndRaisePropertyChange(entities);
             return true;
         }
@@ -146,6 +151,22 @@ namespace BaseModel.ViewModel.Loader
             //MainViewModel.AfterBulkOperationRefreshCallBack = this.FullRefresh;
             MainViewModel.ApplyProjectionPropertiesToEntityCallBack = ApplyProjectionPropertiesToEntity;
             RefreshView();
+
+            post_loaded_dispatcher_timer = new Timer();
+            post_loaded_dispatcher_timer.Interval = 3000;
+            post_loaded_dispatcher_timer.Elapsed += post_loaded_dispatcher_timer_tick;
+            post_loaded_dispatcher_timer.Start();
+        }
+
+        private void post_loaded_dispatcher_timer_tick(object sender, EventArgs e)
+        {
+            post_loaded_dispatcher_timer.Stop();
+            OnAfterAssignedCallbackAndRaisePropertyChanged();
+        }
+
+        protected virtual void OnAfterAssignedCallbackAndRaisePropertyChanged()
+        {
+
         }
 
         protected void ApplyProjectionPropertiesToEntity(TMainProjectionEntity projectionEntity, TMainEntity entity)
@@ -203,7 +224,6 @@ namespace BaseModel.ViewModel.Loader
             return true;
         }
 
-        DispatcherTimer bulk_refresh_dispatcher_timer;
         private void bulk_refresh_dispatcher_timer_tick(object sender, EventArgs e)
         {
             this.RaisePropertiesChanged();
@@ -567,7 +587,7 @@ namespace BaseModel.ViewModel.Loader
             return "grid_export.xls";
         }
 
-        public void ExportToExcel()
+        public virtual void ExportToExcel()
         {
             string ResultPath = string.Empty;
             if (FolderBrowserDialogService.ShowDialog())

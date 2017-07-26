@@ -37,9 +37,9 @@ namespace BaseModel.Data.Helpers
             var gridView = sourceGridControl.View;
 
             List<TProjection> pasteProjections = new List<TProjection>();
-            if (gridView.ActiveEditor == null && gridView.GetType() == typeof(TableViewEx))
+            if (gridView.ActiveEditor == null && gridView.GetType() == typeof(TableView))
             {
-                var gridTableView = gridView as TableViewEx;
+                var gridTableView = gridView as TableView;
                 foreach (var Row in RowData)
                 {
                     TProjection projection = new TProjection();

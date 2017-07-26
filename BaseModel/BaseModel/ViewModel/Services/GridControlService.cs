@@ -1,8 +1,13 @@
 ﻿using BaseModel.Data.Helpers;
 using BaseModel.Misc;
 using DevExpress.Mvvm.UI;
+using DevExpress.Xpf.Editors;
+using DevExpress.Xpf.Editors.Settings;
 using DevExpress.Xpf.Grid;
+using DevExpress.Xpf.SpellChecker;
+using DevExpress.XtraSpellChecker;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,6 +20,7 @@ namespace BaseModel.ViewModel.Services
     {
         void SetRowExpandedByColumnValue(string field_name, IHaveExpandState row);
         void RefreshSummary();
+        void HighlightIncorrectText(SpellChecker spellChecker);
     }
 
     public class GridControlService : ServiceBase, IGridControlService
@@ -51,6 +57,41 @@ namespace BaseModel.ViewModel.Services
                 return;
 
             GridControl.RefreshData();
+        }
+
+        DependencyPropertyKey HighlightedTextPropertyKey;
+        public void HighlightIncorrectText(SpellChecker spellChecker)
+        {
+            foreach (GridColumn column in GridControl.Columns)
+            {
+                var editor = column.ActualEditSettings;
+                if (editor.GetType() == typeof(TextEditSettings))
+                {
+                    TextEditSettings textEditor = editor as TextEditSettings;
+                    for (int i = 0; i < GridControl.VisibleRowCount; i++)
+                    {
+                        int rowHandle = GridControl.GetRowHandleByVisibleIndex(i);
+                        object cellValue = GridControl.GetCellValue(rowHandle, column);
+                        if (cellValue == null)
+                            continue;
+
+                        string cellText = cellValue.ToString();
+                        List<WrongWordRecord> wrongWords = spellChecker.CheckText(cellText);
+
+                        if (wrongWords.Count > 0)
+                        {
+                            var fieldInfo = typeof(TextEdit).GetField("HighlightedTextPropertyKey", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+                            HighlightedTextPropertyKey = fieldInfo.GetValue(textEditor) as DependencyPropertyKey;
+
+                            fieldInfo = typeof(TextEdit).GetField("HighlightedTextCriteriaPropertyKey", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+                            DependencyPropertyKey HighlightedTextCriteriaPropertyKey = fieldInfo.GetValue(textEditor) as DependencyPropertyKey;
+
+                            textEditor.SetValue(HighlightedTextPropertyKey, wrongWords.First().Word);
+                            textEditor.SetValue(HighlightedTextCriteriaPropertyKey, HighlightedTextCriteria.Contains);
+                        }
+                    }
+                }
+            }
         }
     }
 }
