@@ -36,14 +36,14 @@ namespace BaseModel.Misc
         }
     }
 
-    public class OptionalEntitiesParameter<TEntity, TSecondEntity>
+    public class DualEntitiesParameter<TEntity, TSecondEntity>
         where TEntity : class
         where TSecondEntity : class
     {
         private TEntity entity;
         private TSecondEntity secondEntity;
 
-        public OptionalEntitiesParameter(TEntity entity, TSecondEntity secondEntity)
+        public DualEntitiesParameter(TEntity entity, TSecondEntity secondEntity)
         {
             this.entity = entity;
             this.secondEntity = secondEntity;

@@ -54,7 +54,7 @@ namespace BaseModel.Misc
     }
 
     public interface IProjection<TEntity> : IGuidEntityKey
-        where TEntity : class, new()
+        where TEntity : new()
     {
         TEntity Entity { get; set; }
     }

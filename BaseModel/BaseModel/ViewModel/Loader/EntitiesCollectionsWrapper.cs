@@ -23,7 +23,7 @@ using System.Timers;
 namespace BaseModel.ViewModel.Loader
 {
     public abstract class CollectionViewModelsWrapper<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey,
-        TMainEntityUnitOfWork> : ICollectionViewModelsWrapper, IDocumentContent, ISupportParameter, ISupportViewRestoration
+        TMainEntityUnitOfWork> : ICollectionViewModelsWrapper<TMainProjectionEntity>, IDocumentContent, ISupportParameter, ISupportViewRestoration
         where TMainEntity : class, IGuidEntityKey, new()
         where TMainProjectionEntity : class, IGuidEntityKey, new()
         where TMainEntityUnitOfWork : IUnitOfWork
@@ -101,20 +101,11 @@ namespace BaseModel.ViewModel.Loader
             InitializeAndLoadEntitiesLoaderDescription();
         }
 
-        protected virtual void InitializeParameters(object parameter)
-        {
-            throw new NotImplementedException("Override this method to initialize primary parameter attributes in inherited member.");
-        }
+        protected abstract void InitializeParameters(object parameter);
 
-        public virtual void InitializeAndLoadEntitiesLoaderDescription()
-        {
-            throw new NotImplementedException("Override this method to initialize EntitiesLoaderDescriptionCollection.");
-        }
+        public abstract void InitializeAndLoadEntitiesLoaderDescription();
 
-        protected virtual void OnAllEntitiesCollectionLoaded()
-        {
-            throw new NotImplementedException("Override this method to initialize main entity loader.");
-        }
+        protected abstract void OnAllEntitiesCollectionLoaded();
 
         protected void CreateMainViewModel(
             IUnitOfWorkFactory<TMainEntityUnitOfWork> unitOfWorkFactory,
@@ -127,12 +118,11 @@ namespace BaseModel.ViewModel.Loader
                         ConstructMainViewModelProjection);
         }
 
-        protected virtual Func<IRepositoryQuery<TMainEntity>, IQueryable<TMainProjectionEntity>>
-            ConstructMainViewModelProjection()
-        {
-            throw new NotImplementedException("Override this method to define how main view model should be constructed.");
-        }
+        protected abstract Func<IRepositoryQuery<TMainEntity>, IQueryable<TMainProjectionEntity>> ConstructMainViewModelProjection();
+        public Func<IEnumerable<TMainProjectionEntity>, object, bool> OnEntitiesLoadedWithParameterIsContinueCallBack;
 
+        public Action<IEnumerable<TMainProjectionEntity>, object> OnEntitiesLoadedCallBack { get; set; }
+        public Func<object> OnEntitiesLoadedCallBackRelateParam { get; set; }
         protected virtual bool OnMainViewModelLoaded(IEnumerable<TMainProjectionEntity> entities)
         {
             MainViewModel = (CollectionViewModel<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey, TMainEntityUnitOfWork>)mainEntityLoaderDescription.GetViewModel();
@@ -147,6 +137,16 @@ namespace BaseModel.ViewModel.Loader
 
         protected virtual void AssignCallBacksAndRaisePropertyChange(IEnumerable<TMainProjectionEntity> entities)
         {
+            if (OnEntitiesLoadedCallBack != null)
+            {
+                OnEntitiesLoadedCallBack?.Invoke(entities, OnEntitiesLoadedCallBackRelateParam == null ? null : OnEntitiesLoadedCallBackRelateParam());
+                OnEntitiesLoadedCallBack = null;
+                OnEntitiesLoadedCallBackRelateParam = null;
+                //Self destruct after entities has been returned
+                CleanUpEntitiesLoader();
+                return;
+            }
+
             MainViewModel.SelectedEntities = this.DisplaySelectedEntities;
             //MainViewModel.AfterBulkOperationRefreshCallBack = this.FullRefresh;
             MainViewModel.ApplyProjectionPropertiesToEntityCallBack = ApplyProjectionPropertiesToEntity;
@@ -396,7 +396,7 @@ namespace BaseModel.ViewModel.Loader
         int viewRefreshDelay = 500;
         protected virtual void RefreshView(bool forceGridRefresh = false)
         {
-            if(!refreshBackgroundWorker.IsBusy)
+            if(refreshBackgroundWorker != null && !refreshBackgroundWorker.IsBusy)
                 refreshBackgroundWorker.RunWorkerAsync(forceGridRefresh);
         }
 
@@ -426,7 +426,7 @@ namespace BaseModel.ViewModel.Loader
 
         protected void StoreViewState()
         {
-            if (!storeViewStateBackgroundWorker.IsBusy)
+            if (storeViewStateBackgroundWorker != null && !storeViewStateBackgroundWorker.IsBusy)
                 storeViewStateBackgroundWorker.RunWorkerAsync();
         }
 
@@ -508,10 +508,7 @@ namespace BaseModel.ViewModel.Loader
             get { return null; }
         }
 
-        protected virtual string ViewName
-        {
-            get { throw new NotImplementedException("Override this method to specify the view name."); }
-        }
+        protected abstract string ViewName { get; }
 
         public virtual void OnLoaded()
         {
@@ -695,6 +692,14 @@ namespace BaseModel.ViewModel.Loader
             }
         }
         #endregion
+    }
+
+    public interface ICollectionViewModelsWrapper<TMainProjectionEntity> : ICollectionViewModelsWrapper
+        where TMainProjectionEntity : class, IGuidEntityKey, new()
+    {
+        //allow loaded entities to relate back to it's context
+        Func<object> OnEntitiesLoadedCallBackRelateParam { get; set; }
+        Action<IEnumerable<TMainProjectionEntity>, object> OnEntitiesLoadedCallBack { get; set; }
     }
 
     public interface ICollectionViewModelsWrapper

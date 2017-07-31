@@ -57,8 +57,7 @@ namespace BaseModel.ViewModel.UndoRedo
         public void AddUndo(TEntity changedEntity, string propertyName, object oldValue, object newValue,
             EntityMessageType messageType)
         {
-            UndoList.Add(new UndoRedoEntityInfo<TEntity>(changedEntity, propertyName, oldValue, newValue, ActionId,
-                messageType));
+            UndoList.Add(new UndoRedoEntityInfo<TEntity>(changedEntity, propertyName, oldValue, newValue, ActionId, messageType));
             RedoList.Clear();
         }
 

@@ -37,7 +37,7 @@ namespace BaseModel.Data.Helpers
             var gridView = sourceGridControl.View;
 
             List<TProjection> pasteProjections = new List<TProjection>();
-            if (gridView.ActiveEditor == null && gridView.GetType() == typeof(TableView))
+            if (gridView.ActiveEditor == null && gridView.GetType() == typeof(TableView) && gridView.GetType() == typeof(TableViewEx))
             {
                 var gridTableView = gridView as TableView;
                 foreach (var Row in RowData)
@@ -298,6 +298,11 @@ namespace BaseModel.Data.Helpers
             return copyObject;
         }
 
+        public static string FormatColumnFieldname(string columnFieldName)
+        {
+            return columnFieldName.Replace("Entity.", string.Empty);
+        }
+
         public static PropertyInfo GetKeyPropertyInfo(Type type)
         {
             try
@@ -418,7 +423,6 @@ namespace BaseModel.Data.Helpers
 
             return requiredPropertyStrings;
         }
-
 
         /// <summary>
         /// Recurse member instance to change its value

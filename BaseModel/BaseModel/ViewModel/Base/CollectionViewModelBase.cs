@@ -51,6 +51,9 @@ namespace BaseModel.ViewModel.Base
         /// </summary>
         public Func<TProjection, bool, bool> IsContinueSaveCallBack;
 
+
+        public Func<TProjection, bool> OnBeforeEntityDeletedIsContinueCallBack;
+
         /// <summary>
         /// Save projection associated entity, e.g. save user address to another table when user is saved
         /// Undo/Redo manager should be tied to main entity CollectionViewModel and this will be used to handle associated entity save
@@ -265,12 +268,18 @@ namespace BaseModel.ViewModel.Base
             {
                 AddUndoBeforeEntityDeleted(projectionEntitiesList[i]);
 
+                if (OnBeforeEntityDeletedIsContinueCallBack != null)
+                    if (!OnBeforeEntityDeletedIsContinueCallBack(projectionEntitiesList[i]))
+                        continue;
+
                 OnBeforeEntityDeleteCallBack?.Invoke(projectionEntitiesList[i]);
 
                 Entities.Remove(projectionEntitiesList[i]);
                 projectionEntitiesWithTag.Add(new KeyValuePair<int, TProjection>(i, projectionEntitiesList[i]));
             }
 
+            if(OnBeforeEntityDeletedIsContinueCallBack != null)
+                return;
             try
             {
                 LoadingScreenManager.ShowLoadingScreen(projectionEntitiesWithTag.Count);
@@ -334,7 +343,11 @@ namespace BaseModel.ViewModel.Base
                     isContinueSave = OnBeforeEntitySavedIsContinueCallBack(projectionEntityWithTag.Value);
 
                 if (!isContinueSave)
+                {
+                    LoadingScreenManager.Progress();
                     continue;
+                }
+
 
                 var findOrAddNewEntity = Repository.FindExistingOrAddNewEntity(projectionEntityWithTag.Value,
                     (p, e) => { ApplyProjectionPropertiesToEntity(p, e); }, out isNewEntity);
@@ -438,6 +451,10 @@ namespace BaseModel.ViewModel.Base
             {
                 //BaseModel Customization Start
                 AddUndoBeforeEntityDeleted(projectionEntity);
+
+                if (OnBeforeEntityDeletedIsContinueCallBack != null)
+                    if (!OnBeforeEntityDeletedIsContinueCallBack(projectionEntity))
+                        return;
 
                 OnBeforeEntityDeleteCallBack?.Invoke(projectionEntity);
                 if (!IsPersistentView)
