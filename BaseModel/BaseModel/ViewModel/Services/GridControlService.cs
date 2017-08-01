@@ -56,7 +56,8 @@ namespace BaseModel.ViewModel.Services
             if (GridControl == null)
                 return;
 
-            GridControl.RefreshData();
+            GridControl.UpdateGroupSummary();
+            GridControl.UpdateTotalSummary();
         }
 
         DependencyPropertyKey HighlightedTextPropertyKey;
