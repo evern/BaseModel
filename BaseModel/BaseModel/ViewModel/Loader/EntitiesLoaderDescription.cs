@@ -101,10 +101,15 @@ namespace BaseModel.ViewModel.Loader
             if (compulsoryEntityAssignmentFunc != null)
             {
                 if (loadedEntities.Count() == 0)
+                {
+                    compulsoryEntityAssignmentFunc(null);
                     return;
-
-                TProjection compulsoryEntity = loadedEntities.First();
-                compulsoryEntityAssignmentFunc(compulsoryEntity);
+                }
+                else
+                {
+                    TProjection compulsoryEntity = loadedEntities.First();
+                    compulsoryEntityAssignmentFunc(compulsoryEntity);
+                }
             }
 
             if (collectionViewModel != null)

@@ -231,6 +231,10 @@ namespace BaseModel.ViewModel.Loader
 
         public virtual void OnAfterAffectingEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender, bool isBulkRefresh)
         {
+            //Always refresh summary after any changes happens
+            if (GridControlService != null)
+                GridControlService.RefreshSummary();
+
             if (sender != null && sender == MainViewModel)
                 return;
 
@@ -243,7 +247,9 @@ namespace BaseModel.ViewModel.Loader
                     bulk_refresh_dispatcher_timer.Start();
                 }
                 else
+                {
                     this.RaisePropertiesChanged();
+                }
             }
 
             //mainThreadDispatcher.BeginInvoke(new Action(() => FullRefreshWithoutClearingUndoRedo()));
@@ -271,7 +277,9 @@ namespace BaseModel.ViewModel.Loader
                 {
                     //MessageBoxService.ShowMessage(string.Format(CommonResources.Notify_View_Removed,
                     //    StringFormatUtils.GetEntityNameByType(changedType)));
-                    mainThreadDispatcher.BeginInvoke(new Action(() => FullRefresh()));
+
+                    //take this out for now, to make program leaner
+                    //mainThreadDispatcher.BeginInvoke(new Action(() => FullRefresh()));
                     return;
                 }
                 else if (messageType == EntityMessageType.Added && compulsoryLoaders.All(x => x.GetEntitiesCount() > 0))
@@ -279,7 +287,8 @@ namespace BaseModel.ViewModel.Loader
                     //MessageBoxService.ShowMessage(string.Format(CommonResources.Notify_View_Restored,
                     //    StringFormatUtils.GetEntityNameByType(changedType)));
 
-                    mainThreadDispatcher.BeginInvoke(new Action(() => InitializeAndLoadEntitiesLoaderDescription()));
+                    //take this out for now, to make program leaner
+                    //mainThreadDispatcher.BeginInvoke(new Action(() => InitializeAndLoadEntitiesLoaderDescription()));
                     return;
                 }
             }
@@ -613,6 +622,8 @@ namespace BaseModel.ViewModel.Loader
         {
             get { return this.GetService<ILayoutSerializationService>(); }
         }
+
+        public bool SupressCompulsoryEntityNotFoundMessage { get; set; }
         #endregion
 
         #region Layout
@@ -687,7 +698,9 @@ namespace BaseModel.ViewModel.Loader
                 {
                     Type activeEditorType = tableView.ActiveEditor.GetType();
                     if (activeEditorType == typeof(ComboBoxEdit) || activeEditorType == typeof(CheckEdit))
+                    {
                         tableView.PostEditor();
+                    }
                 }
             }
         }
@@ -721,5 +734,7 @@ namespace BaseModel.ViewModel.Loader
         Type MainEntityType { get; }
 
         bool SuppressNotification { get; set; }
+
+        bool SupressCompulsoryEntityNotFoundMessage { get; set; }
     }
 }

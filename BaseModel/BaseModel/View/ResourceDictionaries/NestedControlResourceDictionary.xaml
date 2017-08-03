@@ -13,7 +13,7 @@
         <Setter Property="ShowBorder" Value="False" />
         <Setter Property="AutoExpandAllGroups" Value="False" />
     </Style>
-    <Style x:Key="NestedTableViewTemplate" TargetType="{x:Type misc:TableViewEx}">
+    <Style x:Key="NestedTableViewTemplate" TargetType="{x:Type dxg:TableView}">
         <Setter Property="dxmvvm:Interaction.BehaviorsTemplate">
             <Setter.Value>
                 <DataTemplate>
@@ -36,6 +36,7 @@
                         <dxmvvm:EventToCommand PassEventArgsToCommand="True"
                                                Command="{Binding MainViewModel.ShownEditorCommand}"
                                                EventName="ShownEditor" />
+                        <dxmvvm:EventToCommand Command="{Binding CellValueChangingCommand}" PassEventArgsToCommand="True" EventName="CellValueChanging" />
                         <!--<dxmvvm:KeyToCommand KeyGesture="Delete" Command="{Binding BulkDeleteCommand}"  />-->
                         <dxmvvm:KeyToCommand KeyGesture="CTRL+Z" Command="{Binding MainViewModel.UndoCommand}" />
                         <dxmvvm:KeyToCommand KeyGesture="CTRL+Y" Command="{Binding MainViewModel.RedoCommand}" />

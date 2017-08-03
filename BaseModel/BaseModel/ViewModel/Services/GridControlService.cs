@@ -20,6 +20,7 @@ namespace BaseModel.ViewModel.Services
     {
         void SetRowExpandedByColumnValue(string field_name, IHaveExpandState row);
         void RefreshSummary();
+        IEnumerable<object> GetVisibleRowObjects();
         void HighlightIncorrectText(SpellChecker spellChecker);
     }
 
@@ -49,6 +50,17 @@ namespace BaseModel.ViewModel.Services
             var rowHandle = GridControl.DataController.FindRowByValue(field_name, find_value);
             if (rowHandle >= 0)
                 GridControl.SetMasterRowExpanded(rowHandle, row.IsExpanded);
+        }
+
+        public IEnumerable<object> GetVisibleRowObjects()
+        {
+            List<object> visible_row_object = new List<object>();
+            for (int i = 0; i < GridControl.VisibleRowCount; i++)
+            {
+                object dataRow = GridControl.GetRow(GridControl.GetRowHandleByVisibleIndex(i));
+                visible_row_object.Add(dataRow);
+            }
+            return visible_row_object;
         }
 
         public void RefreshSummary()

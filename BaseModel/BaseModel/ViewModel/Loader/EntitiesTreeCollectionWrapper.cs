@@ -173,7 +173,7 @@ namespace BaseModel.ViewModel.Loader
         #endregion
 
         #region View Commands
-        public void dragDropManager_Drop(object sender, DevExpress.Xpf.Grid.DragDrop.TreeListDropEventArgs e)
+        public void DragDropManager_Drop(object sender, DevExpress.Xpf.Grid.DragDrop.TreeListDropEventArgs e)
         {
             uniqueParent_Guids = new List<Guid?>();
             Parent_GuidOldValue = null;
@@ -197,7 +197,7 @@ namespace BaseModel.ViewModel.Loader
 
         }
 
-        public void dragDropManager_Dropped(object sender, DevExpress.Xpf.Grid.DragDrop.TreeListDroppedEventArgs e)
+        public void DragDropManager_Dropped(object sender, DevExpress.Xpf.Grid.DragDrop.TreeListDroppedEventArgs e)
         {
             Guid? newParentGuid = null;
             if (e.TargetNode != null)

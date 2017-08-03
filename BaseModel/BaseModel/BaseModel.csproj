@@ -124,6 +124,7 @@
     <Compile Include="ViewModel\Loader\EntitiesTreeCollectionWrapper.cs" />
     <Compile Include="ViewModel\Loader\EntitiesAutoNumberCollectionWrapper.cs" />
     <Compile Include="ViewModel\Loader\ProjectionTreeCollectionWrapper.cs" />
+    <Compile Include="ViewModel\Services\WindowService.cs" />
     <Compile Include="ViewModel\Services\GridControlService.cs" />
     <Compile Include="ViewModel\Services\TableViewService.cs" />
     <Compile Include="ViewModel\Services\TextEditService.cs" />
