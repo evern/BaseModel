@@ -501,6 +501,9 @@ namespace BaseModel.ViewModel.Loader
             if(viewModel != null)
             {
                 viewModel.RaisePropertiesChanged();
+                if(GridControlService != null)
+                    GridControlService.RefreshSummary();
+
                 if (isForceGridRefresh && ForceGridRefresh != null)
                     ForceGridRefresh();
                 restoreViewState();
@@ -616,6 +619,11 @@ namespace BaseModel.ViewModel.Loader
         protected IMessageBoxService MessageBoxService
         {
             get { return this.GetRequiredService<IMessageBoxService>(); }
+        }
+        
+        protected virtual INotificationService AppNotificationService
+        {
+            get { return this.GetRequiredService<INotificationService>(); }
         }
 
         protected ILayoutSerializationService LayoutSerializationService

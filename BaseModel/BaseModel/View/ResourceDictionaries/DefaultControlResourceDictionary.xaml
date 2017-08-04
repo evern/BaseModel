@@ -12,6 +12,7 @@
                 <DataTemplate>
                     <ItemsControl>
                         <dx:DXMessageBoxService />
+                        <dxmvvm:NotificationService x:Name="AppNotificationService" UseWin8NotificationsIfAvailable="False" CustomNotificationPosition="BottomRight" />
                         <dxmvvm:EventToCommand Event="Loaded" Command="{Binding OnLoadedCommand}" />
                         <dx:WindowedDocumentUIService YieldToParent="True" />
                         <dx:DialogService x:Name="BulkColumnEditService">
@@ -134,15 +135,15 @@
         </Setter>
         <Setter Property="ShowTotalSummary" Value="True" />
         <Setter Property="GroupSummaryDisplayMode" Value="AlignByColumns" />
-        <Setter Property="ShowFixedTotalSummary" Value="True" />
         <Setter Property="NewItemRowPosition" Value="Top" />
         <Setter Property="AllowPerPixelScrolling" Value="True" />
         <Setter Property="ShowGroupedColumns" Value="True" />
-        <Setter Property="ShowSearchPanelMode" Value="Always" />
+        <Setter Property="ShowSearchPanelMode" Value="Default" />
         <Setter Property="SearchDelay" Value="0" />
         <Setter Property="AllowScrollAnimation" Value="True" />
         <Setter Property="ShowAutoFilterRow" Value="True" />
         <Setter Property="ShowCriteriaInAutoFilterRow" Value="True" />
+        <Setter Property="ShowFixedTotalSummary" Value="False" />
         <Setter Property="UseLightweightTemplates" Value="{x:Null}" />
     </Style>
     <Style x:Key="DefaultDetailTableViewTemplate" TargetType="{x:Type dxg:TableView}">

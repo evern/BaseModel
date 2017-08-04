@@ -44,7 +44,7 @@
                 </DataTemplate>
             </Setter.Value>
         </Setter>
-        <Setter Property="ShowFixedTotalSummary" Value="True" />
+        <Setter Property="ShowFixedTotalSummary" Value="False" />
         <Setter Property="NewItemRowPosition" Value="Top" />
         <Setter Property="AllowPerPixelScrolling" Value="True" />
         <Setter Property="ShowGroupedColumns" Value="True" />
