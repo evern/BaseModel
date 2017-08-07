@@ -115,7 +115,7 @@ namespace BaseModel.ViewModel.Loader
             if (collectionViewModel != null)
             {
                 collectionViewModel.OnEntitiesLoadedCallBack = null;
-                owner.InvokeEntitiesLoaderDescriptionLoading();
+                owner.loadEntitiesCollection();
             }
         }
 

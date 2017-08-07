@@ -77,6 +77,7 @@
             </Setter.Value>
         </Setter>
         <Setter Property="LayoutTransform" Value="{Binding Zoom, Mode=OneWay}" />
+        
     </Style>
     <Style x:Key="DefaultDetailGridControlTemplate" TargetType="{x:Type dxg:GridControl}">
         <Setter Property="ShowLoadingPanel" Value="{Binding DataContext.IsLoading, ElementName=userControl}" />
@@ -178,6 +179,17 @@
         <Setter Property="AllowScrollAnimation" Value="True" />
     </Style>
     <Style x:Key="DefaultTreeListControlTemplate" TargetType="{x:Type dxg:TreeListControl}">
+        <Setter Property="dxmvvm:Interaction.BehaviorsTemplate">
+            <Setter.Value>
+                <DataTemplate>
+                    <ItemsControl>
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True"
+                                               Command="{Binding PastingFromClipboardTreeListCommand}"
+                                               EventName="PastingFromClipboard" />
+                    </ItemsControl>
+                </DataTemplate>
+            </Setter.Value>
+        </Setter>
         <Setter Property="ItemsSource" Value="{Binding DataContext.DisplayEntities, ElementName=userControl}" />
         <Setter Property="ClipboardCopyMode" Value="ExcludeHeader" />
         <Setter Property="SelectionMode" Value="Row" />

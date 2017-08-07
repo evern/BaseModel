@@ -22,23 +22,20 @@ using System.Timers;
 
 namespace BaseModel.ViewModel.Loader
 {
-    public abstract class CollectionViewModelsWrapper<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey,
-        TMainEntityUnitOfWork> : ICollectionViewModelsWrapper<TMainProjectionEntity>, IDocumentContent, ISupportParameter, ISupportViewRestoration
+    public abstract partial class CollectionViewModelsWrapper<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey,
+        TMainEntityUnitOfWork> : ICollectionViewModelsWrapper<TMainProjectionEntity>, IDocumentContent, ISupportParameter
         where TMainEntity : class, IGuidEntityKey, new()
-        where TMainProjectionEntity : class, IGuidEntityKey, new()
+        where TMainProjectionEntity : class, IGuidEntityKey, ICanUpdate, new()
         where TMainEntityUnitOfWork : IUnitOfWork
         
     {
-        protected bool isSubEntitiesAdded;
         protected EntitiesLoaderDescriptionCollection loaderCollection = null;
-
         protected EntitiesLoaderDescription<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey, TMainEntityUnitOfWork> mainEntityLoaderDescription;
 
         public CollectionViewModel<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey, TMainEntityUnitOfWork> MainViewModel { get; set; }
         public bool SuppressNotification { get; set; }
 
         //allows view state to interact with OnMainViewModelRefreshed
-        //due to StoreViewState being called OnBeforeEntitiesChanged and OnMainViewModelRefreshed called OnEntitiesLoaded
         protected object onMessageSender;
         protected Dispatcher mainThreadDispatcher = Application.Current.Dispatcher;
 
@@ -49,20 +46,40 @@ namespace BaseModel.ViewModel.Loader
 
         }
 
-        public virtual void InvokeEntitiesLoaderDescriptionLoading()
+        public virtual void OnParameterChanged(object parameter)
         {
-            if (MainViewModel != null)
-                return;
-            else if (isAllEntitiesLoaded())
-                mainThreadDispatcher.BeginInvoke(new Action(() => OnAllEntitiesCollectionLoaded()));
-            else
-                mainThreadDispatcher.BeginInvoke(new Action(() => loadEntitiesCollectionOnMainThread()));
+            initializePresentationProperties();
+            resolveParameters(parameter);
+            initializeEntitiesLoadersDescription();
+            loadEntitiesCollection();
+        }
+
+        public void ReloadEntitiesCollection()
+        {
+            MainViewModel = null;
+            this.RaisePropertyChanged(x => x.IsLoading);
+            cleanUpEntitiesLoader();
+            initializeEntitiesLoadersDescription();
+            loadEntitiesCollection();
         }
 
         /// <summary>
-        /// Begins loading the collection of entities loader
+        /// start loading the entities collection as per entities collection description specification in specifyEntitiesLoadersDescription()
         /// </summary>
-        private void loadEntitiesCollectionOnMainThread()
+        public void loadEntitiesCollection()
+        {
+            if (MainViewModel != null)
+                return;
+            else if (isAuxiliaryEntitiesLoaded())
+                mainThreadDispatcher.BeginInvoke(new Action(() => onAuxiliaryEntitiesCollectionLoaded()));
+            else
+                mainThreadDispatcher.BeginInvoke(new Action(() => loadSubsequentEntitiesCollection()));
+        }
+
+        /// <summary>
+        /// begin loading the collection of entities loader
+        /// </summary>
+        private void loadSubsequentEntitiesCollection()
         {
             var entitiesLoader = loaderCollection.Where(x => !x.IsLoaded);
             if (entitiesLoader == null || entitiesLoader.Count() == 0)
@@ -75,7 +92,10 @@ namespace BaseModel.ViewModel.Loader
             entitiesLoaderDescription.CreateCollectionViewModel();
         }
 
-        private bool isAllEntitiesLoaded()
+        /// <summary>
+        /// check if auxiliary entities are all loaded
+        /// </summary>
+        private bool isAuxiliaryEntitiesLoaded()
         {
             if (loaderCollection == null)
                 return false;
@@ -83,6 +103,11 @@ namespace BaseModel.ViewModel.Loader
             return loaderCollection.Where(x => !x.IsLoaded).Count() == 0 ? true : false;
         }
 
+        /// <summary>
+        /// get entities
+        /// </summary>
+        /// <typeparam name="TProjection">type of entities to retrieve</typeparam>
+        /// <returns>entities as per TProjection specification</returns>
         protected IEnumerable<TProjection> GetEntities<TProjection>()
             where TProjection : class
         {
@@ -93,19 +118,12 @@ namespace BaseModel.ViewModel.Loader
             return getCollectionFunc();
         }
 
-        protected virtual void OnParameterChanged(object parameter)
-        {
-            InitializePresentationProperties();
-            InitializeParameters(parameter);
 
-            InitializeAndLoadEntitiesLoaderDescription();
-        }
+        protected abstract void resolveParameters(object parameter);
 
-        protected abstract void InitializeParameters(object parameter);
+        protected abstract void initializeEntitiesLoadersDescription();
 
-        public abstract void InitializeAndLoadEntitiesLoaderDescription();
-
-        protected abstract void OnAllEntitiesCollectionLoaded();
+        protected abstract void onAuxiliaryEntitiesCollectionLoaded();
 
         protected void CreateMainViewModel(
             IUnitOfWorkFactory<TMainEntityUnitOfWork> unitOfWorkFactory,
@@ -114,13 +132,11 @@ namespace BaseModel.ViewModel.Loader
             mainEntityLoaderDescription =
                 new EntitiesLoaderDescription
                     <TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey, TMainEntityUnitOfWork>(this, 0,
-                        unitOfWorkFactory, getRepositoryFunc, OnMainViewModelLoaded, OnBeforeAffectingOrCompulsoryEntitiesChanged, OnAfterAffectingEntitiesChanged, 
-                        ConstructMainViewModelProjection);
+                        unitOfWorkFactory, getRepositoryFunc, OnMainViewModelLoaded, OnBeforeEntitiesChanged, OnAfterAuxiliaryEntitiesChanged, 
+                        specifyMainViewModelProjection);
         }
 
-        protected abstract Func<IRepositoryQuery<TMainEntity>, IQueryable<TMainProjectionEntity>> ConstructMainViewModelProjection();
-        public Func<IEnumerable<TMainProjectionEntity>, object, bool> OnEntitiesLoadedWithParameterIsContinueCallBack;
-
+        protected abstract Func<IRepositoryQuery<TMainEntity>, IQueryable<TMainProjectionEntity>> specifyMainViewModelProjection();
         public Action<IEnumerable<TMainProjectionEntity>, object> OnEntitiesLoadedCallBack { get; set; }
         public Func<object> OnEntitiesLoadedCallBackRelateParam { get; set; }
         protected virtual bool OnMainViewModelLoaded(IEnumerable<TMainProjectionEntity> entities)
@@ -143,14 +159,14 @@ namespace BaseModel.ViewModel.Loader
                 OnEntitiesLoadedCallBack = null;
                 OnEntitiesLoadedCallBackRelateParam = null;
                 //Self destruct after entities has been returned
-                CleanUpEntitiesLoader();
+                cleanUpEntitiesLoader();
                 return;
             }
 
             MainViewModel.SelectedEntities = this.DisplaySelectedEntities;
             //MainViewModel.AfterBulkOperationRefreshCallBack = this.FullRefresh;
             MainViewModel.ApplyProjectionPropertiesToEntityCallBack = ApplyProjectionPropertiesToEntity;
-            RefreshView();
+            BackgroundRefresh();
 
             post_loaded_dispatcher_timer = new Timer();
             post_loaded_dispatcher_timer.Interval = 3000;
@@ -161,12 +177,13 @@ namespace BaseModel.ViewModel.Loader
         private void post_loaded_dispatcher_timer_tick(object sender, EventArgs e)
         {
             post_loaded_dispatcher_timer.Stop();
-            OnAfterAssignedCallbackAndRaisePropertyChanged();
+            mainThreadDispatcher.BeginInvoke(new Action(() => OnAfterAssignedCallbackAndRaisePropertyChanged()));
         }
 
         protected virtual void OnAfterAssignedCallbackAndRaisePropertyChanged()
         {
-
+            if (GridControlService != null)
+                GridControlService.SetCheckedListFilterPopUpMode();
         }
 
         protected void ApplyProjectionPropertiesToEntity(TMainProjectionEntity projectionEntity, TMainEntity entity)
@@ -213,23 +230,30 @@ namespace BaseModel.ViewModel.Loader
                 return compulsoryLoaders;
             }
         }
+        
+        public Type MainEntityType
+        {
+            get { return typeof(TMainProjectionEntity); }
+        }
 
-        public virtual bool OnBeforeAffectingOrCompulsoryEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender, bool isBulkRefresh)
+        #region ISupportParameter
+        object ISupportParameter.Parameter
+        {
+            get { return null; }
+            set { OnParameterChanged(value); }
+        }
+        #endregion
+
+        #region Messaging
+        public virtual bool OnBeforeEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender, bool isBulkRefresh)
         {
             onMessageSender = sender;
             if (sender != null && sender == MainViewModel)
                 return true;
-
-                //mainThreadDispatcher.BeginInvoke(new Action(() => StoreViewState()));
             return true;
         }
 
-        private void bulk_refresh_dispatcher_timer_tick(object sender, EventArgs e)
-        {
-            this.RaisePropertiesChanged();
-        }
-
-        public virtual void OnAfterAffectingEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender, bool isBulkRefresh)
+        public virtual void OnAfterAuxiliaryEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender, bool isBulkRefresh)
         {
             //Always refresh summary after any changes happens
             if (GridControlService != null)
@@ -240,7 +264,7 @@ namespace BaseModel.ViewModel.Loader
 
             if (!IsSingleMainEntityRefreshIdentified(key, changedType, messageType, sender, isBulkRefresh))
             {
-                if(isBulkRefresh)
+                if (isBulkRefresh)
                 {
                     bulk_refresh_dispatcher_timer.Tick -= bulk_refresh_dispatcher_timer_tick;
                     bulk_refresh_dispatcher_timer.Tick += bulk_refresh_dispatcher_timer_tick;
@@ -251,17 +275,6 @@ namespace BaseModel.ViewModel.Loader
                     this.RaisePropertiesChanged();
                 }
             }
-
-            //mainThreadDispatcher.BeginInvoke(new Action(() => FullRefreshWithoutClearingUndoRedo()));
-            //this.RaisePropertiesChanged();
-            //IsSingleMainEntityRefreshIdentified(key, changedType, messageType, sender);
-        }
-
-        protected virtual bool IsSingleMainEntityRefreshIdentified(object key, Type changedType, EntityMessageType messageType, object sender, bool isBulkRefresh)
-        {
-            return DoNotAutoRefresh;
-            //Override this method to check if a single main entity can be refreshed by sending a message
-            //return false;
         }
 
         public virtual void OnAfterCompulsoryEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender, bool isBulkRefresh)
@@ -275,6 +288,7 @@ namespace BaseModel.ViewModel.Loader
             {
                 if (messageType == EntityMessageType.Deleted && currentCompulsoryEntitiesLoader.GetEntitiesCount() == 0)
                 {
+                    //potential to set a global where compulsory entity doesn't exists message
                     //MessageBoxService.ShowMessage(string.Format(CommonResources.Notify_View_Removed,
                     //    StringFormatUtils.GetEntityNameByType(changedType)));
 
@@ -284,45 +298,30 @@ namespace BaseModel.ViewModel.Loader
                 }
                 else if (messageType == EntityMessageType.Added && compulsoryLoaders.All(x => x.GetEntitiesCount() > 0))
                 {
-                    //MessageBoxService.ShowMessage(string.Format(CommonResources.Notify_View_Restored,
-                    //    StringFormatUtils.GetEntityNameByType(changedType)));
-
-                    //take this out for now, to make program leaner
-                    //mainThreadDispatcher.BeginInvoke(new Action(() => InitializeAndLoadEntitiesLoaderDescription()));
+                    //potential to set a global where compulsory entity restored mechanism
+                    MessageBoxService.ShowMessage(changedType.ToString() + " restored");
+                    mainThreadDispatcher.BeginInvoke(new Action(() => ReloadEntitiesCollection()));
                     return;
                 }
             }
         }
 
-        public Type MainEntityType
+        private void bulk_refresh_dispatcher_timer_tick(object sender, EventArgs e)
         {
-            get { return typeof(TMainProjectionEntity); }
+            this.RaisePropertiesChanged();
         }
 
-        protected virtual void OnMainViewModelRefreshed(IEnumerable<TMainProjectionEntity> refreshedEntities)
+        /// <summary>
+        /// override this method if entity refresh can be handled manually
+        /// </summary>
+        protected virtual bool IsSingleMainEntityRefreshIdentified(object key, Type changedType, EntityMessageType messageType, object sender, bool isBulkRefresh)
         {
-            if (onMessageSender != null && (onMessageSender == MainViewModel || onMessageSender == this))
-                return;
-
-            //entities are confirmed to be loaded here for refresh to work properly on MainViewModel
-            RefreshView();
+            return DoNotAutoRefresh;
         }
 
-        #region ISupportParameter
-        object ISupportParameter.Parameter
-        {
-            get { return null; }
-            set { OnParameterChanged(value); }
-        }
         #endregion
 
         #region Presentation
-        public Action StoreActiveCell { get; set; }
-        public Action RestoreActiveCell { get; set; }
-        public Action ForceGridRefresh { get; set; }
-
-        private Guid RestoreSelectedEntityGuid;
-        private List<Guid> RestoreSelectedEntitiesGuids = new List<Guid>();
         TMainProjectionEntity displaySelectedEntity;
         public TMainProjectionEntity DisplaySelectedEntity
         {
@@ -337,17 +336,12 @@ namespace BaseModel.ViewModel.Loader
         public ObservableCollection<TMainProjectionEntity> DisplaySelectedEntities { get; set; }
         public Action OnSelectedEntitiesChangedCallBack;
         private BackgroundWorker refreshBackgroundWorker;
-        private BackgroundWorker storeViewStateBackgroundWorker;
 
-        private void InitializePresentationProperties()
+        private void initializePresentationProperties()
         {
             refreshBackgroundWorker = new BackgroundWorker();
             refreshBackgroundWorker.DoWork += refreshBackgroundWorker_DoWork;
             refreshBackgroundWorker.WorkerSupportsCancellation = true;
-
-            storeViewStateBackgroundWorker = new BackgroundWorker();
-            storeViewStateBackgroundWorker.DoWork += storeViewStateBackgroundWorker_DoWork;
-            storeViewStateBackgroundWorker.WorkerSupportsCancellation = true;
 
             DisplaySelectedEntities = new ObservableCollection<TMainProjectionEntity>();
             DisplaySelectedEntities.CollectionChanged += DisplaySelectedEntities_CollectionChanged;
@@ -363,11 +357,24 @@ namespace BaseModel.ViewModel.Loader
             this.RaisePropertyChanged(x => x.DisplaySelectedEntity);
         }
 
-        public virtual void OnDisplaySelectedEntityChanged(TMainProjectionEntity entity)
+        public virtual ObservableCollection<TMainProjectionEntity> DisplayEntities
         {
-            
+            get
+            {
+                if (MainViewModel == null)
+                    return null;
+
+                return MainViewModel.Entities;
+            }
         }
 
+        public virtual void OnDisplaySelectedEntityChanged(TMainProjectionEntity entity)
+        {
+
+        }
+        #endregion
+
+        #region Refresh
         public virtual bool CanFullRefresh()
         {
             return !IsLoading;
@@ -378,9 +385,8 @@ namespace BaseModel.ViewModel.Loader
             if (MainViewModel == null)
                 return;
 
-            mainThreadDispatcher.BeginInvoke(new Action(() => StoreViewState()));
             MainViewModel.Refresh();
-            RefreshView();
+            BackgroundRefresh();
         }
 
         public virtual void FullRefreshWithoutClearingUndoRedo()
@@ -388,13 +394,11 @@ namespace BaseModel.ViewModel.Loader
             if (MainViewModel == null)
                 return;
 
-            mainThreadDispatcher.BeginInvoke(new Action(() => StoreViewState()));
             MainViewModel.RefreshWithoutClearingUndoManager();
-            RefreshView();
+            BackgroundRefresh();
         }
 
         private bool doNotAutoRefresh { get; set; }
-
         public bool DoNotAutoRefresh
         {
             get { return doNotAutoRefresh; }
@@ -403,9 +407,9 @@ namespace BaseModel.ViewModel.Loader
 
         //Delay to make sure entities are fully loaded before refreshing the view
         int viewRefreshDelay = 500;
-        protected virtual void RefreshView(bool forceGridRefresh = false)
+        protected virtual void BackgroundRefresh(bool forceGridRefresh = false)
         {
-            if(refreshBackgroundWorker != null && !refreshBackgroundWorker.IsBusy)
+            if (refreshBackgroundWorker != null && !refreshBackgroundWorker.IsBusy)
                 refreshBackgroundWorker.RunWorkerAsync(forceGridRefresh);
         }
 
@@ -419,94 +423,24 @@ namespace BaseModel.ViewModel.Loader
                 return;
             }
 
-            mainThreadDispatcher.BeginInvoke(new Action(() => this.refreshView(forceGridRefresh)));
+            mainThreadDispatcher.BeginInvoke(new Action(() => this.Refresh()));
         }
 
-        public virtual ObservableCollection<TMainProjectionEntity> DisplayEntities
+        protected virtual void onAfterRefresh()
         {
-            get
-            {
-                if (MainViewModel == null)
-                    return null;
 
-                return MainViewModel.Entities;
-            }
         }
 
-        protected void StoreViewState()
-        {
-            if (storeViewStateBackgroundWorker != null && !storeViewStateBackgroundWorker.IsBusy)
-                storeViewStateBackgroundWorker.RunWorkerAsync();
-        }
-
-        private void storeViewStateBackgroundWorker_DoWork(object sender, DoWorkEventArgs e)
-        {
-            if (storeViewStateBackgroundWorker.CancellationPending)
-            {
-                e.Cancel = true;
-                return;
-            }
-
-            mainThreadDispatcher.BeginInvoke(new Action(() => this.storeViewState()));
-            System.Threading.Thread.Sleep(viewRefreshDelay);
-        }
-
-        protected virtual void storeViewState()
+        public void Refresh()
         {
             IPOCOViewModel viewModel = this as IPOCOViewModel;
-            if (viewModel == null)
-                return;
-
-            if (DisplayEntities == null)
-                return;
-
-            StoreActiveCell?.Invoke();
-
-            RestoreSelectedEntityGuid = Guid.Empty;
-            RestoreSelectedEntitiesGuids.Clear();
-
-            foreach (var selectedEntity in DisplaySelectedEntities)
-                RestoreSelectedEntitiesGuids.Add(new Guid(selectedEntity.EntityKey.ToString()));
-
-            if (DisplaySelectedEntity != null)
-                RestoreSelectedEntityGuid = DisplaySelectedEntity.EntityKey;
-        }
-
-        protected virtual void restoreViewState()
-        {
-            if (DisplayEntities == null)
-                return;
-
-            var restoreSelectedEntities =
-                DisplayEntities.Where(x => RestoreSelectedEntitiesGuids.Any(y => y == x.EntityKey));
-            DisplaySelectedEntities.Clear();
-            if (restoreSelectedEntities.Count() > 0)
-                foreach (var restoreSelectedEntity in restoreSelectedEntities)
-                    DisplaySelectedEntities.Add(restoreSelectedEntity);
-
-            if (RestoreSelectedEntityGuid != Guid.Empty)
-            {
-                var restoreSelectedEntity =
-                    DisplayEntities.FirstOrDefault(x => x.EntityKey == RestoreSelectedEntityGuid);
-                if (restoreSelectedEntity != null)
-                    DisplaySelectedEntity = restoreSelectedEntity;
-            }
-
-            RestoreActiveCell?.Invoke();
-        }
-
-        private void refreshView(bool isForceGridRefresh)
-        {
-            IPOCOViewModel viewModel = this as IPOCOViewModel;
-            if(viewModel != null)
+            if (viewModel != null)
             {
                 viewModel.RaisePropertiesChanged();
-                if(GridControlService != null)
+                if (GridControlService != null)
                     GridControlService.RefreshSummary();
 
-                if (isForceGridRefresh && ForceGridRefresh != null)
-                    ForceGridRefresh();
-                restoreViewState();
+                onAfterRefresh();
             }
         }
         #endregion
@@ -554,7 +488,7 @@ namespace BaseModel.ViewModel.Loader
         /// <summary>
         /// Unregister any messaging listener
         /// </summary>
-        public virtual void CleanUpEntitiesLoader()
+        public virtual void cleanUpEntitiesLoader()
         {
             compulsoryLoaders = null;
             if (mainEntityLoaderDescription != null)
@@ -573,7 +507,7 @@ namespace BaseModel.ViewModel.Loader
 
         void IDocumentContent.OnDestroy()
         {
-            CleanUpEntitiesLoader();
+            cleanUpEntitiesLoader();
         }
 
         IDocumentOwner IDocumentContent.DocumentOwner
@@ -588,7 +522,7 @@ namespace BaseModel.ViewModel.Loader
         public void SetMainNestedValueWithUndoAndRefresh(TMainProjectionEntity entity, string propertyName, object newValue)
         {
             MainViewModel.SetNestedValueWithUndo(entity, propertyName, newValue);
-            this.RaisePropertyChanged(x => x.DisplaySelectedEntity);
+            entity.Update();
         }
 
         protected virtual string ExportExcelFilename()
@@ -649,11 +583,17 @@ namespace BaseModel.ViewModel.Loader
             PersistentLayoutHelper.ResetLayout(ViewName);
         }
 
+        /// <summary>
+        /// for sending signalR deleted message
+        /// </summary>
         public virtual void OnAfterDeletedSendMessage(string entityName, string key, string messageType, string sender)
         {
             
         }
 
+        /// <summary>
+        /// for sending signalR saved message
+        /// </summary>
         public virtual void OnAfterSavedSendMessage(string entityName, string key, string messageType, string sender)
         {
             
@@ -661,7 +601,6 @@ namespace BaseModel.ViewModel.Loader
         #endregion
 
         #region View Behavior
-
         /// <summary>
         /// Influence column(s) when changes happens in other column
         /// </summary>
@@ -725,15 +664,13 @@ namespace BaseModel.ViewModel.Loader
 
     public interface ICollectionViewModelsWrapper
     {
-        void InvokeEntitiesLoaderDescriptionLoading();
+        void loadEntitiesCollection();
 
-        void InitializeAndLoadEntitiesLoaderDescription();
-
-        bool OnBeforeAffectingOrCompulsoryEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender, bool isBulkRefresh);
-
-        void OnAfterAffectingEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender, bool isBulkRefresh);
+        void OnAfterAuxiliaryEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender, bool isBulkRefresh);
 
         void OnAfterCompulsoryEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender, bool isBulkRefresh);
+
+        bool OnBeforeEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender, bool isBulkRefresh);
 
         void OnAfterDeletedSendMessage(string entityName, string key, string messageType, string sender);
 

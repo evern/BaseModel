@@ -29,7 +29,8 @@ namespace BaseModel.Data.Helpers
             this.messageBoxService = messageBoxService;
         }
 
-        public List<TProjection> PastingFromClipboard(PastingFromClipboardEventArgs e)
+        public List<TProjection> PastingFromClipboard<TView>(PastingFromClipboardEventArgs e)
+            where TView : DataViewBase
         {
             var PasteString = Clipboard.GetText();
             var RowData = PasteString.Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
@@ -37,9 +38,12 @@ namespace BaseModel.Data.Helpers
             var gridView = sourceGridControl.View;
 
             List<TProjection> pasteProjections = new List<TProjection>();
-            if (gridView.ActiveEditor == null && (gridView.GetType() == typeof(TableView) || gridView.GetType() == typeof(TableViewEx)))
+            if (gridView.ActiveEditor == null && (gridView.GetType() == typeof(TView)))
             {
-                var gridTableView = gridView as TableView;
+                var gridTView = gridView as TView;
+                TableView gridTableView = gridTView as TableView;
+                TreeListView gridTreeListView = gridTView as TreeListView;
+
                 foreach (var Row in RowData)
                 {
                     TProjection projection = new TProjection();
@@ -48,7 +52,7 @@ namespace BaseModel.Data.Helpers
                     for (var i = 0; i < ColumnStrings.Count(); i++)
                         try
                         {
-                            var copyColumn = gridTableView.VisibleColumns[i];
+                            ColumnBase copyColumn = gridTableView != null ? gridTableView.VisibleColumns[i] : gridTreeListView.VisibleColumns[i];
 
                             if (copyColumn.ReadOnly)
                                 continue;

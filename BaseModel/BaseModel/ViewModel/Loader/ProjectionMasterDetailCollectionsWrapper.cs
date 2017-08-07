@@ -16,7 +16,7 @@ namespace BaseModel.ViewModel.Loader
         TMainEntityUnitOfWork> : CollectionViewModelsWrapper<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey,
         TMainEntityUnitOfWork>
         where TMainEntity : class, IGuidEntityKey, IGuidParentEntityKey, new()
-        where TMainProjectionEntity : class, IProjectionMasterDetail<TMainEntity, TMainProjectionEntity>, new()
+        where TMainProjectionEntity : class, IProjectionMasterDetail<TMainEntity, TMainProjectionEntity>, ICanUpdate, new()
         where TMainEntityUnitOfWork : IUnitOfWork
     {
         protected virtual bool OnBeforeParentAssigned(TMainProjectionEntity masterEntity, TMainProjectionEntity childEntity)
@@ -147,25 +147,23 @@ namespace BaseModel.ViewModel.Loader
         }
 
         #region View Refresh
-        public override void OnAfterAffectingEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender, bool isBulkRefresh)
+        public override void OnAfterAuxiliaryEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender, bool isBulkRefresh)
         {
             mainThreadDispatcher.BeginInvoke(new Action(() => refreshDisplayEntities()));
         }
 
         private void refreshDisplayEntities()
         {
-            ////displayEntities.RaisePropertiesChanged();
             displayEntities = null;
             this.RaisePropertyChanged(x => x.DisplayEntities);
-            restoreViewState();
+            onAfterRefresh();
         }
 
         protected abstract string expand_key_field_name { get; }
 
-        public Action<TMainProjectionEntity> SetIsRowExpanded;
-        protected override void restoreViewState()
+        //public Action<TMainProjectionEntity> SetIsRowExpanded;
+        protected override void onAfterRefresh()
         {
-            base.restoreViewState();
             if(DisplayEntities != null)
                 foreach (var entity in DisplayEntities)
                 {

@@ -16,7 +16,7 @@ namespace BaseModel.ViewModel.Loader
         TMainEntityUnitOfWork> : EntitiesTreeCollectionWrapper<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey,
         TMainEntityUnitOfWork>
         where TMainEntity : class, IGuidEntityKey, new()
-        where TMainProjectionEntity : class, IProjection<TMainEntity>, IHaveSortOrder, IHaveExpandState, IGuidParentEntityKey, new()
+        where TMainProjectionEntity : class, IProjection<TMainEntity>, IHaveSortOrder, IHaveExpandState, IGuidParentEntityKey, ICanUpdate, new()
         where TMainEntityUnitOfWork : IUnitOfWork
     {
         #region Call Backs

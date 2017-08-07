@@ -15,7 +15,7 @@ namespace BaseModel.ViewModel.Loader
             TMainEntityUnitOfWork> : CollectionViewModelsWrapper<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey,
             TMainEntityUnitOfWork>
             where TMainEntity : class, IGuidEntityKey, new()
-            where TMainProjectionEntity : class, IGuidEntityKey, IHaveSortOrder, IHaveExpandState, IGuidParentEntityKey, new()
+            where TMainProjectionEntity : class, IGuidEntityKey, IHaveSortOrder, IHaveExpandState, IGuidParentEntityKey, ICanUpdate, new()
             where TMainEntityUnitOfWork : IUnitOfWork
     {
         private Guid? Parent_GuidOldValue; //stores old parent guid for undo redo

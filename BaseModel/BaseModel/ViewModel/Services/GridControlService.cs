@@ -22,6 +22,7 @@ namespace BaseModel.ViewModel.Services
         void RefreshSummary();
         IEnumerable<object> GetVisibleRowObjects();
         void HighlightIncorrectText(SpellChecker spellChecker);
+        void SetCheckedListFilterPopUpMode();
     }
 
     public class GridControlService : ServiceBase, IGridControlService
@@ -34,6 +35,17 @@ namespace BaseModel.ViewModel.Services
         
         public static readonly DependencyProperty GridControlProperty =
             DependencyProperty.Register("GridControl", typeof(GridControl), typeof(GridControlService), new PropertyMetadata(null));
+
+        public void SetCheckedListFilterPopUpMode()
+        {
+            if (GridControl == null)
+                return;
+
+            foreach(GridColumn grid_column in GridControl.Columns)
+            {
+                grid_column.FilterPopupMode = FilterPopupMode.CheckedList;
+            }
+        }
 
         public void SetRowExpandedByColumnValue(string field_name, IHaveExpandState row)
         {

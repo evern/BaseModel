@@ -66,14 +66,6 @@ namespace BaseModel.Misc
         ObservableCollection<TProjection> DetailEntities { get; set; }
     }
 
-    public interface ISupportViewRestoration
-    {
-        Action StoreActiveCell { get; set; }
-        Action RestoreActiveCell { get; set; }
-        //Raise Properties changed doesn't refresh column data, call this method instead
-        Action ForceGridRefresh { get; set; }
-    }
-
     /// <summary>
     /// The interface for supporting children document other than using TEntity type name.
     /// </summary>

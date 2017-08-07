@@ -553,10 +553,11 @@ namespace BaseModel.ViewModel.Base
                 Repository.UnitOfWork.SaveChanges();
                 var primaryKey = Repository.GetPrimaryKey(entity);
                 Repository.SetProjectionPrimaryKey(projectionEntity, primaryKey);
-                OnEntitySaved(primaryKey, projectionEntity, entity, isNewEntity);
 
-                //Any associating changes to the collection must be placed here so undo/redo will be in effect
+                //Need to put here because any updates associated with the entity need to be committed before sending message
                 OnAfterEntitySavedCallBack?.Invoke(projectionEntity, isNewEntity);
+
+                OnEntitySaved(primaryKey, projectionEntity, entity, isNewEntity);
             }
             catch (DbException e)
             {

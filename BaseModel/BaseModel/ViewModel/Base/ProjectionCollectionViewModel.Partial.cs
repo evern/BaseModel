@@ -1076,9 +1076,35 @@ namespace BaseModel.ViewModel.Base
 
             PasteListener?.Invoke(PasteStatus.Start);
             CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, MessageBoxService);
-            List<TProjection> pasteProjections = copyPasteHelper.PastingFromClipboard(e);
+            List<TProjection> pasteProjections = copyPasteHelper.PastingFromClipboard<TableView>(e);
 
             if(pasteProjections.Count > 0)
+            {
+                EntitiesUndoRedoManager.PauseActionId();
+                pasteProjections.ForEach(x => EntitiesUndoRedoManager.AddUndo(x, null, null, null, EntityMessageType.Added));
+                EntitiesUndoRedoManager.UnpauseActionId();
+
+                BulkSave(pasteProjections);
+                e.Handled = true;
+            }
+
+            PasteListener?.Invoke(PasteStatus.Stop);
+        }
+
+        /// <summary>
+        /// Converts clipboard text into entity values and saves to database
+        /// </summary>
+        /// <param name="e"></param>
+        public virtual void PastingFromClipboardTreeList(PastingFromClipboardEventArgs e)
+        {
+            if (DisablePasting)
+                return;
+
+            PasteListener?.Invoke(PasteStatus.Start);
+            CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, MessageBoxService);
+            List<TProjection> pasteProjections = copyPasteHelper.PastingFromClipboard<TreeListView>(e);
+
+            if (pasteProjections.Count > 0)
             {
                 EntitiesUndoRedoManager.PauseActionId();
                 pasteProjections.ForEach(x => EntitiesUndoRedoManager.AddUndo(x, null, null, null, EntityMessageType.Added));
