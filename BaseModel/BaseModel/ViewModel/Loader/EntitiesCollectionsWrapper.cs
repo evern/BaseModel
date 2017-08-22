@@ -262,9 +262,7 @@ namespace BaseModel.ViewModel.Loader
 
         public virtual void OnAfterAuxiliaryEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender, bool isBulkRefresh)
         {
-            //Always refresh summary after any changes happens
-            if (GridControlService != null)
-                GridControlService.RefreshSummary();
+            UpdateGridSummary();
 
             if (sender != null && sender == MainViewModel)
                 return;
@@ -282,6 +280,13 @@ namespace BaseModel.ViewModel.Loader
                     this.RaisePropertiesChanged();
                 }
             }
+        }
+
+        private async void UpdateGridSummary()
+        {
+            //Always refresh summary after any changes happens
+            if (GridControlService != null)
+                GridControlService.RefreshSummary();
         }
 
         public virtual void OnAfterCompulsoryEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender, bool isBulkRefresh)
