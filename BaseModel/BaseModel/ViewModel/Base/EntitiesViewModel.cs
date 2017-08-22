@@ -133,7 +133,7 @@ namespace BaseModel.ViewModel.Base
                         OnEntityAdded(message.PrimaryKey);
                         break;
                     case EntityMessageType.Changed:
-                        OnEntityChanged(message.PrimaryKey);
+                        OnEntityChanged(message.PrimaryKey, owner.SkipOnMessage);
                         break;
                     case EntityMessageType.Deleted:
                         OnEntityDeleted(message.PrimaryKey);
@@ -151,9 +151,18 @@ namespace BaseModel.ViewModel.Base
                     Entities.Add(projectionEntity);
             }
 
-            private void OnEntityChanged(TPrimaryKey primaryKey)
+            private void OnEntityChanged(TPrimaryKey primaryKey, bool skipOnMessage)
             {
                 var existingProjectionEntity = FindLocalProjectionByKey(primaryKey);
+                if(skipOnMessage)
+                {
+                    ICanUpdate can_update_entity = existingProjectionEntity as ICanUpdate;
+                    if (can_update_entity != null)
+                        can_update_entity.Update();
+
+                    return;
+                }
+
                 var projectionEntity = FindActualProjectionByKey(primaryKey);
 
                 if (projectionEntity == null)
@@ -430,6 +439,7 @@ namespace BaseModel.ViewModel.Base
         public Action<object, Type, EntityMessageType, object, bool> OnAfterEntitiesChangedCallBack { get; set; }
         public Action<TProjection, TProjection> OnBeforeAssignRepositoryToExistingProjection { get; set; }
         public Action<TProjection, TProjection> OnMappingAdditionalChangedEntitiesProperties { get; set; }
+        public bool SkipOnMessage { get; set; }
         public bool IsPersistentView { get; set; }
     }
 
@@ -451,7 +461,7 @@ namespace BaseModel.ViewModel.Base
         /// Used to check whether entities are currently being loaded in the background. The property can be used to show the progress indicator.
         /// </summary>
         bool IsLoading { get; }
-
+        bool SkipOnMessage { get; set; }
         bool IsPersistentView { get; set; }
 
         //BaseModel Customization Start

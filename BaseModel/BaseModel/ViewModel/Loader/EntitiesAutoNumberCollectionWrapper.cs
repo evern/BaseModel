@@ -59,6 +59,72 @@ namespace BaseModel.ViewModel.Loader
             return true;
         }
 
+
+        public bool CanDuplicate()
+        {
+            if (MainViewModel == null || DisplaySelectedEntities == null)
+                return false;
+
+            return true;
+        }
+
+        public void DuplicateMultiple(BarEditItem barEdit)
+        {
+            MainViewModel.EntitiesUndoRedoManager.PauseActionId();
+            _isProcessingMultiple = true;
+            var timesToDuplicate = 0;
+            List<TMainProjectionEntity> newEntities = new List<TMainProjectionEntity>();
+            if (int.TryParse(barEdit.EditValue.ToString(), out timesToDuplicate))
+            {
+                List<TMainProjectionEntity> currentEnumerationSaveEntities = getNewDuplicateEntities(timesToDuplicate, false, MainViewModel.Entities, MainViewModel.SelectedEntities);
+                newEntities.AddRange(currentEnumerationSaveEntities);
+            }
+
+            MainViewModel.BulkSave(newEntities);
+            _isProcessingMultiple = false;
+            MainViewModel.EntitiesUndoRedoManager.UnpauseActionId();
+        }
+
+        public void Duplicate()
+        {
+            if (!_isProcessingMultiple)
+                MainViewModel.EntitiesUndoRedoManager.PauseActionId();
+
+            List<TMainProjectionEntity> newEntities = getNewDuplicateEntities(1, false, MainViewModel.Entities, MainViewModel.SelectedEntities);
+            MainViewModel.BulkSave(newEntities);
+            //Add undo must happen after save so that variation can pick it up
+            foreach (TMainProjectionEntity newEntity in newEntities)
+                MainViewModel.EntitiesUndoRedoManager.AddUndo(newEntity, null, null, null, EntityMessageType.Added);
+
+            if (!_isProcessingMultiple)
+                MainViewModel.EntitiesUndoRedoManager.UnpauseActionId();
+        }
+
+
+        private List<TMainProjectionEntity> getNewDuplicateEntities(int timesToDuplicate, bool isInsert, IEnumerable<TMainProjectionEntity> all_entities, IEnumerable<TMainProjectionEntity> selected_entities)
+        {
+            List<TMainProjectionEntity> unsavedEntities = new List<TMainProjectionEntity>();
+            IEnumerable<TMainProjectionEntity> entitiesInOrder = MainViewModel.Entities.OrderBy(x => x.EntityNumber);
+            TMainProjectionEntity largestNumberEntity = entitiesInOrder.Last();
+            string largestNumberString = largestNumberEntity.EntityNumber;
+
+            for (int i = 0; i < timesToDuplicate; i++)
+            {
+                foreach (var selectedEntity in selected_entities)
+                {
+                    var newProjection = new TMainProjectionEntity();
+                    DataUtils.ShallowCopy(newProjection, selectedEntity);
+                    newProjection.EntityKey = Guid.Empty;
+
+                    newProjection.EntityNumber = newProjection.EntityNumber = StringFormatUtils.GetNewRegisterNumber(MainViewModel.Entities, unsavedEntities, largestNumberString, MainViewModel.SelectedEntities);
+                    MainViewModel.EntitiesUndoRedoManager.AddUndo(newProjection, null, null, null, EntityMessageType.Added);
+                    unsavedEntities.Add(newProjection);
+                }
+            }
+
+            return unsavedEntities;
+        }
+
         private void OnAfterEntitiesDeletedCallBack(IEnumerable<TMainEntity> entities)
         {
             List<TMainProjectionEntity> changedEntities = new List<TMainProjectionEntity>();
@@ -125,6 +191,8 @@ namespace BaseModel.ViewModel.Loader
                 foreach (var selectedEntity in MainViewModel.SelectedEntities)
                 {
                     var newProjection = new TMainProjectionEntity();
+                    DataUtils.ShallowCopy(newProjection, selectedEntity);
+                    newProjection.EntityKey = Guid.Empty;
                     newProjection.EntityNumber = StringFormatUtils.GetNewRegisterNumber(MainViewModel.Entities, unsavedEntities, selectedEntity.EntityNumber, MainViewModel.SelectedEntities);
                     MainViewModel.EntitiesUndoRedoManager.AddUndo(newProjection, null, null, null, EntityMessageType.Added);
                     unsavedEntities.Add(newProjection);

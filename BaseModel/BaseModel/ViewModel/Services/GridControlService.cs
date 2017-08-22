@@ -23,6 +23,7 @@ namespace BaseModel.ViewModel.Services
         IEnumerable<object> GetVisibleRowObjects();
         void HighlightIncorrectText(SpellChecker spellChecker);
         void SetCheckedListFilterPopUpMode();
+        void SetGridColumnSortMode();
     }
 
     public class GridControlService : ServiceBase, IGridControlService
@@ -44,6 +45,17 @@ namespace BaseModel.ViewModel.Services
             foreach(GridColumn grid_column in GridControl.Columns)
             {
                 grid_column.FilterPopupMode = FilterPopupMode.CheckedList;
+            }
+        }
+
+        public void SetGridColumnSortMode()
+        {
+            if (GridControl == null)
+                return;
+
+            foreach (GridColumn grid_column in GridControl.Columns)
+            {
+                grid_column.SortMode = DevExpress.XtraGrid.ColumnSortMode.Custom;
             }
         }
 

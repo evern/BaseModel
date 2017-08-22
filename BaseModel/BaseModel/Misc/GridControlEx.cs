@@ -1,5 +1,8 @@
-﻿using DevExpress.Xpf.Core.Serialization;
+﻿using DevExpress.Utils.Serializing;
+using DevExpress.Xpf.Core.Serialization;
 using DevExpress.Xpf.Grid;
+using System;
+using System.Collections.ObjectModel;
 
 namespace BaseModel.Misc
 {
@@ -7,16 +10,47 @@ namespace BaseModel.Misc
     {
         public GridControlEx()
         {
-            this.AddHandler(DXSerializer.AllowPropertyEvent,
-                    new AllowPropertyEventHandler(grid_AllowedProperty));
         }
 
-        void grid_AllowedProperty(object sender, AllowPropertyEventArgs e)
+        [XtraSerializableProperty]
+        public ObservableCollection<GroupInfo> States
         {
-            e.Allow = e.DependencyProperty != GridControl.FilterStringProperty 
-                   && e.DependencyProperty != GridControl.GroupSummarySourceProperty 
-                   && e.DependencyProperty != GridControl.TotalSummarySourceProperty;
+            get { return GetGroupStates(); }
+            set { Dispatcher.BeginInvoke(new Action(() => SaveGroupStates(value))); }
         }
+
+        private void SaveGroupStates(ObservableCollection<GroupInfo> states)
+        {
+            foreach (var state in states)
+            {
+                if (!IsGroupRowHandle(state.RowHandle))
+                    continue;
+                if (state.State)
+                    ExpandGroupRow(state.RowHandle);
+                else
+                    CollapseGroupRow(state.RowHandle);
+            }
+        }
+
+        private ObservableCollection<GroupInfo> GetGroupStates()
+        {
+            var states = new ObservableCollection<GroupInfo>();
+            for (int i = 0; i < VisibleRowCount; i++)
+            {
+                var handle = GetRowHandleByVisibleIndex(i);
+                if (!IsGroupRowHandle(handle))
+                    continue;
+                states.Add(new GroupInfo { RowHandle = handle, State = IsGroupRowExpanded(handle) });
+            }
+            return states;
+        }
+    }
+
+    [Serializable]
+    public class GroupInfo
+    {
+        public int RowHandle { get; set; }
+        public bool State { get; set; }
     }
 
     public class TableViewEx : TableView

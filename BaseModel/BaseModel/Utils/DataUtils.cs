@@ -1,5 +1,6 @@
 ﻿using BaseModel.Attributes;
 using BaseModel.Misc;
+using BaseModel.ViewModel.UndoRedo;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Editors.Settings;
 using DevExpress.Xpf.Grid;
@@ -15,7 +16,7 @@ using System.Windows;
 namespace BaseModel.Data.Helpers
 {   
     public class CopyPasteHelper<TProjection>
-        where TProjection : new()
+        where TProjection : class, new()
     {
         public delegate bool IsValidProjectionFunc(TProjection projection, ref string errorMessage);
         readonly IsValidProjectionFunc isValidProjectionFunc;
@@ -29,11 +30,190 @@ namespace BaseModel.Data.Helpers
             this.messageBoxService = messageBoxService;
         }
 
-        public List<TProjection> PastingFromClipboard<TView>(PastingFromClipboardEventArgs e)
+        private class UndoRedoArg
+        {
+            public TProjection Projection { get; set; }
+            public string FieldName { get; set; }
+            public object OldValue { get; set; }
+            public object NewValue { get; set; }
+        }
+
+        private enum PasteResult
+        {
+            Success, 
+            Skip, 
+            Failed
+        }
+
+        public List<TProjection> PastingFromClipboardCellLevel<TView>(PastingFromClipboardEventArgs e, bool dontSplit, EntitiesUndoRedoManager<TProjection> undo_redo_manager)
             where TView : DataViewBase
         {
             var PasteString = Clipboard.GetText();
-            var RowData = PasteString.Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            string[] RowData;
+            if (dontSplit)
+            {
+                string format_string = PasteString.Substring(1, PasteString.Length - 2);
+                RowData = new string[] { format_string };
+            }
+            else
+                RowData = PasteString.Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            
+            var sourceGridControl = (GridControl)e.Source;
+            var gridView = sourceGridControl.View;
+
+            HashSet<TProjection> preValidatedProjections = new HashSet<TProjection>();
+            List<TProjection> pasteProjections = new List<TProjection>();
+            List<UndoRedoArg> undoRedoArguments = new List<UndoRedoArg>();
+            if (gridView.ActiveEditor == null && (gridView.GetType() == typeof(TView)))
+            {
+                var gridTView = gridView as TView;
+                TableView gridTableView = gridTView as TableView;
+                TreeListView gridTreeListView = gridTView as TreeListView;
+
+                List<List<string>> row_data = new List<List<string>>();
+                foreach (var row in RowData)
+                {
+                    List<string> column_data = row.Split('\t').ToList();
+                    row_data.Add(column_data);
+                }
+
+                var grouped_results = row_data
+                    .SelectMany(inner => inner.Select((item, index) => new { item, index }))
+                    .GroupBy(i => i.index, i => i.item)
+                    .Select(g => g.ToList())
+                    .ToList();
+
+                var selected_cells = gridTableView.GetSelectedCells();
+                if (selected_cells.Count == 0)
+                    return pasteProjections;
+
+                var selected_cells_groupby_columns = selected_cells.GroupBy(x => x.Column.FieldName).Select(group => new { FieldName = group.Key, Cells = group.ToList() });
+                if (grouped_results.Count == 0)
+                {
+                    foreach(var selected_cell in selected_cells)
+                    {
+                        int row_handle = selected_cell.RowHandle;
+                        TProjection editing_row = (TProjection)sourceGridControl.GetRow(row_handle);
+                        PasteResult result = pasteDataInProjectionColumn(editing_row, selected_cell.Column, string.Empty, undoRedoArguments);
+                        if (!preValidatedProjections.Any(x => x.GetHashCode() == editing_row.GetHashCode()))
+                            preValidatedProjections.Add(editing_row);
+                    }
+                }
+                //if copied only a row
+                else if(grouped_results.All(x => x.Count == 1) && (grouped_results.Count == 1 || (selected_cells_groupby_columns.Count() == grouped_results.Count)))
+                {
+                    int column_offset = 0;
+                    foreach(var selected_column in selected_cells_groupby_columns)
+                    {
+                        int validated_column_offset = column_offset > (grouped_results.Count - 1) ? grouped_results.Count - 1 : column_offset;
+                        var paste_value = grouped_results[validated_column_offset];
+                        column_offset += 1;
+                        //since we've already verified that each column group only has a row
+                        string paste_data = paste_value.First();
+                        List<GridColumn> visible_columns = gridTableView.VisibleColumns.ToList();
+
+                        foreach (var selected_cell in selected_column.Cells)
+                        {
+                            int column_visible_index = selected_cell.Column.VisibleIndex;
+                            int row_handle = selected_cell.RowHandle;
+                            GridColumn current_column = visible_columns[column_visible_index];
+                            TProjection editing_row = (TProjection)sourceGridControl.GetRow(row_handle);
+                            PasteResult result = pasteDataInProjectionColumn(editing_row, current_column, paste_data, undoRedoArguments);
+                            if (result == PasteResult.Skip)
+                                continue;
+
+                            if (!preValidatedProjections.Any(x => x.GetHashCode() == editing_row.GetHashCode()))
+                                preValidatedProjections.Add(editing_row);
+                        }
+                    }
+                }
+                else
+                {
+                    GridCell first_selected_cell = selected_cells.First();
+                    int first_row_handle = first_selected_cell.RowHandle;
+                    int first_row_visible_index = sourceGridControl.GetRowVisibleIndexByHandle(first_row_handle);
+                    int first_column_visible_index = first_selected_cell.Column.VisibleIndex;
+                    List<GridColumn> visible_columns = gridTableView.VisibleColumns.ToList();
+
+                    for (int i = 0; i < grouped_results.Count; i++)
+                    {
+                        GridColumn current_column = visible_columns[first_column_visible_index + i];
+                        string column_name = current_column.FieldName;
+                        int row_visible_index_offset = 0;
+
+                        foreach (string rowValue in grouped_results[i])
+                        {
+                            int current_row_visible_index = first_row_visible_index + row_visible_index_offset;
+                            int current_row_handle = sourceGridControl.GetRowHandleByVisibleIndex(current_row_visible_index);
+                            TProjection editing_row = (TProjection)sourceGridControl.GetRow(current_row_handle);
+                            row_visible_index_offset += 1;
+
+                            PasteResult result = pasteDataInProjectionColumn(editing_row, current_column, rowValue, undoRedoArguments);
+                            if (result == PasteResult.Skip)
+                                continue;
+
+                            //only add once
+                            if (i == 0)
+                                preValidatedProjections.Add(editing_row);
+                        }
+                    }
+                }
+                
+                undo_redo_manager.PauseActionId();
+                foreach (TProjection preValidatedProjection in preValidatedProjections)
+                {
+                    var errorMessage = "Duplicate exists on constraint field named: ";
+                    if (isValidProjectionFunc(preValidatedProjection, ref errorMessage))
+                        if (onBeforePasteWithValidationFunc != null)
+                        {
+                            if (onBeforePasteWithValidationFunc(preValidatedProjection))
+                            {
+                                IEnumerable<UndoRedoArg> projection_undo_redos = undoRedoArguments.Where(x => x.Projection == preValidatedProjection);
+                                foreach (UndoRedoArg projection_undo_redo in projection_undo_redos)
+                                    undo_redo_manager.AddUndo(projection_undo_redo.Projection, projection_undo_redo.FieldName, projection_undo_redo.OldValue, projection_undo_redo.NewValue, EntityMessageType.Changed);
+
+                                pasteProjections.Add(preValidatedProjection);
+                            }
+                        }
+                        else
+                        {
+                            IEnumerable<UndoRedoArg> projection_undo_redos = undoRedoArguments.Where(x => x.Projection == preValidatedProjection);
+                            foreach (UndoRedoArg projection_undo_redo in projection_undo_redos)
+                                undo_redo_manager.AddUndo(projection_undo_redo.Projection, projection_undo_redo.FieldName, projection_undo_redo.OldValue, projection_undo_redo.NewValue, EntityMessageType.Changed);
+
+                            pasteProjections.Add(preValidatedProjection);
+                        }
+                    else
+                    {
+                        if (messageBoxService != null)
+                        {
+                            errorMessage += " , paste operation will be terminated";
+                            messageBoxService.ShowMessage(errorMessage, CommonResources.Exception_UpdateErrorCaption, MessageButton.OK);
+                        }
+
+                        break;
+                    }
+                }
+
+            }
+
+            undo_redo_manager.UnpauseActionId();
+            return pasteProjections;
+        }
+
+        public List<TProjection> PastingFromClipboard<TView>(PastingFromClipboardEventArgs e, bool dontSplit)
+        where TView : DataViewBase
+        {
+            var PasteString = Clipboard.GetText();
+            string[] RowData;
+            if (dontSplit)
+            {
+                string format_string = PasteString.Substring(1, PasteString.Length - 2);
+                RowData = new string[] { format_string };
+            }
+            else
+                RowData = PasteString.Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+
             var sourceGridControl = (GridControl)e.Source;
             var gridView = sourceGridControl.View;
 
@@ -50,151 +230,12 @@ namespace BaseModel.Data.Helpers
 
                     var ColumnStrings = Row.Split('\t');
                     for (var i = 0; i < ColumnStrings.Count(); i++)
-                        try
-                        {
-                            ColumnBase copyColumn = gridTableView != null ? gridTableView.VisibleColumns[i] : gridTreeListView.VisibleColumns[i];
-
-                            if (copyColumn.ReadOnly)
-                                continue;
-
-                            var columnName = copyColumn.FieldName;
-                            var columnPropertyInfo = DataUtils.GetNestedPropertyInfo(columnName, projection);
-                            if (columnPropertyInfo != null)
-                                if (columnPropertyInfo.PropertyType == typeof(Guid?) ||
-                                    columnPropertyInfo.PropertyType == typeof(Guid))
-                                {
-                                    Type editSettingsType = copyColumn.ActualEditSettings.GetType();
-                                    object editSettings = null;
-                                    if(editSettingsType == typeof(ComboBoxEditSettings))
-                                        editSettings = copyColumn.ActualEditSettings as ComboBoxEditSettings;
-                                    else if (editSettingsType == typeof(LookUpEditSettings))
-                                        editSettings = copyColumn.ActualEditSettings as LookUpEditSettingsBase;
-
-                                    if (editSettings != null)
-                                    {
-                                        var copyColumnValueMember = (string)editSettings.GetType().GetProperty("ValueMember").GetValue(editSettings);
-                                        var copyColumnDisplayMember = (string)editSettings.GetType().GetProperty("DisplayMember").GetValue(editSettings);
-                                        var copyColumnItemsSource = (IEnumerable<object>)editSettings.GetType().GetProperty("ItemsSource").GetValue(editSettings);
-                                        Guid? itemValue = null;
-                                        foreach (var copyColumnItem in copyColumnItemsSource)
-                                        {
-                                            var itemDisplayMemberPropertyInfo =
-                                                copyColumnItem.GetType().GetProperty(copyColumnDisplayMember);
-                                            var itemValueMemberPropertyInfo =
-                                                copyColumnItem.GetType().GetProperty(copyColumnValueMember);
-                                            if (itemDisplayMemberPropertyInfo.GetValue(copyColumnItem).ToString().ToUpper() ==
-                                                ColumnStrings[i].ToUpper())
-                                            {
-                                                itemValue = (Guid)itemValueMemberPropertyInfo.GetValue(copyColumnItem);
-                                                break;
-                                            }
-                                        }
-
-                                        if (itemValue != null)
-                                            DataUtils.SetNestedValue(columnName, projection, itemValue);
-                                        else
-                                            continue;
-                                    }
-                                    else if (ColumnStrings[i] != Guid.Empty.ToString())
-                                    {
-                                        var newGuid = new Guid(ColumnStrings[i]);
-                                        DataUtils.SetNestedValue(columnName, projection, newGuid);
-                                    }
-                                }
-                                else if (columnPropertyInfo.PropertyType == typeof(string))
-                                    DataUtils.SetNestedValue(columnName, projection, ColumnStrings[i]);
-                                else if (columnPropertyInfo.PropertyType.BaseType == typeof(Enum))
-                                {
-                                    var enumValues = Enum.GetValues(columnPropertyInfo.PropertyType);
-                                    foreach (var enumValue in enumValues)
-                                    {
-                                        var fieldInfo = enumValue.GetType().GetField(enumValue.ToString());
-                                        if (fieldInfo == null)
-                                            return pasteProjections;
-
-                                        var descriptionAttributes =
-                                            fieldInfo.GetCustomAttributes(typeof(DisplayAttribute), false) as
-                                                DisplayAttribute[];
-                                        if (descriptionAttributes == null || descriptionAttributes.Count() == 0)
-                                            return pasteProjections;
-
-                                        var descriptionAttribute = descriptionAttributes.First();
-                                        if (ColumnStrings[i] == descriptionAttribute.Name)
-                                        {
-                                            DataUtils.SetNestedValue(columnName, projection, enumValue);
-                                            continue;
-                                        }
-                                    }
-                                }
-                                else if (columnPropertyInfo.PropertyType == typeof(decimal) ||
-                                         columnPropertyInfo.PropertyType == typeof(decimal?)
-                                         || columnPropertyInfo.PropertyType == typeof(int) ||
-                                         columnPropertyInfo.PropertyType == typeof(int?)
-                                         || columnPropertyInfo.PropertyType == typeof(double) ||
-                                         columnPropertyInfo.PropertyType == typeof(double?))
-                                {
-                                    var rgx = new Regex("[^0-9a-z\\.]");
-                                    var cleanColumnString = rgx.Replace(ColumnStrings[i], string.Empty);
-
-                                    if (columnPropertyInfo.PropertyType == typeof(decimal) ||
-                                        columnPropertyInfo.PropertyType == typeof(decimal?))
-                                    {
-                                        decimal getDecimal;
-                                        if (decimal.TryParse(cleanColumnString, out getDecimal))
-                                        {
-                                            if (columnName.Contains('%') || columnName.ToUpper().Contains("PERCENT"))
-                                                getDecimal /= 100;
-
-                                            DataUtils.SetNestedValue(columnName, projection, getDecimal);
-                                        }
-                                        else
-                                            return pasteProjections;
-                                    }
-                                    else if (columnPropertyInfo.PropertyType == typeof(int) ||
-                                             columnPropertyInfo.PropertyType == typeof(int?))
-                                    {
-                                        int getInt;
-                                        if (int.TryParse(cleanColumnString, out getInt))
-                                            DataUtils.SetNestedValue(columnName, projection, getInt);
-                                        else
-                                            return pasteProjections;
-                                    }
-                                    else if (columnPropertyInfo.PropertyType == typeof(double) ||
-                                             columnPropertyInfo.PropertyType == typeof(double?))
-                                    {
-                                        double getDouble;
-                                        if (double.TryParse(cleanColumnString, out getDouble))
-                                        {
-                                            if (columnName.Contains('%') || columnName.ToUpper().Contains("PERCENT"))
-                                                getDouble /= 100;
-
-                                            DataUtils.SetNestedValue(columnName, projection, getDouble);
-                                        }
-                                        else
-                                            return pasteProjections;
-                                    }
-                                    else
-                                        return pasteProjections;
-                                }
-                                else if (columnPropertyInfo.PropertyType == typeof(DateTime?) ||
-                                         columnPropertyInfo.PropertyType == typeof(DateTime))
-                                {
-                                    DateTime getDateTime;
-                                    if (DateTime.TryParse(ColumnStrings[i], out getDateTime))
-                                        DataUtils.SetNestedValue(columnName, projection, getDateTime);
-                                    else
-                                        continue;
-                                }
-                                else
-                                    continue;
-                            else
-                                continue;
-                        }
-                        catch(Exception ex)
-                        {
-                            string s = ex.ToString();
-                            return pasteProjections;
-                        }
+                    {
+                        ColumnBase copyColumn = gridTableView != null ? gridTableView.VisibleColumns[i] : gridTreeListView.VisibleColumns[i];
+                        PasteResult result = pasteDataInProjectionColumn(projection, copyColumn, ColumnStrings[i]);
+                        if (result == PasteResult.Skip)
+                            continue;
+                    }
 
                     var errorMessage = "Duplicate exists on constraint field named: ";
                     if (isValidProjectionFunc(projection, ref errorMessage))
@@ -220,6 +261,149 @@ namespace BaseModel.Data.Helpers
 
             return pasteProjections;
         }
+
+        private PasteResult pasteDataInProjectionColumn(TProjection projection, ColumnBase column, string pasteData, List<UndoRedoArg> undoRedoArguments = null)
+        {
+            if (column.ReadOnly)
+                return PasteResult.Skip;
+
+            string column_name = column.FieldName;
+            PropertyInfo columnPropertyInfo = DataUtils.GetNestedPropertyInfo(column_name, projection);
+            if (columnPropertyInfo != null)
+                if (columnPropertyInfo.PropertyType == typeof(Guid?) || columnPropertyInfo.PropertyType == typeof(Guid))
+                {
+                    Type editSettingsType = column.ActualEditSettings.GetType();
+                    object editSettings = null;
+                    if (editSettingsType == typeof(ComboBoxEditSettings))
+                        editSettings = column.ActualEditSettings as ComboBoxEditSettings;
+                    else if (editSettingsType == typeof(LookUpEditSettings))
+                        editSettings = column.ActualEditSettings as LookUpEditSettingsBase;
+
+                    if (editSettings != null)
+                    {
+                        var copyColumnValueMember = (string)editSettings.GetType().GetProperty("ValueMember").GetValue(editSettings);
+                        var copyColumnDisplayMember = (string)editSettings.GetType().GetProperty("DisplayMember").GetValue(editSettings);
+                        var copyColumnItemsSource = (IEnumerable<object>)editSettings.GetType().GetProperty("ItemsSource").GetValue(editSettings);
+                        Guid? guid_value = null;
+                        foreach (var copyColumnItem in copyColumnItemsSource)
+                        {
+                            var itemDisplayMemberPropertyInfo =
+                                copyColumnItem.GetType().GetProperty(copyColumnDisplayMember);
+                            var itemValueMemberPropertyInfo =
+                                copyColumnItem.GetType().GetProperty(copyColumnValueMember);
+                            if (itemDisplayMemberPropertyInfo.GetValue(copyColumnItem).ToString().ToUpper() == pasteData.ToUpper())
+                            {
+                                guid_value = (Guid)itemValueMemberPropertyInfo.GetValue(copyColumnItem);
+                                break;
+                            }
+                        }
+
+                        if (guid_value != null)
+                            return tryPasteNewValueInProjectionColumn(projection, column_name, guid_value, undoRedoArguments);
+                        else
+                            return PasteResult.Skip;
+                    }
+                    else if (pasteData != Guid.Empty.ToString())
+                    {
+                        Guid new_guid = new Guid(pasteData);
+                        return tryPasteNewValueInProjectionColumn(projection, column_name, new_guid, undoRedoArguments);
+                    }
+                }
+                else if (columnPropertyInfo.PropertyType == typeof(string))
+                {
+                    string new_string = pasteData.ToString();
+                    return tryPasteNewValueInProjectionColumn(projection, column_name, new_string, undoRedoArguments);
+                }
+                else if (columnPropertyInfo.PropertyType.BaseType == typeof(Enum))
+                {
+                    var enumValues = Enum.GetValues(columnPropertyInfo.PropertyType);
+                    foreach (var enum_value in enumValues)
+                    {
+                        var fieldInfo = enum_value.GetType().GetField(enum_value.ToString());
+                        if (fieldInfo == null)
+                            return PasteResult.Skip;
+
+                        var descriptionAttributes = fieldInfo.GetCustomAttributes(typeof(DisplayAttribute), false) as DisplayAttribute[];
+                        if (descriptionAttributes == null || descriptionAttributes.Count() == 0)
+                            return PasteResult.Skip;
+
+                        var descriptionAttribute = descriptionAttributes.First();
+                        if (pasteData == descriptionAttribute.Name)
+                            return tryPasteNewValueInProjectionColumn(projection, column_name, enum_value, undoRedoArguments);
+                    }
+                }
+                else if (columnPropertyInfo.PropertyType == typeof(decimal) || columnPropertyInfo.PropertyType == typeof(decimal?) || columnPropertyInfo.PropertyType == typeof(int) || columnPropertyInfo.PropertyType == typeof(int?) || columnPropertyInfo.PropertyType == typeof(double) || columnPropertyInfo.PropertyType == typeof(double?))
+                {
+                    var rgx = new Regex("[^0-9a-z\\.]");
+                    var cleanColumnString = rgx.Replace(pasteData, string.Empty);
+
+                    if (columnPropertyInfo.PropertyType == typeof(decimal) ||
+                        columnPropertyInfo.PropertyType == typeof(decimal?))
+                    {
+                        decimal decimal_value;
+                        if (decimal.TryParse(cleanColumnString, out decimal_value))
+                        {
+                            if (column_name.Contains('%') || column_name.ToUpper().Contains("PERCENT"))
+                                decimal_value /= 100;
+
+                            return tryPasteNewValueInProjectionColumn(projection, column_name, decimal_value, undoRedoArguments);
+                        }
+                        else
+                            return PasteResult.Skip;
+                    }
+                    else if (columnPropertyInfo.PropertyType == typeof(int) ||
+                             columnPropertyInfo.PropertyType == typeof(int?))
+                    {
+                        int int_value;
+                        if (int.TryParse(cleanColumnString, out int_value))
+                            return tryPasteNewValueInProjectionColumn(projection, column_name, int_value, undoRedoArguments);
+                        else
+                            return PasteResult.Skip;
+                    }
+                    else if (columnPropertyInfo.PropertyType == typeof(double) ||
+                             columnPropertyInfo.PropertyType == typeof(double?))
+                    {
+                        double double_value;
+                        if (double.TryParse(cleanColumnString, out double_value))
+                        {
+                            if (column_name.Contains('%') || column_name.ToUpper().Contains("PERCENT"))
+                                double_value /= 100;
+
+                            return tryPasteNewValueInProjectionColumn(projection, column_name, double_value, undoRedoArguments);
+                        }
+                        else
+                            return PasteResult.Skip;
+                    }
+                    else
+                        return PasteResult.Skip;
+                }
+                else if (columnPropertyInfo.PropertyType == typeof(DateTime?) || columnPropertyInfo.PropertyType == typeof(DateTime))
+                {
+                    DateTime datetime_value;
+                    if (DateTime.TryParse(pasteData, out datetime_value))
+                        return tryPasteNewValueInProjectionColumn(projection, column_name, datetime_value, undoRedoArguments);
+                    else
+                        return PasteResult.Skip;
+                }
+                else
+                    return PasteResult.Skip;
+            else
+                return PasteResult.Skip;
+
+            return PasteResult.Success;
+        }
+
+        private PasteResult tryPasteNewValueInProjectionColumn(TProjection projection, string column_name, object new_value, List<UndoRedoArg> undoRedoArguments = null)
+        {
+            object old_value = DataUtils.GetNestedValue(column_name, projection);
+            if (!DataUtils.TrySetNestedValue(column_name, projection, new_value))
+                return PasteResult.Skip;
+            else if (undoRedoArguments != null)
+                undoRedoArguments.Add(new UndoRedoArg() { FieldName = column_name, Projection = projection, OldValue = old_value, NewValue = new_value });
+
+            return PasteResult.Success;
+        }
+
     }
 
     public static class MorphUtils<TFromEntity, TToEntity>
@@ -426,6 +610,20 @@ namespace BaseModel.Data.Helpers
             }
 
             return requiredPropertyStrings;
+        }
+
+        public static bool TrySetNestedValue(string propertyString, object parentInstance, object value)
+        {
+            try
+            {
+                SetNestedValue(propertyString, parentInstance, value);
+            }
+            catch
+            {
+                return false;
+            }
+
+            return true;
         }
 
         /// <summary>

@@ -19,6 +19,7 @@ using DevExpress.Xpf.Editors;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Timers;
+using System.Collections;
 
 namespace BaseModel.ViewModel.Loader
 {
@@ -169,7 +170,7 @@ namespace BaseModel.ViewModel.Loader
             BackgroundRefresh();
 
             post_loaded_dispatcher_timer = new Timer();
-            post_loaded_dispatcher_timer.Interval = 3000;
+            post_loaded_dispatcher_timer.Interval = 500;
             post_loaded_dispatcher_timer.Elapsed += post_loaded_dispatcher_timer_tick;
             post_loaded_dispatcher_timer.Start();
         }
@@ -183,7 +184,13 @@ namespace BaseModel.ViewModel.Loader
         protected virtual void OnAfterAssignedCallbackAndRaisePropertyChanged()
         {
             if (GridControlService != null)
+            {
                 GridControlService.SetCheckedListFilterPopUpMode();
+                GridControlService.SetGridColumnSortMode();
+            }
+
+
+            PersistentLayoutHelper.TryDeserializeLayout(LayoutSerializationService, ViewName);
         }
 
         protected void ApplyProjectionPropertiesToEntity(TMainProjectionEntity projectionEntity, TMainEntity entity)
@@ -334,7 +341,7 @@ namespace BaseModel.ViewModel.Loader
         }
 
         public ObservableCollection<TMainProjectionEntity> DisplaySelectedEntities { get; set; }
-        public Action OnSelectedEntitiesChangedCallBack;
+        public Action<object, System.Collections.Specialized.NotifyCollectionChangedEventArgs> OnSelectedEntitiesChangedCallBack;
         private BackgroundWorker refreshBackgroundWorker;
 
         private void initializePresentationProperties()
@@ -349,7 +356,7 @@ namespace BaseModel.ViewModel.Loader
 
         private void DisplaySelectedEntities_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
-            OnSelectedEntitiesChangedCallBack?.Invoke();
+            OnSelectedEntitiesChangedCallBack?.Invoke(sender, e);
         }
 
         public virtual void RefreshSelectedEntity()
@@ -458,7 +465,7 @@ namespace BaseModel.ViewModel.Loader
 
         public virtual void OnLoaded()
         {
-            PersistentLayoutHelper.TryDeserializeLayout(LayoutSerializationService, ViewName);
+            //PersistentLayoutHelper.TryDeserializeLayout(LayoutSerializationService, ViewName);
         }
 
         public bool IsLoading
@@ -527,7 +534,7 @@ namespace BaseModel.ViewModel.Loader
 
         protected virtual string ExportExcelFilename()
         {
-            return "grid_export.xls";
+            return "grid_export.xlsx";
         }
 
         public virtual void ExportToExcel()
@@ -596,11 +603,26 @@ namespace BaseModel.ViewModel.Loader
         /// </summary>
         public virtual void OnAfterSavedSendMessage(string entityName, string key, string messageType, string sender)
         {
-            
+
         }
         #endregion
 
         #region View Behavior
+        /// <summary>
+        /// Resolve problem in the view group value repeats itself
+        /// </summary>
+        public void CustomColumnGroup(CustomColumnSortEventArgs e)
+        {
+            if (e.Value1 != null && e.Value2 != null)
+            {
+                string first_department_string = e.Value1.ToString();
+                string second_department_string = e.Value2.ToString();
+                int res = Comparer.Default.Compare(first_department_string, second_department_string);
+                e.Result = res;
+                e.Handled = true;
+            }
+        }
+
         /// <summary>
         /// Influence column(s) when changes happens in other column
         /// </summary>

@@ -53,7 +53,7 @@
         <Setter Property="ShowLoadingPanel" Value="{Binding DataContext.IsLoading, ElementName=userControl}" />
         <Setter Property="ItemsSource" Value="{Binding DataContext.DisplayEntities, ElementName=userControl}" />
         <Setter Property="ClipboardCopyMode" Value="ExcludeHeader" />
-        <Setter Property="SelectionMode" Value="Row" />
+        <Setter Property="SelectionMode" Value="{Binding SelectMode}" />
         <Setter Property="CurrentItem" Value="{Binding DataContext.DisplaySelectedEntity, Mode=TwoWay, ElementName=userControl}" />
         <Setter Property="SelectedItems" Value="{Binding DataContext.DisplaySelectedEntities, Mode=TwoWay, ElementName=userControl}" />
         <Setter Property="ShowBorder" Value="False" />
@@ -67,17 +67,14 @@
             <Setter.Value>
                 <DataTemplate>
                     <ItemsControl>
-                        <dxmvvm:KeyToCommand Command="{Binding ShowPopUpCommand}" KeyGesture="Space"
-                                             CommandParameter="{Binding ElementName=GridControl}" />
-                        <!--<dxmvvm:EventToCommand Command="{Binding DataContext.LoadedCommand, ElementName=userControl}"
-                                               EventName="Loaded" />-->
+                        <dxmvvm:KeyToCommand Command="{Binding ShowPopUpCommand}" KeyGesture="Space" CommandParameter="{Binding ElementName=GridControl}" />
                         <dxmvvm:EventToCommand EventName="PreviewMouseWheel" Command="{Binding Grid_MouseWheelCommand}" PassEventArgsToCommand="True" />
+                        <dxmvvm:EventToCommand EventName="CustomColumnGroup" Command="{Binding DataContext.CustomColumnGroupCommand, ElementName=userControl}" PassEventArgsToCommand="True" />
                     </ItemsControl>
                 </DataTemplate>
             </Setter.Value>
         </Setter>
         <Setter Property="LayoutTransform" Value="{Binding Zoom, Mode=OneWay}" />
-        
     </Style>
     <Style x:Key="DefaultDetailGridControlTemplate" TargetType="{x:Type dxg:GridControl}">
         <Setter Property="ShowLoadingPanel" Value="{Binding DataContext.IsLoading, ElementName=userControl}" />
@@ -145,7 +142,7 @@
         <Setter Property="ShowAutoFilterRow" Value="True" />
         <Setter Property="ShowCriteriaInAutoFilterRow" Value="True" />
         <Setter Property="ShowFixedTotalSummary" Value="False" />
-        <Setter Property="UseLightweightTemplates" Value="{x:Null}" />
+        <Setter Property="UseLightweightTemplates" Value="All" />
     </Style>
     <Style x:Key="DefaultDetailTableViewTemplate" TargetType="{x:Type dxg:TableView}">
         <Setter Property="dxmvvm:Interaction.BehaviorsTemplate">

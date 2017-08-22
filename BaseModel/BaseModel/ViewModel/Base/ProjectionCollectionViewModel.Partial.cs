@@ -1064,6 +1064,18 @@ namespace BaseModel.ViewModel.Base
         public Func<TProjection, bool> OnBeforePasteWithValidation;
         public Action<PasteStatus> PasteListener;
         public bool DisablePasting { get; set; }
+        bool isPasteCellLevel;
+        public bool IsPasteCellLevel
+        {
+            get => isPasteCellLevel;
+            set
+            {
+                isPasteCellLevel = value;
+                this.RaisePropertyChanged(x => x.SelectMode);
+            }
+        }
+
+        public MultiSelectMode SelectMode => IsPasteCellLevel ? MultiSelectMode.Cell : MultiSelectMode.Row;
 
         /// <summary>
         /// Converts clipboard text into entity values and saves to database
@@ -1073,16 +1085,28 @@ namespace BaseModel.ViewModel.Base
         {
             if (DisablePasting)
                 return;
-
+            
             PasteListener?.Invoke(PasteStatus.Start);
             CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, MessageBoxService);
-            List<TProjection> pasteProjections = copyPasteHelper.PastingFromClipboard<TableView>(e);
 
-            if(pasteProjections.Count > 0)
+            bool dontSplit = false;
+            if ((Keyboard.Modifiers | ModifierKeys.Shift) == Keyboard.Modifiers)
+                dontSplit = true;
+
+            List<TProjection> pasteProjections;
+            if (IsPasteCellLevel)
+                pasteProjections = copyPasteHelper.PastingFromClipboardCellLevel<TableView>(e, dontSplit, EntitiesUndoRedoManager);
+            else
+                pasteProjections = copyPasteHelper.PastingFromClipboard<TableView>(e, dontSplit);
+
+            if (pasteProjections.Count > 0)
             {
-                EntitiesUndoRedoManager.PauseActionId();
-                pasteProjections.ForEach(x => EntitiesUndoRedoManager.AddUndo(x, null, null, null, EntityMessageType.Added));
-                EntitiesUndoRedoManager.UnpauseActionId();
+                if (!IsPasteCellLevel)
+                {
+                    EntitiesUndoRedoManager.PauseActionId();
+                    pasteProjections.ForEach(x => EntitiesUndoRedoManager.AddUndo(x, null, null, null, EntityMessageType.Added));
+                    EntitiesUndoRedoManager.UnpauseActionId();
+                }
 
                 BulkSave(pasteProjections);
                 e.Handled = true;
@@ -1102,7 +1126,13 @@ namespace BaseModel.ViewModel.Base
 
             PasteListener?.Invoke(PasteStatus.Start);
             CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, MessageBoxService);
-            List<TProjection> pasteProjections = copyPasteHelper.PastingFromClipboard<TreeListView>(e);
+            bool dontSplit = false;
+            if ((Keyboard.Modifiers | ModifierKeys.Shift) == Keyboard.Modifiers)
+            {
+                dontSplit = true;
+            }
+
+            List<TProjection> pasteProjections = copyPasteHelper.PastingFromClipboard<TreeListView>(e, dontSplit);
 
             if (pasteProjections.Count > 0)
             {

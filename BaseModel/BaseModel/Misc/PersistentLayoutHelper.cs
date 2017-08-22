@@ -18,8 +18,7 @@ namespace BaseModel.Misc
             get
             {
                 if (persistentViewsLayout == null)
-                    persistentViewsLayout =
-                        LogicalLayoutSerializationHelper.Deserialize(LayoutSettings.Default.ViewsLayout);
+                    persistentViewsLayout = LogicalLayoutSerializationHelper.Deserialize(LayoutSettings.Default.ViewsLayout);
                 return persistentViewsLayout;
             }
         }
