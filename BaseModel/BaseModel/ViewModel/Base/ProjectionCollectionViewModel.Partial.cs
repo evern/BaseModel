@@ -1131,7 +1131,7 @@ namespace BaseModel.ViewModel.Base
             string[] RowData;
             if (dontSplit)
             {
-                string format_string = PasteString.Substring(1, PasteString.Length - 2);
+                string format_string = PasteString.Replace(@"""", "");
                 RowData = new string[] { format_string };
             }
             else
