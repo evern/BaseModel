@@ -1154,9 +1154,9 @@ namespace BaseModel.ViewModel.Base
                 }
 
                 BulkSave(pasteProjections);
-                e.Handled = true;
             }
 
+            e.Handled = true;
             PasteListener?.Invoke(PasteStatus.Stop);
         }
 
@@ -1198,9 +1198,9 @@ namespace BaseModel.ViewModel.Base
                 EntitiesUndoRedoManager.UnpauseActionId();
 
                 BulkSave(pasteProjections);
-                e.Handled = true;
             }
 
+            e.Handled = true;
             PasteListener?.Invoke(PasteStatus.Stop);
         }
 
