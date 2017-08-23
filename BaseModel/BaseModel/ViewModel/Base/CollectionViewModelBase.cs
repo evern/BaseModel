@@ -180,7 +180,7 @@ namespace BaseModel.ViewModel.Base
 
         protected virtual void OnEntityDeleted(TPrimaryKey primaryKey, TEntity entity, bool willPerformBulkRefresh = false)
         {
-            Messenger.Default.Send(new EntityMessage<TEntity, TPrimaryKey>(primaryKey, EntityMessageType.Deleted, this, string.Empty, willPerformBulkRefresh));
+            Messenger.Default.Send(new EntityMessage<TEntity, TPrimaryKey>(primaryKey, EntityMessageType.Deleted, this, CurrentHWID, willPerformBulkRefresh));
             OnAfterDeletedSendMessage?.Invoke(typeof(TEntity).ToString(), primaryKey.ToString(), EntityMessageType.Deleted.ToString(), ToString());
         }
 
@@ -192,7 +192,7 @@ namespace BaseModel.ViewModel.Base
             try
             {
                 Messenger.Default.Send(new EntityMessage<TEntity, TPrimaryKey>(primaryKey,
-    isNewEntity ? EntityMessageType.Added : EntityMessageType.Changed, this, string.Empty, willPerformBulkRefresh));
+    isNewEntity ? EntityMessageType.Added : EntityMessageType.Changed, this, CurrentHWID, willPerformBulkRefresh));
 
                 OnAfterSavedSendMessage?.Invoke(typeof(TEntity).ToString(), primaryKey.ToString(),
                 isNewEntity ? EntityMessageType.Added.ToString() : EntityMessageType.Changed.ToString(), ToString());
@@ -370,6 +370,9 @@ namespace BaseModel.ViewModel.Base
                     var projectionEntity = projectionEntitiesWithTag.First(x => x.Key == entityWithTag.Key).Value;
                     var isNewEntity = isNewEntityWithTag.First(x => x.Key == entityWithTag.Key).Value;
                     Repository.SetProjectionPrimaryKey(projectionEntity, primaryKey);
+
+                    //Need to put here because any updates associated with the entity need to be committed before sending message
+                    OnAfterEntitySavedCallBack?.Invoke(projectionEntity, isNewEntity);
                     OnEntitySaved(primaryKey, projectionEntity, entityWithTag.Value, isNewEntity);
                 }
             }

@@ -72,6 +72,7 @@ namespace BaseModel.ViewModel.Loader
             collectionViewModel.OnBeforeEntitiesChangedCallBack = collectionViewModelBeforeChangedCallBack;
             collectionViewModel.OnAfterDeletedSendMessage = owner.OnAfterDeletedSendMessage;
             collectionViewModel.OnAfterSavedSendMessage = owner.OnAfterSavedSendMessage;
+            collectionViewModel.CurrentHWID = owner.CurrentHWID;
             collectionViewModel.Entities.ToList();
         }
 

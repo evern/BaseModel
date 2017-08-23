@@ -35,7 +35,7 @@ namespace BaseModel.ViewModel.Loader
 
         public CollectionViewModel<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey, TMainEntityUnitOfWork> MainViewModel { get; set; }
         public bool SuppressNotification { get; set; }
-
+        public string CurrentHWID { get; set; }
         //allows view state to interact with OnMainViewModelRefreshed
         protected object onMessageSender;
         protected Dispatcher mainThreadDispatcher = Application.Current.Dispatcher;
@@ -44,7 +44,12 @@ namespace BaseModel.ViewModel.Loader
         Timer post_loaded_dispatcher_timer;
         public void CollectionViewModelWrapper()
         {
+            CurrentHWID = string.Empty;
+        }
 
+        public void SetCurrentHWID(string hwid)
+        {
+            CurrentHWID = hwid;
         }
 
         public virtual void OnParameterChanged(object parameter)
@@ -87,8 +92,7 @@ namespace BaseModel.ViewModel.Loader
                 return;
 
             var currentLoadOrder = entitiesLoader.Min(x => x.LoadOrder);
-            var entitiesLoaderDescription =
-                loaderCollection.First(x => x.LoadOrder == currentLoadOrder);
+            var entitiesLoaderDescription = loaderCollection.First(x => x.LoadOrder == currentLoadOrder);
 
             entitiesLoaderDescription.CreateCollectionViewModel();
         }
@@ -163,7 +167,7 @@ namespace BaseModel.ViewModel.Loader
                 cleanUpEntitiesLoader();
                 return;
             }
-
+            
             MainViewModel.SelectedEntities = this.DisplaySelectedEntities;
             //MainViewModel.AfterBulkOperationRefreshCallBack = this.FullRefresh;
             MainViewModel.ApplyProjectionPropertiesToEntityCallBack = ApplyProjectionPropertiesToEntity;
@@ -708,5 +712,7 @@ namespace BaseModel.ViewModel.Loader
         bool SuppressNotification { get; set; }
 
         bool SupressCompulsoryEntityNotFoundMessage { get; set; }
+
+        string CurrentHWID { get; set; }
     }
 }

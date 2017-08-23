@@ -68,6 +68,7 @@
                 <DataTemplate>
                     <ItemsControl>
                         <dxmvvm:KeyToCommand Command="{Binding ShowPopUpCommand}" KeyGesture="Space" CommandParameter="{Binding ElementName=GridControl}" />
+                        <dxmvvm:KeyToCommand Command="{Binding DeleteCellContentCommand}" KeyGesture="Delete" CommandParameter="{Binding ElementName=GridControl}" />
                         <dxmvvm:EventToCommand EventName="PreviewMouseWheel" Command="{Binding Grid_MouseWheelCommand}" PassEventArgsToCommand="True" />
                         <dxmvvm:EventToCommand EventName="CustomColumnGroup" Command="{Binding DataContext.CustomColumnGroupCommand, ElementName=userControl}" PassEventArgsToCommand="True" />
                     </ItemsControl>

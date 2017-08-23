@@ -25,6 +25,7 @@ using BaseModel.ViewModel.Services;
 using DevExpress.Xpf.Grid.LookUp;
 using System.Windows.Media;
 using System.Windows.Input;
+using DevExpress.Xpf.Editors.Filtering;
 
 namespace BaseModel.ViewModel.Base
 {
@@ -615,6 +616,20 @@ namespace BaseModel.ViewModel.Base
 
         #endregion
 
+        #region Cell Content Deletion
+        public virtual void DeleteCellContent(GridControl gridControl)
+        {
+            string[] RowData = new string[] { string.Empty };
+            CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, MessageBoxService, ValidateSetValueIsContinueCallBack);
+            List<TProjection> pasteProjections = copyPasteHelper.PastingFromClipboardCellLevel<TableView>(gridControl, RowData, EntitiesUndoRedoManager);
+
+            if (pasteProjections.Count > 0)
+            {
+                BulkSave(pasteProjections);
+            }
+        }
+        #endregion
+
         #region Fill Down Convention
 
         public Func<IEnumerable<TProjection>, GridMenuInfo, bool> CanFillDownCallBack;
@@ -646,7 +661,7 @@ namespace BaseModel.ViewModel.Base
 
         public void Fill(object button, bool isUp)
         {
-            var info = GridPopupMenuBase.GetGridMenuInfo((DependencyObject)button) as GridMenuInfo;
+            GridMenuInfo info = GridPopupMenuBase.GetGridMenuInfo((DependencyObject)button) as GridMenuInfo;
             object valueToFill;
             object nextValueInSequence;
 
@@ -676,7 +691,7 @@ namespace BaseModel.ViewModel.Base
 
             if (!isUp)
             {
-                for (int i = 1; i < SelectedEntities.Count; i++)
+                for (int i = 0; i < SelectedEntities.Count; i++)
                 {
                     if(enumerationType == EnumerationType.Increase)
                         enumerator += enumerationDifferences;
@@ -689,8 +704,11 @@ namespace BaseModel.ViewModel.Base
 
 
                     TProjection seletedEntity = SelectedEntities[i];
-                    setEntityProperty(seletedEntity, info, valueToFill, numericIndex, enumerator, numericFieldLength);
-                    bulkSaveEntities.Add(seletedEntity);
+                    if (ValidateSetValueIsContinueCallBack == null || ValidateSetValueIsContinueCallBack.Invoke(seletedEntity, info.Column.FieldName, valueToFill))
+                    {
+                        setEntityProperty(seletedEntity, info, valueToFill, numericIndex, enumerator, numericFieldLength);
+                        bulkSaveEntities.Add(seletedEntity);
+                    }
                 }
             }
             else
@@ -707,8 +725,11 @@ namespace BaseModel.ViewModel.Base
                     }
 
                     TProjection seletedEntity = SelectedEntities[i];
-                    setEntityProperty(seletedEntity, info, valueToFill, numericIndex, enumerator, numericFieldLength);
-                    bulkSaveEntities.Add(seletedEntity);
+                    if (ValidateSetValueIsContinueCallBack == null || ValidateSetValueIsContinueCallBack.Invoke(seletedEntity, info.Column.FieldName, valueToFill))
+                    {
+                        setEntityProperty(seletedEntity, info, valueToFill, numericIndex, enumerator, numericFieldLength);
+                        bulkSaveEntities.Add(seletedEntity);
+                    }
                 }
             }
 
@@ -919,7 +940,7 @@ namespace BaseModel.ViewModel.Base
         }
 
         public Func<TProjection, string, object, bool> ValidateBulkEditCallBack;
-        public Action<TProjection, string> OnBeforeBulkEditSaveCallBack;
+        public Func<TProjection, string, object, bool> ValidateSetValueIsContinueCallBack;
 
         public void BulkColumnEdit(object button)
         {
@@ -1012,6 +1033,7 @@ namespace BaseModel.ViewModel.Base
                     }
                 }
 
+                bool isError = false;
                 if(commence_bulk_edit)
                     foreach (var selectedProjection in SelectedEntities)
                     {
@@ -1034,20 +1056,30 @@ namespace BaseModel.ViewModel.Base
                             else if (operation == Arithmetic.Divide && (decimal)newValue > 0)
                                 currentValue = currentValue / (decimal)newValue;
 
-                            DataUtils.SetNestedValue(info.Column.FieldName, selectedProjection, currentValue);
-                            EntitiesUndoRedoManager.AddUndo(selectedProjection, info.Column.FieldName, currentOldValue,
-                                currentValue, EntityMessageType.Changed);
+                            if (ValidateSetValueIsContinueCallBack == null || ValidateSetValueIsContinueCallBack.Invoke(selectedProjection, info.Column.FieldName, currentValue))
+                            {
+                                DataUtils.SetNestedValue(info.Column.FieldName, selectedProjection, currentValue);
+                                EntitiesUndoRedoManager.AddUndo(selectedProjection, info.Column.FieldName, currentOldValue,
+                                    currentValue, EntityMessageType.Changed);
+                            }
+                            else
+                                isError = true;
                         }
                         else
                         {
-                            oldValue = DataUtils.GetNestedValue(info.Column.FieldName, selectedProjection);
-                            DataUtils.SetNestedValue(info.Column.FieldName, selectedProjection, newValue);
-                            EntitiesUndoRedoManager.AddUndo(selectedProjection, info.Column.FieldName, oldValue,
-                                newValue, EntityMessageType.Changed);
+                            if (ValidateSetValueIsContinueCallBack == null || ValidateSetValueIsContinueCallBack.Invoke(selectedProjection, info.Column.FieldName, newValue))
+                            {
+                                oldValue = DataUtils.GetNestedValue(info.Column.FieldName, selectedProjection);
+                                DataUtils.SetNestedValue(info.Column.FieldName, selectedProjection, newValue);
+                                EntitiesUndoRedoManager.AddUndo(selectedProjection, info.Column.FieldName, oldValue,
+                                    newValue, EntityMessageType.Changed);
+                            }
+                            else
+                                isError = true;
                         }
 
-                        OnBeforeBulkEditSaveCallBack?.Invoke(selectedProjection, info.Column.FieldName);
-                        SaveEntities.Add(selectedProjection);
+                        if(!isError)
+                            SaveEntities.Add(selectedProjection);
                     }
 
                 BulkSave(SaveEntities);
@@ -1087,17 +1119,30 @@ namespace BaseModel.ViewModel.Base
                 return;
             
             PasteListener?.Invoke(PasteStatus.Start);
-            CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, MessageBoxService);
+            CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, MessageBoxService, ValidateSetValueIsContinueCallBack);
 
             bool dontSplit = false;
             if ((Keyboard.Modifiers | ModifierKeys.Shift) == Keyboard.Modifiers)
                 dontSplit = true;
 
             List<TProjection> pasteProjections;
-            if (IsPasteCellLevel)
-                pasteProjections = copyPasteHelper.PastingFromClipboardCellLevel<TableView>(e, dontSplit, EntitiesUndoRedoManager);
+
+            var PasteString = Clipboard.GetText();
+            string[] RowData;
+            if (dontSplit)
+            {
+                string format_string = PasteString.Substring(1, PasteString.Length - 2);
+                RowData = new string[] { format_string };
+            }
             else
-                pasteProjections = copyPasteHelper.PastingFromClipboard<TableView>(e, dontSplit);
+                RowData = PasteString.Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+
+            var gridControl = (GridControl)e.Source;
+
+            if (IsPasteCellLevel)
+                pasteProjections = copyPasteHelper.PastingFromClipboardCellLevel<TableView>(gridControl, RowData, EntitiesUndoRedoManager);
+            else
+                pasteProjections = copyPasteHelper.PastingFromClipboard<TableView>(gridControl, RowData);
 
             if (pasteProjections.Count > 0)
             {
@@ -1125,14 +1170,26 @@ namespace BaseModel.ViewModel.Base
                 return;
 
             PasteListener?.Invoke(PasteStatus.Start);
-            CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, MessageBoxService);
+            CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, MessageBoxService, ValidateSetValueIsContinueCallBack);
             bool dontSplit = false;
             if ((Keyboard.Modifiers | ModifierKeys.Shift) == Keyboard.Modifiers)
             {
                 dontSplit = true;
             }
 
-            List<TProjection> pasteProjections = copyPasteHelper.PastingFromClipboard<TreeListView>(e, dontSplit);
+            var PasteString = Clipboard.GetText();
+            string[] RowData;
+            if (dontSplit)
+            {
+                string format_string = PasteString.Substring(1, PasteString.Length - 2);
+                RowData = new string[] { format_string };
+            }
+            else
+                RowData = PasteString.Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+
+            GridControl gridControl = (GridControl)e.Source;
+
+            List<TProjection> pasteProjections = copyPasteHelper.PastingFromClipboard<TreeListView>(gridControl, RowData);
 
             if (pasteProjections.Count > 0)
             {

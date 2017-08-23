@@ -127,13 +127,15 @@ namespace BaseModel.ViewModel.Base
                         message.MessageType, message.Sender, message.WillPerformBulkRefresh))
                     return;
 
+                bool skipOnMessage = message.Sender.ToString() == owner.ToString() && message.HWID == owner.CurrentHWID;
+
                 switch (message.MessageType)
                 {
                     case EntityMessageType.Added:
                         OnEntityAdded(message.PrimaryKey);
                         break;
                     case EntityMessageType.Changed:
-                        OnEntityChanged(message.PrimaryKey, owner.SkipOnMessage);
+                        OnEntityChanged(message.PrimaryKey, skipOnMessage);
                         break;
                     case EntityMessageType.Deleted:
                         OnEntityDeleted(message.PrimaryKey);
@@ -439,7 +441,7 @@ namespace BaseModel.ViewModel.Base
         public Action<object, Type, EntityMessageType, object, bool> OnAfterEntitiesChangedCallBack { get; set; }
         public Action<TProjection, TProjection> OnBeforeAssignRepositoryToExistingProjection { get; set; }
         public Action<TProjection, TProjection> OnMappingAdditionalChangedEntitiesProperties { get; set; }
-        public bool SkipOnMessage { get; set; }
+        public string CurrentHWID { get; set; }
         public bool IsPersistentView { get; set; }
     }
 
@@ -461,7 +463,7 @@ namespace BaseModel.ViewModel.Base
         /// Used to check whether entities are currently being loaded in the background. The property can be used to show the progress indicator.
         /// </summary>
         bool IsLoading { get; }
-        bool SkipOnMessage { get; set; }
+        string CurrentHWID { get; set; }
         bool IsPersistentView { get; set; }
 
         //BaseModel Customization Start
