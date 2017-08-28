@@ -2,9 +2,11 @@
 using BaseModel.Misc;
 using BaseModel.ViewModel.UndoRedo;
 using DevExpress.Mvvm;
+using DevExpress.Xpf.Editors;
 using DevExpress.Xpf.Editors.Settings;
 using DevExpress.Xpf.Grid;
 using DevExpress.Xpf.Grid.LookUp;
+using DevExpress.Xpf.Grid.TreeList;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -204,6 +206,161 @@ namespace BaseModel.Data.Helpers
             return pasteProjections;
         }
 
+        public List<TProjection> PastingFromClipboardTreeListCellLevel<TView>(GridControl gridControl, string[] RowData, EntitiesUndoRedoManager<TProjection> undo_redo_manager)
+            where TView : DataViewBase
+        {
+            var gridView = gridControl.View;
+
+            HashSet<TProjection> preValidatedProjections = new HashSet<TProjection>();
+            List<TProjection> pasteProjections = new List<TProjection>();
+            List<UndoRedoArg> undoRedoArguments = new List<UndoRedoArg>();
+            if (gridView.ActiveEditor == null && (gridView.GetType() == typeof(TView)))
+            {
+                var gridTView = gridView as TView;
+                TreeListView gridTreeListView = gridTView as TreeListView;
+
+                List<List<string>> row_data = new List<List<string>>();
+                foreach (var row in RowData)
+                {
+                    List<string> column_data = row.Split('\t').ToList();
+                    row_data.Add(column_data);
+                }
+
+                var grouped_results = row_data
+                    .SelectMany(inner => inner.Select((item, index) => new { item, index }))
+                    .GroupBy(i => i.index, i => i.item)
+                    .Select(g => g.ToList())
+                    .ToList();
+
+                var selected_cells = gridTreeListView.GetSelectedCells();
+                if (selected_cells.Count == 0)
+                    return pasteProjections;
+
+                var selected_cells_groupby_columns = selected_cells.GroupBy(x => x.Column.FieldName).Select(group => new { FieldName = group.Key, Cells = group.ToList() });
+                if (grouped_results.Count == 0)
+                {
+                    foreach (var selected_cell in selected_cells)
+                    {
+                        int row_handle = selected_cell.RowHandle;
+                        TProjection editing_row = (TProjection)gridControl.GetRow(row_handle);
+                        PasteResult result = pasteDataInProjectionColumn(editing_row, selected_cell.Column, string.Empty, undoRedoArguments);
+                        if (!preValidatedProjections.Any(x => x.GetHashCode() == editing_row.GetHashCode()))
+                            preValidatedProjections.Add(editing_row);
+                    }
+                }
+                //if copied only a row
+                else if (grouped_results.All(x => x.Count == 1) && (grouped_results.Count == 1 || (selected_cells_groupby_columns.Count() == grouped_results.Count)))
+                {
+                    int column_offset = 0;
+                    foreach (var selected_column in selected_cells_groupby_columns)
+                    {
+                        int validated_column_offset = column_offset > (grouped_results.Count - 1) ? grouped_results.Count - 1 : column_offset;
+                        var paste_value = grouped_results[validated_column_offset];
+                        column_offset += 1;
+                        //since we've already verified that each column group only has a row
+                        string paste_data = paste_value.First();
+                        List<ColumnBase> visible_columns = gridTreeListView.VisibleColumns.ToList();
+
+                        foreach (var selected_cell in selected_column.Cells)
+                        {
+                            int column_visible_index = selected_cell.Column.VisibleIndex;
+                            int row_handle = selected_cell.RowHandle;
+                            ColumnBase current_column = visible_columns[column_visible_index];
+                            TProjection editing_row = (TProjection)gridControl.GetRow(row_handle);
+                            PasteResult result = pasteDataInProjectionColumn(editing_row, current_column, paste_data, undoRedoArguments);
+
+                            if (result == PasteResult.FailOnRequired)
+                            {
+                                messageBoxService.ShowMessage("Cannot set null in required cell, operation has been terminated");
+                                break;
+                            }
+                            if (result != PasteResult.Success)
+                                continue;
+
+                            if (!preValidatedProjections.Any(x => x.GetHashCode() == editing_row.GetHashCode()))
+                                preValidatedProjections.Add(editing_row);
+                        }
+                    }
+                }
+                else
+                {
+                    TreeListCell first_selected_cell = selected_cells.First();
+                    int first_row_handle = first_selected_cell.RowHandle;
+                    int first_row_visible_index = gridControl.GetRowVisibleIndexByHandle(first_row_handle);
+                    int first_column_visible_index = first_selected_cell.Column.VisibleIndex;
+                    List<ColumnBase> visible_columns = gridTreeListView.VisibleColumns.ToList();
+
+                    for (int i = 0; i < grouped_results.Count; i++)
+                    {
+                        ColumnBase current_column = visible_columns[first_column_visible_index + i];
+                        string column_name = current_column.FieldName;
+                        int row_visible_index_offset = 0;
+
+                        foreach (string rowValue in grouped_results[i])
+                        {
+                            int current_row_visible_index = first_row_visible_index + row_visible_index_offset;
+                            int current_row_handle = gridControl.GetRowHandleByVisibleIndex(current_row_visible_index);
+                            TProjection editing_row = (TProjection)gridControl.GetRow(current_row_handle);
+                            row_visible_index_offset += 1;
+
+                            PasteResult result = pasteDataInProjectionColumn(editing_row, current_column, rowValue, undoRedoArguments);
+                            if (result == PasteResult.FailOnRequired)
+                            {
+                                messageBoxService.ShowMessage("Cannot set null in required cell, operation has been terminated");
+                                break;
+                            }
+                            if (result != PasteResult.Success)
+                                continue;
+
+                            //only add once
+                            if (i == 0)
+                                preValidatedProjections.Add(editing_row);
+                        }
+                    }
+                }
+
+                undo_redo_manager.PauseActionId();
+                foreach (TProjection preValidatedProjection in preValidatedProjections)
+                {
+                    var errorMessage = "Duplicate exists on constraint field named: ";
+                    if (isValidProjectionFunc(preValidatedProjection, ref errorMessage))
+                        if (onBeforePasteWithValidationFunc != null)
+                        {
+                            if (onBeforePasteWithValidationFunc(preValidatedProjection))
+                            {
+                                IEnumerable<UndoRedoArg> projection_undo_redos = undoRedoArguments.Where(x => x.Projection == preValidatedProjection);
+                                foreach (UndoRedoArg projection_undo_redo in projection_undo_redos)
+                                    undo_redo_manager.AddUndo(projection_undo_redo.Projection, projection_undo_redo.FieldName, projection_undo_redo.OldValue, projection_undo_redo.NewValue, EntityMessageType.Changed);
+
+                                pasteProjections.Add(preValidatedProjection);
+                            }
+                        }
+                        else
+                        {
+                            IEnumerable<UndoRedoArg> projection_undo_redos = undoRedoArguments.Where(x => x.Projection == preValidatedProjection);
+                            foreach (UndoRedoArg projection_undo_redo in projection_undo_redos)
+                                undo_redo_manager.AddUndo(projection_undo_redo.Projection, projection_undo_redo.FieldName, projection_undo_redo.OldValue, projection_undo_redo.NewValue, EntityMessageType.Changed);
+
+                            pasteProjections.Add(preValidatedProjection);
+                        }
+                    else
+                    {
+                        if (messageBoxService != null)
+                        {
+                            errorMessage += " , paste operation will be terminated";
+                            messageBoxService.ShowMessage(errorMessage, CommonResources.Exception_UpdateErrorCaption, MessageButton.OK);
+                        }
+
+                        break;
+                    }
+                }
+
+            }
+
+            undo_redo_manager.UnpauseActionId();
+            return pasteProjections;
+        }
+
         public List<TProjection> PastingFromClipboard<TView>(GridControl gridControl, string[] RowData)
         where TView : DataViewBase
         {
@@ -273,12 +430,21 @@ namespace BaseModel.Data.Helpers
                     }
                     else if (columnPropertyInfo.PropertyType == typeof(Guid?) || columnPropertyInfo.PropertyType == typeof(Guid))
                     {
-                        Type editSettingsType = column.ActualEditSettings.GetType();
+                        object cellTemplate = column.CellTemplate;
+                        DataTemplate dataTemplate = cellTemplate as DataTemplate;
+                        Type editSettingsType;
+                        //if (dataTemplate != null && dataTemplate.HasContent)
+                        //    editSettingsType = dataTemplate.LoadContent().GetType();
+                        //else
+                        editSettingsType = column.ActualEditSettings.GetType();
+
                         object editSettings = null;
                         if (editSettingsType == typeof(ComboBoxEditSettings))
                             editSettings = column.ActualEditSettings as ComboBoxEditSettings;
                         else if (editSettingsType == typeof(LookUpEditSettings))
                             editSettings = column.ActualEditSettings as LookUpEditSettingsBase;
+                        //else if (editSettingsType == typeof(ComboBoxEdit) && dataTemplate.HasContent)
+                        //    editSettings = dataTemplate.LoadContent() as ComboBoxEdit;
 
                         if (editSettings != null)
                         {
@@ -304,7 +470,7 @@ namespace BaseModel.Data.Helpers
                             else
                                 return PasteResult.Skip;
                         }
-                        else if (pasteData != Guid.Empty.ToString())
+                        else if (editSettings != null && pasteData != Guid.Empty.ToString())
                         {
                             Guid new_guid = new Guid(pasteData);
                             return tryPasteNewValueInProjectionColumn(projection, column_name, new_guid, undoRedoArguments);
@@ -393,6 +559,38 @@ namespace BaseModel.Data.Helpers
                         DateTime datetime_value;
                         if (DateTime.TryParse(pasteData, out datetime_value))
                             return tryPasteNewValueInProjectionColumn(projection, column_name, datetime_value, undoRedoArguments);
+                        else
+                            return PasteResult.Skip;
+                    }
+                    else if (column.ActualEditSettings is ComboBoxEditSettings)
+                    {
+                        ComboBoxEditSettings editSettings = column.ActualEditSettings as ComboBoxEditSettings;
+                        CheckedComboBoxStyleSettings checkedComboBoxStyleSettings = editSettings.StyleSettings as CheckedComboBoxStyleSettings;
+
+                        if (checkedComboBoxStyleSettings != null)
+                        {
+                            var copyColumnDisplayMember = (string)editSettings.GetType().GetProperty("DisplayMember").GetValue(editSettings);
+                            var copyColumnItemsSource = (IEnumerable<object>)editSettings.GetType().GetProperty("ItemsSource").GetValue(editSettings);
+
+                            string[] pasteStringArray = pasteData.Split(';');
+                            List<object> setValues = new List<object>();
+                            foreach (string pasteString in pasteStringArray)
+                            {
+                                foreach (var copyColumnItem in copyColumnItemsSource)
+                                {
+                                    var itemDisplayMemberPropertyInfo = copyColumnItem.GetType().GetProperty(copyColumnDisplayMember);
+                                    if (itemDisplayMemberPropertyInfo.GetValue(copyColumnItem).ToString().ToUpper() == pasteString.ToUpper())
+                                    {
+                                        setValues.Add(copyColumnItem);
+                                    }
+                                }
+                            }
+
+                            if(setValues.Count > 0)
+                                return tryPasteNewValueInProjectionColumn(projection, column_name, setValues, undoRedoArguments);
+                            else
+                                return PasteResult.Skip;
+                        }
                         else
                             return PasteResult.Skip;
                     }

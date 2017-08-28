@@ -66,6 +66,13 @@ namespace BaseModel.Misc
         ObservableCollection<TProjection> DetailEntities { get; set; }
     }
 
+    public interface IProjectionMasterOtherDetail<TEntity, TChild> : IProjection<TEntity>, IHaveExpandState
+    where TEntity : class, IGuidEntityKey, new()
+    where TChild : class, IGuidEntityKey, IGuidParentEntityKey, new()
+    {
+        ObservableCollection<TChild> DetailEntities { get; set; }
+    }
+
     /// <summary>
     /// The interface for supporting children document other than using TEntity type name.
     /// </summary>

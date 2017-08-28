@@ -62,4 +62,29 @@ namespace BaseModel.Misc
             DetailEntities = new ObservableCollection<TProjection>();
         }
     }
+
+    public abstract class ProjectionMasterOtherDetailBase<TEntity, TChild, TProjection> : ProjectionBase<TEntity>, IProjectionMasterOtherDetail<TEntity, TChild>
+    where TEntity : class, IGuidEntityKey, new()
+    where TChild : class, IGuidEntityKey, IGuidParentEntityKey, new()
+    where TProjection : class, IGuidEntityKey, new()
+    {
+        protected virtual ObservableCollection<TChild> detailEntities { get; set; }
+        public virtual ObservableCollection<TChild> DetailEntities
+        {
+            get { return GetProperty(() => detailEntities); }
+            set { SetProperty(() => detailEntities, value); }
+        }
+
+        public virtual bool IsExpanded
+        {
+            get { return GetProperty(() => IsExpanded); }
+            set { SetProperty(() => IsExpanded, value); }
+        }
+
+        public ProjectionMasterOtherDetailBase()
+            : base()
+        {
+            DetailEntities = new ObservableCollection<TChild>();
+        }
+    }
 }

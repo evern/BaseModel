@@ -20,6 +20,7 @@ namespace BaseModel.ViewModel.Services
     {
         void SetRowExpandedByColumnValue(string field_name, IHaveExpandState row);
         void RefreshSummary();
+        void RefreshData();
         IEnumerable<object> GetVisibleRowObjects();
         void HighlightIncorrectText(SpellChecker spellChecker);
         void SetCheckedListFilterPopUpMode();
@@ -85,6 +86,14 @@ namespace BaseModel.ViewModel.Services
                 visible_row_object.Add(dataRow);
             }
             return visible_row_object;
+        }
+
+        public void RefreshData()
+        {
+            if (GridControl == null)
+                return;
+
+            GridControl.RefreshData();
         }
 
         public void RefreshSummary()

@@ -25,12 +25,35 @@
                             </dx:DialogService.DialogStyle>
                         </dx:DialogService>
                         <dxmvvm:LayoutSerializationService />
-                        <dxmvvm:FolderBrowserDialogService 
-                            Description="Choose Folder"
-                            ShowNewFolderButton="True" 
-                            RootFolder="Desktop"
-                            RestorePreviouslySelectedDirectory="True"/>
+                        <dxmvvm:FolderBrowserDialogService Description="Choose Folder" ShowNewFolderButton="True" RootFolder="Desktop" RestorePreviouslySelectedDirectory="True" />
                         <services:TableViewService TableView="{Binding ElementName=tableView}" />
+                        <services:GridControlService GridControl="{Binding ElementName=GridControl}" />
+                    </ItemsControl>
+                </DataTemplate>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="dx:DXSerializer.StoreLayoutMode" Value="UI" />
+    </Style>
+    <Style x:Key="CollectionView.TreeListRootContainer" TargetType="FrameworkElement" >
+        <Setter Property="dxmvvm:Interaction.BehaviorsTemplate">
+            <Setter.Value>
+                <DataTemplate>
+                    <ItemsControl>
+                        <dx:DXMessageBoxService />
+                        <dxmvvm:NotificationService x:Name="AppNotificationService" UseWin8NotificationsIfAvailable="False" CustomNotificationPosition="BottomRight" />
+                        <dxmvvm:EventToCommand Event="Loaded" Command="{Binding OnLoadedCommand}" />
+                        <dx:WindowedDocumentUIService YieldToParent="True" />
+                        <dx:DialogService x:Name="BulkColumnEditService">
+                            <dx:DialogService.DialogStyle>
+                                <Style TargetType="dx:DXDialogWindow">
+                                    <Setter Property="SizeToContent" Value="WidthAndHeight" />
+                                    <Setter Property="MinWidth" Value="500" />
+                                    <Setter Property="MinHeight" Value="370" />
+                                </Style>
+                            </dx:DialogService.DialogStyle>
+                        </dx:DialogService>
+                        <dxmvvm:LayoutSerializationService />
+                        <dxmvvm:FolderBrowserDialogService Description="Choose Folder" ShowNewFolderButton="True" RootFolder="Desktop" RestorePreviouslySelectedDirectory="True" />
                         <services:GridControlService GridControl="{Binding ElementName=GridControl}" />
                     </ItemsControl>
                 </DataTemplate>
@@ -96,6 +119,26 @@
                     <ItemsControl>
                         <dxmvvm:KeyToCommand Command="{Binding ShowPopUpCommand}" KeyGesture="Space"
                                              CommandParameter="{Binding ElementName=GridControl}" />
+                    </ItemsControl>
+                </DataTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style x:Key="DefaultOtherDetailGridControlTemplate" TargetType="{x:Type dxg:GridControl}">
+        <Setter Property="ShowLoadingPanel" Value="{Binding DataContext.IsLoading, ElementName=userControl}" />
+        <Setter Property="ClipboardCopyMode" Value="ExcludeHeader" />
+        <Setter Property="SelectionMode" Value="Row" />
+        <Setter Property="ShowBorder" Value="False" />
+        <Setter Property="AutoExpandAllGroups" Value="False" />
+        <Setter Property="ShowAllTableValuesInCheckedFilterPopup" Value="False" />
+        <Setter Property="dxsc:SpellingSettings.CheckAsYouType" Value="True" />
+        <Setter Property="dxsc:SpellingSettings.ShowSpellCheckMenu" Value="True" />
+        <Setter Property="dxsc:SpellingSettings.SpellChecker" Value="{Binding DataContext.SpellCheckerModule.SpellChecker, ElementName=userControl}" />
+        <Setter Property="dxmvvm:Interaction.BehaviorsTemplate">
+            <Setter.Value>
+                <DataTemplate>
+                    <ItemsControl>
+                        <dxmvvm:KeyToCommand Command="{Binding ShowPopUpCommand}" KeyGesture="Space" CommandParameter="{Binding ElementName=GridControl}" />
                     </ItemsControl>
                 </DataTemplate>
             </Setter.Value>
@@ -176,24 +219,56 @@
         <Setter Property="SearchDelay" Value="0" />
         <Setter Property="AllowScrollAnimation" Value="True" />
     </Style>
-    <Style x:Key="DefaultTreeListControlTemplate" TargetType="{x:Type dxg:TreeListControl}">
+    <Style x:Key="DefaultOtherDetailTableViewTemplate" TargetType="{x:Type dxg:TableView}">
         <Setter Property="dxmvvm:Interaction.BehaviorsTemplate">
             <Setter.Value>
                 <DataTemplate>
                     <ItemsControl>
-                        <dxmvvm:EventToCommand PassEventArgsToCommand="True"
-                                               Command="{Binding PastingFromClipboardTreeListCommand}"
-                                               EventName="PastingFromClipboard" />
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" Command="{Binding DataContext.ChildEntitiesViewModel.ExistingRowAddUndoAndSaveCommand, ElementName=userControl}" EventName="CellValueChanged" />
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" Command="{Binding DataContext.ChildEntitiesViewModel.NewRowAddUndoAndSaveCommand, ElementName=userControl}" EventName="RowUpdated" />
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" Command="{Binding DataContext.ChildEntitiesViewModel.ValidateCellCommand, ElementName=userControl}" EventName="ValidateCell" />
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" Command="{Binding DataContext.ChildEntitiesViewModel.ValidateRowCommand, ElementName=userControl}" EventName="ValidateRow" />
+                        <!--<dxmvvm:KeyToCommand KeyGesture="Delete" Command="{Binding BulkDeleteCommand}"  />-->
+                        <dxmvvm:KeyToCommand KeyGesture="CTRL+Z" Command="{Binding DataContext.ChildEntitiesViewModel.UndoCommand, ElementName=userControl}" />
+                        <dxmvvm:KeyToCommand KeyGesture="CTRL+Y" Command="{Binding DataContext.ChildEntitiesViewModel.RedoCommand, ElementName=userControl}" />
                     </ItemsControl>
                 </DataTemplate>
             </Setter.Value>
         </Setter>
-        <Setter Property="ItemsSource" Value="{Binding DataContext.DisplayEntities, ElementName=userControl}" />
-        <Setter Property="ClipboardCopyMode" Value="ExcludeHeader" />
-        <Setter Property="SelectionMode" Value="Row" />
-        <Setter Property="CurrentItem" Value="{Binding DataContext.DisplaySelectedEntity, Mode=TwoWay, ElementName=userControl}" />
-        <Setter Property="SelectedItems" Value="{Binding DataContext.DisplaySelectedEntities, Mode=TwoWay, ElementName=userControl}" />
-        <Setter Property="ShowBorder" Value="False" />
-        <Setter Property="ShowLoadingPanel" Value="{Binding DataContext.IsLoading, ElementName=userControl}" />
+        <Setter Property="ShowFixedTotalSummary" Value="False" />
+        <Setter Property="NewItemRowPosition" Value="Top" />
+        <Setter Property="AllowPerPixelScrolling" Value="True" />
+        <Setter Property="ShowGroupedColumns" Value="False" />
+        <Setter Property="ShowSearchPanelMode" Value="Never" />
+        <Setter Property="SearchDelay" Value="0" />
+        <Setter Property="AllowScrollAnimation" Value="True" />
+    </Style>
+    <Style x:Key="DefaultTreeListViewTemplate" TargetType="{x:Type dxg:TreeListView}">
+        <Setter Property="dxmvvm:Interaction.BehaviorsTemplate">
+            <Setter.Value>
+                <DataTemplate>
+                    <ItemsControl>
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" Command="{Binding TreelistExistingRowAddUndoAndSaveCommand}" EventName="CellValueChanged" />
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" Command="{Binding PastingFromClipboardTreeListCommand}" EventName="PastingFromClipboard" />
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" Command="{Binding ValidateCellCommand}" EventName="ValidateCell" />
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" Command="{Binding ValidateRowCommand}" EventName="ValidateRow" />
+                        <dxmvvm:KeyToCommand KeyGesture="CTRL+Z" Command="{Binding UndoCommand}" />
+                        <dxmvvm:KeyToCommand KeyGesture="CTRL+Y" Command="{Binding RedoCommand}" />
+                    </ItemsControl>
+                </DataTemplate>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="ParentFieldName" Value="ParentEntityKey" />
+        <Setter Property="KeyFieldName" Value="EntityKey" />
+        <Setter Property="ExpandStateFieldName" Value="IsExpanded" />
+        <Setter Property="ShowTotalSummary" Value="True" />
+        <Setter Property="AllowPerPixelScrolling" Value="True" />
+        <Setter Property="ShowSearchPanelMode" Value="Default" />
+        <Setter Property="SearchDelay" Value="0" />
+        <Setter Property="AllowScrollAnimation" Value="True" />
+        <Setter Property="ShowAutoFilterRow" Value="True" />
+        <Setter Property="ShowCriteriaInAutoFilterRow" Value="True" />
+        <Setter Property="ShowFixedTotalSummary" Value="False" />
+        <Setter Property="AllowSorting" Value="True" />
     </Style>
 </ResourceDictionary>

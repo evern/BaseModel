@@ -621,7 +621,11 @@ namespace BaseModel.ViewModel.Base
         {
             string[] RowData = new string[] { string.Empty };
             CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, MessageBoxService, ValidateSetValueIsContinueCallBack);
-            List<TProjection> pasteProjections = copyPasteHelper.PastingFromClipboardCellLevel<TableView>(gridControl, RowData, EntitiesUndoRedoManager);
+            List<TProjection> pasteProjections;
+            if(gridControl.View.GetType() == typeof(TableView))
+                pasteProjections = copyPasteHelper.PastingFromClipboardCellLevel<TableView>(gridControl, RowData, EntitiesUndoRedoManager);
+            else
+                pasteProjections = copyPasteHelper.PastingFromClipboardTreeListCellLevel<TreeListView>(gridControl, RowData, EntitiesUndoRedoManager);
 
             if (pasteProjections.Count > 0)
             {
@@ -1187,9 +1191,12 @@ namespace BaseModel.ViewModel.Base
             else
                 RowData = PasteString.Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
 
-            GridControl gridControl = (GridControl)e.Source;
-
-            List<TProjection> pasteProjections = copyPasteHelper.PastingFromClipboard<TreeListView>(gridControl, RowData);
+            GridControl gridControl = e.Source as GridControl;
+            List<TProjection> pasteProjections;
+            if (IsPasteCellLevel)
+                pasteProjections = copyPasteHelper.PastingFromClipboardTreeListCellLevel<TreeListView>(gridControl, RowData, EntitiesUndoRedoManager);
+            else
+                pasteProjections = copyPasteHelper.PastingFromClipboard<TreeListView>(gridControl, RowData);
 
             if (pasteProjections.Count > 0)
             {

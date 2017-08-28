@@ -9,32 +9,33 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections.ObjectModel;
 using DevExpress.Mvvm.POCO;
+using BaseModel.ViewModel.Base;
 
 namespace BaseModel.ViewModel.Loader
 {
-    public abstract class ProjectionMasterDetailCollectionsWrapper<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey,
+    public abstract class ProjectionMasterOtherDetailCollectionsWrapper<TMainEntity, TChildEntity, TMainProjectionEntity, TMainEntityPrimaryKey,
         TMainEntityUnitOfWork> : CollectionViewModelsWrapper<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey,
         TMainEntityUnitOfWork>
-        where TMainEntity : class, IGuidEntityKey, IGuidParentEntityKey, new()
-        where TMainProjectionEntity : class, IProjectionMasterDetail<TMainEntity, TMainProjectionEntity>, ICanUpdate, new()
+        where TMainEntity : class, IGuidEntityKey, new()
+        where TChildEntity : class, IGuidEntityKey, IGuidParentEntityKey, new()
+        where TMainProjectionEntity : class, IProjectionMasterOtherDetail<TMainEntity, TChildEntity>, ICanUpdate, new()
         where TMainEntityUnitOfWork : IUnitOfWork
     {
-        protected virtual bool OnBeforeParentAssigned(TMainProjectionEntity masterEntity, TMainProjectionEntity childEntity)
+        protected virtual bool OnBeforeParentAssigned(TMainProjectionEntity masterEntity, TChildEntity childEntity)
         {
             return true;
         }
 
         protected override void AssignCallBacksAndRaisePropertyChange(IEnumerable<TMainProjectionEntity> entities)
         {
-            MainViewModel.OnBeforeEntitiesDeleteCallBack = EntitiesBeforeDeletion;
-            MainViewModel.IsContinueNewRowFromViewCallBack = NewRowAddUndoAndSave;
-
+            ChildEntitiesViewModel.OnBeforeEntitySavedIsContinueCallBack = onBeforeSavedIsContinue;
+            ChildEntitiesViewModel.IsContinueNewRowFromViewCallBack = newRowAddUndoAndSave;
             MainViewModel.SetParentViewModel(this);
             base.AssignCallBacksAndRaisePropertyChange(entities);
         }
 
         #region Call Backs
-        private bool NewRowAddUndoAndSave(RowEventArgs e, TMainProjectionEntity projectionEntity)
+        private bool newRowAddUndoAndSave(RowEventArgs e, TChildEntity childEntity)
         {
             var gridView = (GridViewBase)e.Source;
             var grid = gridView.Grid;
@@ -44,13 +45,13 @@ namespace BaseModel.ViewModel.Loader
             {
                 var masterRowHandle = grid.GetMasterRowHandle();
                 var masterEntity = (TMainProjectionEntity)masterGrid.GetRow(masterRowHandle);
-                if (OnBeforeParentAssigned(masterEntity, projectionEntity))
+                if (OnBeforeParentAssigned(masterEntity, childEntity))
                 {
                     IOriginalGuidEntityKey masterEntityOriginalKey = masterEntity as IOriginalGuidEntityKey;
                     if (masterEntityOriginalKey == null)
-                        projectionEntity.Entity.ParentEntityKey = masterEntity.EntityKey;
+                        childEntity.ParentEntityKey = masterEntity.EntityKey;
                     else
-                        projectionEntity.Entity.ParentEntityKey = masterEntityOriginalKey.OriginalEntityKey;
+                        childEntity.ParentEntityKey = masterEntityOriginalKey.OriginalEntityKey;
                 }
 
             }
@@ -58,41 +59,17 @@ namespace BaseModel.ViewModel.Loader
             return true;
         }
 
-        private void EntitiesBeforeDeletion(IEnumerable<IProjectionMasterDetail<TMainEntity, TMainProjectionEntity>> projections)
+        private bool onBeforeSavedIsContinue(TChildEntity childEntity)
         {
-            //Undo manager is paused in bulk deletion and will be unpaused in bulk deletion too
-            var childrenEntities = new List<TMainProjectionEntity>();
-            var parentEntitiesNotInList =
-                new List<TMainProjectionEntity>();
-
-            foreach (var projection in projections)
+            IHaveCreatedDate childEntityCreatedDate = childEntity as IHaveCreatedDate;
+            if (childEntityCreatedDate != null)
             {
-                var childrenEntitiesInTotal = projection.DetailEntities;
-                var childrenEntitiesNotInDeletionCollection =
-                    new List<TMainProjectionEntity>();
-                foreach (var childrenEntityInTotal in childrenEntitiesInTotal)
-                    if (!projections.Any(x => x.EntityKey == childrenEntityInTotal.EntityKey))
-                        childrenEntitiesNotInDeletionCollection.Add(childrenEntityInTotal);
-
-                TMainProjectionEntity parentEntity = null;
-                if (projection.Entity.ParentEntityKey != Guid.Empty)
-                {
-                    parentEntity = MainViewModel.Entities.FirstOrDefault(x => x.EntityKey == projection.Entity.ParentEntityKey);
-                    if (parentEntity != null)
-                        if (!projections.Any(x => x.EntityKey == parentEntity.EntityKey))
-                            parentEntitiesNotInList.Add(parentEntity);
-                }
-
-                childrenEntities = childrenEntities.Concat(childrenEntitiesNotInDeletionCollection).ToList();
+                if(childEntityCreatedDate.EntityCreatedDate.Year == 1)
+                    childEntityCreatedDate.EntityCreatedDate = DateTime.Now;
             }
 
-            //can't use bulk delete here due to stack overflow
-            foreach (var childrenEntity in childrenEntities)
-            {
-                MainViewModel.EntitiesUndoRedoManager.AddUndo(childrenEntity, null, null, null,
-                    EntityMessageType.Deleted);
-                MainViewModel.Delete(childrenEntity);
-            }
+
+            return true;
         }
         #endregion
 
@@ -108,8 +85,8 @@ namespace BaseModel.ViewModel.Loader
                 if (displayEntities == null)
                 {
                     displayEntities = new ObservableCollection<TMainProjectionEntity>();
-                    var parentEntities = MainViewModel.Entities.Where(x => x.Entity.ParentEntityKey == null).AsEnumerable();
-                    var childEntities = MainViewModel.Entities.Where(x => x.Entity.ParentEntityKey != null).AsEnumerable();
+                    var parentEntities = MainViewModel.Entities;
+                    var childEntities = child_entities;
                     foreach (var parentEntity in parentEntities)
                     {
                         var parentEntityPOCO = new TMainProjectionEntity();
@@ -125,19 +102,15 @@ namespace BaseModel.ViewModel.Loader
                     {
                         IOriginalGuidEntityKey displayEntityWithOriginalKey = displayEntity as IOriginalGuidEntityKey;
 
-                        IEnumerable<TMainProjectionEntity> currentChildEntities;
+                        IEnumerable<TChildEntity> currentChildEntities;
                         if (displayEntityWithOriginalKey == null)
-                            currentChildEntities = childEntities.Where(y => y.Entity.ParentEntityKey == displayEntity.EntityKey);
+                            currentChildEntities = childEntities.Where(y => y.ParentEntityKey == displayEntity.EntityKey);
                         else
-                            currentChildEntities = childEntities.Where(y => y.Entity.ParentEntityKey == displayEntityWithOriginalKey.OriginalEntityKey);
+                            currentChildEntities = childEntities.Where(y => y.ParentEntityKey == displayEntityWithOriginalKey.OriginalEntityKey);
 
                         foreach (var currentChildEntity in currentChildEntities)
                         {
-                            var currentChildEntityPOCO = new TMainProjectionEntity();
-                            //childCOMMODITY_GROUP_DIRECTPOCO.EntityKey = childCOMMODITY_GROUP_DIRECT.EntityKey;
-                            DataUtils.ShallowCopy(currentChildEntityPOCO, currentChildEntity);
-                            DataUtils.ShallowCopy(currentChildEntityPOCO.Entity, currentChildEntity.Entity);
-                            displayEntity.DetailEntities.Add(currentChildEntityPOCO);
+                            displayEntity.DetailEntities.Add(currentChildEntity);
                         }
                     }
                 }
@@ -145,6 +118,10 @@ namespace BaseModel.ViewModel.Loader
                 return displayEntities;
             }
         }
+
+        protected abstract IEnumerable<TChildEntity> child_entities { get; }
+
+        public abstract CollectionViewModel<TChildEntity, TChildEntity, Guid, TMainEntityUnitOfWork> ChildEntitiesViewModel { get;}
 
         #region View Refresh
         public override void OnAfterAuxiliaryEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender, bool isBulkRefresh)

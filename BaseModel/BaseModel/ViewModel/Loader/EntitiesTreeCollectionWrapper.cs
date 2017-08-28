@@ -3,6 +3,7 @@ using BaseModel.DataModel;
 using BaseModel.Misc;
 using DevExpress.Mvvm.POCO;
 using DevExpress.Xpf.Grid;
+using DevExpress.Xpf.Grid.DragDrop;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,7 +21,6 @@ namespace BaseModel.ViewModel.Loader
     {
         private Guid? Parent_GuidOldValue; //stores old parent guid for undo redo
         private List<Guid?> uniqueParent_Guids; //stores dropping entity parent guid before it gets reassigned
-        public Action NativeTreeListRefresh;
 
         /// <summary>
         /// Get the actual parent entity key field name for undo redo
@@ -86,6 +86,12 @@ namespace BaseModel.ViewModel.Loader
             MainViewModel.EntitiesUndoRedoManager.PauseActionId(); //save will unpause this
             ReorderAndSave(uniqueParent_Guids);
         }
+
+        protected override void OnPersistentAfterAuxiliaryEntitiesChanges(object key, Type changedType, EntityMessageType messageType, object sender, bool isBulkRefresh)
+        {
+            GridControlService.RefreshData();
+            base.OnPersistentAfterAuxiliaryEntitiesChanges(key, changedType, messageType, sender, isBulkRefresh);
+        }
         #endregion
 
         #region Reordering
@@ -96,7 +102,7 @@ namespace BaseModel.ViewModel.Loader
                 childEntities = childEntities.Concat(ReorderAndSave(guid_parent, true)).ToList();
 
             MainViewModel.BulkSave(childEntities);
-            NativeTreeListRefresh?.Invoke();
+            GridControlService.RefreshData();
         }
 
         protected virtual void onReorderingPopulateOrderSpecificProperties(TMainProjectionEntity orderingProjection)
@@ -153,7 +159,11 @@ namespace BaseModel.ViewModel.Loader
                 childProjections.Add(parentEntity);
 
             if (!dontSave)
+            {
                 MainViewModel.BulkSave(childProjections);
+                TreeListControlService.RefreshData();
+            }
+
 
             return childProjections;
         }
@@ -173,7 +183,7 @@ namespace BaseModel.ViewModel.Loader
         #endregion
 
         #region View Commands
-        public void DragDropManager_Drop(object sender, DevExpress.Xpf.Grid.DragDrop.TreeListDropEventArgs e)
+        public void DragDropManager_Drop(TreeListDropEventArgs e)
         {
             uniqueParent_Guids = new List<Guid?>();
             Parent_GuidOldValue = null;
@@ -192,12 +202,7 @@ namespace BaseModel.ViewModel.Loader
             }
         }
 
-        protected virtual void onAfterDroppedCopySpecificProperties(TMainProjectionEntity droppedProjection, TMainProjectionEntity targetProjection)
-        {
-
-        }
-
-        public void DragDropManager_Dropped(object sender, DevExpress.Xpf.Grid.DragDrop.TreeListDroppedEventArgs e)
+        public void DragDropManager_Dropped(TreeListDroppedEventArgs e)
         {
             Guid? newParentGuid = null;
             if (e.TargetNode != null)
@@ -230,9 +235,8 @@ namespace BaseModel.ViewModel.Loader
 
                         maxTargetChildrenOrder += 1;
 
-                        onAfterDroppedCopySpecificProperties(droppedProjection, targetProjection);
-
                         droppedProjection.SortOrder = maxTargetChildrenOrder;
+
                         MainViewModel.EntitiesUndoRedoManager.AddUndo(droppedProjection, GetParentEntityKeyFieldName(), Parent_GuidOldValue, droppedProjection.ParentEntityKey, EntityMessageType.Changed);
                     }
 
@@ -267,7 +271,7 @@ namespace BaseModel.ViewModel.Loader
                 return;
 
             var unalignedSortOrder = 0;
-            Guid? guid_parent = Guid.Empty;
+            Guid? guid_parent = null;
 
             if (DisplaySelectedEntity != null)
             {
@@ -279,14 +283,14 @@ namespace BaseModel.ViewModel.Loader
                 guid_parent = DisplaySelectedEntity.ParentEntityKey;
             }
 
-            var newROLE = new TMainProjectionEntity();
-            PopulateNewProjection(newROLE);
-            newROLE.SortOrder = unalignedSortOrder;
-            newROLE.ParentEntityKey = guid_parent;
-            newROLE.IsExpanded = true;
+            var newRow = new TMainProjectionEntity();
+            PopulateNewProjection(newRow);
+            newRow.SortOrder = unalignedSortOrder;
+            newRow.ParentEntityKey = guid_parent;
+            newRow.IsExpanded = true;
             MainViewModel.EntitiesUndoRedoManager.PauseActionId(); //Save will unpause this
-            MainViewModel.EntitiesUndoRedoManager.AddUndo(newROLE, null, null, null, EntityMessageType.Added);
-            MainViewModel.Save(newROLE);
+            MainViewModel.EntitiesUndoRedoManager.AddUndo(newRow, null, null, null, EntityMessageType.Added);
+            MainViewModel.Save(newRow);
             ReorderAndSave(guid_parent);
         }
         #endregion

@@ -193,7 +193,6 @@ namespace BaseModel.ViewModel.Loader
                 GridControlService.SetGridColumnSortMode();
             }
 
-
             PersistentLayoutHelper.TryDeserializeLayout(LayoutSerializationService, ViewName);
         }
 
@@ -268,6 +267,8 @@ namespace BaseModel.ViewModel.Loader
         {
             UpdateGridSummary();
 
+            OnPersistentAfterAuxiliaryEntitiesChanges(key, changedType, messageType, sender, isBulkRefresh);
+
             if (sender != null && sender == MainViewModel)
                 return;
 
@@ -284,6 +285,11 @@ namespace BaseModel.ViewModel.Loader
                     this.RaisePropertiesChanged();
                 }
             }
+        }
+
+        protected virtual void OnPersistentAfterAuxiliaryEntitiesChanges(object key, Type changedType, EntityMessageType messageType, object sender, bool isBulkRefresh)
+        {
+
         }
 
         private async void UpdateGridSummary()
@@ -564,6 +570,7 @@ namespace BaseModel.ViewModel.Loader
         protected virtual IGridControlService GridControlService { get { return this.GetService<IGridControlService>(); } }
         protected virtual ITableViewService TableViewService { get { return this.GetService<ITableViewService>(); } }
         protected virtual ITreeViewService TreeViewService { get { return this.GetService<ITreeViewService>(); } }
+        protected virtual ITreeListControlService TreeListControlService { get { return this.GetService<ITreeListControlService>(); } }
         protected virtual IFolderBrowserDialogService FolderBrowserDialogService { get { return this.GetService<IFolderBrowserDialogService>(); } }
 
         protected IMessageBoxService MessageBoxService
