@@ -59,7 +59,7 @@ namespace BaseModel.ViewModel.Loader
             return true;
         }
 
-        private bool onBeforeSavedIsContinue(TChildEntity childEntity)
+        protected virtual bool onBeforeSavedIsContinue(TChildEntity childEntity)
         {
             IHaveCreatedDate childEntityCreatedDate = childEntity as IHaveCreatedDate;
             if (childEntityCreatedDate != null)

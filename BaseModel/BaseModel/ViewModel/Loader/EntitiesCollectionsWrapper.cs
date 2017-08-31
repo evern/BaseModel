@@ -390,9 +390,10 @@ namespace BaseModel.ViewModel.Loader
             }
         }
 
+        public Action<TMainProjectionEntity> OnDisplaySelectedEntityChangedCallBack;
         public virtual void OnDisplaySelectedEntityChanged(TMainProjectionEntity entity)
         {
-
+            OnDisplaySelectedEntityChangedCallBack?.Invoke(entity);
         }
         #endregion
 
@@ -567,7 +568,7 @@ namespace BaseModel.ViewModel.Loader
         #endregion
 
         #region Services
-        protected virtual IGridControlService GridControlService { get { return this.GetService<IGridControlService>(); } }
+        protected virtual IGridControlService GridControlService { get { return this.GetService<IGridControlService>("DefaultGridControlService"); } }
         protected virtual ITableViewService TableViewService { get { return this.GetService<ITableViewService>(); } }
         protected virtual ITreeViewService TreeViewService { get { return this.GetService<ITreeViewService>(); } }
         protected virtual ITreeListControlService TreeListControlService { get { return this.GetService<ITreeListControlService>(); } }
@@ -639,6 +640,7 @@ namespace BaseModel.ViewModel.Loader
             }
         }
 
+        protected bool disable_immediate_post;
         /// <summary>
         /// Influence column(s) when changes happens in other column
         /// </summary>
@@ -656,7 +658,8 @@ namespace BaseModel.ViewModel.Loader
                     CellValueExistingRowChanging(e);
             }
 
-            CellValueChangingImmediatePost(e);
+            if(!disable_immediate_post)
+                CellValueChangingImmediatePost(e);
         }
 
         protected virtual void CellValueAnyRowChanging(CellValueChangedEventArgs e)

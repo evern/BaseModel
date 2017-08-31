@@ -119,6 +119,7 @@
     <Compile Include="ViewModel\Loader\EntitiesCollectionsWrapper.cs" />
     <Compile Include="ViewModel\Loader\EntitiesLoaderDescription.cs" />
     <Compile Include="ViewModel\Loader\EntitiesLoaderDescriptionCollection.cs" />
+    <Compile Include="ViewModel\Loader\ProjectionStaticMasterOtherDetailCollectionsWrapper.cs" />
     <Compile Include="ViewModel\Loader\ProjectionMasterOtherDetailCollectionsWrapper.cs" />
     <Compile Include="ViewModel\Loader\ProjectionMasterDetailCollectionsWrapper.cs" />
     <Compile Include="ViewModel\Loader\EntitiesTreeCollectionWrapper.cs" />

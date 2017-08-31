@@ -97,7 +97,7 @@ namespace BaseModel.ViewModel.Loader
         #endregion
 
         private List<Guid> RestoreExpandedGuids = new List<Guid>();
-        ObservableCollection<TMainProjectionEntity> displayEntities;
+        protected ObservableCollection<TMainProjectionEntity> displayEntities;
         public override ObservableCollection<TMainProjectionEntity> DisplayEntities
         {
             get
@@ -149,10 +149,10 @@ namespace BaseModel.ViewModel.Loader
         #region View Refresh
         public override void OnAfterAuxiliaryEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender, bool isBulkRefresh)
         {
-            mainThreadDispatcher.BeginInvoke(new Action(() => refreshDisplayEntities()));
+            mainThreadDispatcher.BeginInvoke(new Action(() => RefreshDisplayEntities()));
         }
 
-        private void refreshDisplayEntities()
+        protected void RefreshDisplayEntities()
         {
             displayEntities = null;
             this.RaisePropertyChanged(x => x.DisplayEntities);

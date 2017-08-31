@@ -92,7 +92,7 @@ namespace BaseModel.Helpers
             return stringOnlyValue;
         }
 
-        public static string GetNewRegisterNumber(IEnumerable<IEntityNumber> originalEntities, IEnumerable<IEntityNumber> unsavedEntities, string duplicateInternalNumber, IEnumerable<IEntityNumber> insertSelectedEntities)
+        public static string GetNewRegisterNumber(IEnumerable<IEntityNumber> originalEntities, IEnumerable<IEntityNumber> unsavedEntities, string duplicateInternalNumber, IEnumerable<IEntityNumber> insertSelectedEntities, string entityGroup = "")
         {
             if (duplicateInternalNumber != string.Empty && duplicateInternalNumber != null)
             {
@@ -105,15 +105,15 @@ namespace BaseModel.Helpers
                 allEntities.AddRange(unsavedEntities);
 
                 List<string> originalEntitiesSimilarNames =
-                originalEntities.Where(x => x.EntityNumber != null).Select(x => x.EntityNumber).ToList();
+                originalEntities.Where(x => x.EntityGroup == entityGroup).Where(x => x.EntityNumber != null).Select(x => x.EntityNumber).ToList();
 
                 List<string> allEntitiesSimilarNames =
-                allEntities.Where(x => x.EntityNumber != null).Select(x => x.EntityNumber).ToList();
+                allEntities.Where(x => x.EntityGroup == entityGroup).Where(x => x.EntityNumber != null).Select(x => x.EntityNumber).ToList();
 
                 List<string> unsavedEntitiesSimilarNames =
-                unsavedEntities.Where(x => x.EntityNumber != null).Select(x => x.EntityNumber).ToList();
+                unsavedEntities.Where(x => x.EntityGroup == entityGroup).Where(x => x.EntityNumber != null).Select(x => x.EntityNumber).ToList();
 
-                List<string> insertSelectedEntitiesSimilarNames = insertSelectedEntities.Where(x => x.EntityNumber != null).Select(x => x.EntityNumber).ToList();
+                List<string> insertSelectedEntitiesSimilarNames = insertSelectedEntities.Where(x => x.EntityGroup == entityGroup).Where(x => x.EntityNumber != null).Select(x => x.EntityNumber).ToList();
 
                 do
                 {

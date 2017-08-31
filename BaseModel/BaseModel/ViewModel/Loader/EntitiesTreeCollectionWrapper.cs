@@ -1,6 +1,7 @@
 ﻿using BaseModel.Data.Helpers;
 using BaseModel.DataModel;
 using BaseModel.Misc;
+using BaseModel.ViewModel.Services;
 using DevExpress.Mvvm.POCO;
 using DevExpress.Xpf.Grid;
 using DevExpress.Xpf.Grid.DragDrop;
@@ -89,12 +90,14 @@ namespace BaseModel.ViewModel.Loader
 
         protected override void OnPersistentAfterAuxiliaryEntitiesChanges(object key, Type changedType, EntityMessageType messageType, object sender, bool isBulkRefresh)
         {
-            GridControlService.RefreshData();
+            TreeGridControlService.RefreshData();
             base.OnPersistentAfterAuxiliaryEntitiesChanges(key, changedType, messageType, sender, isBulkRefresh);
         }
         #endregion
 
         #region Reordering
+        protected virtual IGridControlService TreeGridControlService { get { return this.GetService<IGridControlService>("TreeGridControlService"); } }
+
         private void ReorderAndSave(IEnumerable<Guid?> guid_parents)
         {
             var childEntities = new List<TMainProjectionEntity>();
@@ -103,6 +106,7 @@ namespace BaseModel.ViewModel.Loader
 
             MainViewModel.BulkSave(childEntities);
             GridControlService.RefreshData();
+            TreeGridControlService.RefreshData();
         }
 
         protected virtual void onReorderingPopulateOrderSpecificProperties(TMainProjectionEntity orderingProjection)
@@ -161,7 +165,9 @@ namespace BaseModel.ViewModel.Loader
             if (!dontSave)
             {
                 MainViewModel.BulkSave(childProjections);
-                TreeListControlService.RefreshData();
+
+                if(TreeGridControlService != null)
+                    TreeGridControlService.RefreshData();
             }
 
 

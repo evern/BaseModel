@@ -33,15 +33,39 @@ namespace BaseModel.ViewModel.Loader
         #region Call Backs
         protected override void AssignCallBacksAndRaisePropertyChange(IEnumerable<TMainProjectionEntity> entities)
         {
-            MainViewModel.IsContinueNewRowFromViewCallBack += IsContinueNewRowFromViewCallBack;
+            //MainViewModel.IsContinueNewRowFromViewCallBack += IsContinueNewRowFromViewCallBack;
+            MainViewModel.OnBeforeEntitySavedIsContinueCallBack = onBeforeEntitySavedIsContinue;
             MainViewModel.OnAfterEntitiesDeletedCallBack = OnAfterEntitiesDeletedCallBack;
             MainViewModel.SetParentViewModel(this);
             base.AssignCallBacksAndRaisePropertyChange(entities);
         }
 
+        protected virtual bool onBeforeEntitySavedIsContinue(TMainProjectionEntity projection)
+        {
+            if(projection.EntityNumber == string.Empty || projection.EntityNumber == null)
+            {
+                IEnumerable<TMainProjectionEntity> entitiesInOrder = MainViewModel.Entities.Where(x => x.EntityGroup == projection.EntityGroup).OrderBy(x => x.EntityNumber);
+                if (entitiesInOrder.Count() == 0)
+                {
+                    projection.EntityNumber = StringFormatUtils.AppendStringWithEnumerator(string.Empty, 0, DefaultNumericFieldLength());
+                    return true;
+                }
+
+                TMainProjectionEntity largestNumberEntity = entitiesInOrder.Last();
+                string largestNumberString = largestNumberEntity.EntityNumber;
+                int numericFieldLength = 0;
+                long largestNumberValueOnly = 0;
+                string largestNumberStringOnly = StringFormatUtils.ParseStringIntoComponents(largestNumberString, out numericFieldLength, out largestNumberValueOnly);
+                long newRowNumber = largestNumberValueOnly + 1;
+                projection.EntityNumber = StringFormatUtils.AppendStringWithEnumerator(string.Empty, newRowNumber, DefaultNumericFieldLength());
+            }
+
+            return true;
+        }
+
         protected bool IsContinueNewRowFromViewCallBack(RowEventArgs e, TMainProjectionEntity projection)
         {
-            IEnumerable<TMainProjectionEntity> entitiesInOrder = MainViewModel.Entities.OrderBy(x => x.EntityNumber);
+            IEnumerable<TMainProjectionEntity> entitiesInOrder = MainViewModel.Entities.Where(x => x.EntityGroup == projection.EntityGroup).OrderBy(x => x.EntityNumber);
             if(entitiesInOrder.Count() == 0)
             {
                 projection.EntityNumber = StringFormatUtils.AppendStringWithEnumerator(string.Empty, 0, DefaultNumericFieldLength());
@@ -58,7 +82,6 @@ namespace BaseModel.ViewModel.Loader
 
             return true;
         }
-
 
         public bool CanDuplicate()
         {
@@ -193,7 +216,7 @@ namespace BaseModel.ViewModel.Loader
                     var newProjection = new TMainProjectionEntity();
                     DataUtils.ShallowCopy(newProjection, selectedEntity);
                     newProjection.EntityKey = Guid.Empty;
-                    newProjection.EntityNumber = StringFormatUtils.GetNewRegisterNumber(MainViewModel.Entities, unsavedEntities, selectedEntity.EntityNumber, MainViewModel.SelectedEntities);
+                    newProjection.EntityNumber = StringFormatUtils.GetNewRegisterNumber(MainViewModel.Entities, unsavedEntities, selectedEntity.EntityNumber, MainViewModel.SelectedEntities, selectedEntity.EntityGroup);
                     MainViewModel.EntitiesUndoRedoManager.AddUndo(newProjection, null, null, null, EntityMessageType.Added);
                     unsavedEntities.Add(newProjection);
                 }

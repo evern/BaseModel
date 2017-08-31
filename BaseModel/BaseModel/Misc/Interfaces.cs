@@ -30,6 +30,8 @@ namespace BaseModel.Misc
     {
         int SortOrder { get; set; }
         int? OldSortOrder { get; set; }
+        string DisplayNumber { get; }
+        bool IsLast { get; }
     }
 
     public interface ICanUpdate
@@ -51,6 +53,7 @@ namespace BaseModel.Misc
     public interface IEntityNumber
     {
         string EntityNumber { get; set; }
+        string EntityGroup { get; }
     }
 
     public interface IProjection<TEntity> : IGuidEntityKey
@@ -66,9 +69,14 @@ namespace BaseModel.Misc
         ObservableCollection<TProjection> DetailEntities { get; set; }
     }
 
-    public interface IProjectionMasterOtherDetail<TEntity, TChild> : IProjection<TEntity>, IHaveExpandState
+    public interface IProjectionMasterOtherDetail<TEntity, TChild> : IProjection<TEntity>, IHaveDetail<TChild>, IHaveExpandState
     where TEntity : class, IGuidEntityKey, new()
     where TChild : class, IGuidEntityKey, IGuidParentEntityKey, new()
+    {
+    }
+
+    public interface IHaveDetail<TChild> : IHaveExpandState
+        where TChild : class, IGuidEntityKey, IGuidParentEntityKey, new()
     {
         ObservableCollection<TChild> DetailEntities { get; set; }
     }
