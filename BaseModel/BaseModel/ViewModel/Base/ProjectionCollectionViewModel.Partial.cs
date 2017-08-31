@@ -698,7 +698,7 @@ namespace BaseModel.ViewModel.Base
 
             if (!isUp)
             {
-                for (int i = 0; i < SelectedEntities.Count; i++)
+                for (int i = 1; i < SelectedEntities.Count; i++)
                 {
                     if(enumerationType == EnumerationType.Increase)
                         enumerator += enumerationDifferences;
