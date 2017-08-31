@@ -498,6 +498,9 @@ namespace BaseModel.ViewModel.Base
         public void ShowPopUp(object sender)
         {
             var editor = sender as GridControl;
+            if (editor == null)
+                return;
+
             var comboBoxEditor = editor.View.ActiveEditor as ComboBoxEdit;
             if (comboBoxEditor == null)
                 return;
