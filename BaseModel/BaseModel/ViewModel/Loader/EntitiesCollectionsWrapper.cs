@@ -20,6 +20,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Timers;
 using System.Collections;
+using DevExpress.Mvvm.DataAnnotations;
 
 namespace BaseModel.ViewModel.Loader
 {
@@ -568,7 +569,10 @@ namespace BaseModel.ViewModel.Loader
         #endregion
 
         #region Services
-        protected virtual IGridControlService GridControlService { get { return this.GetService<IGridControlService>("DefaultGridControlService"); } }
+        [ServiceProperty(Key = "DefaultGridControlService")]
+        protected virtual IGridControlService GridControlService { get { return null; } }
+
+        //protected virtual IGridControlService GridControlService { get { return this.GetService<IGridControlService>("DefaultGridControlService"); } }
         protected virtual ITableViewService TableViewService { get { return this.GetService<ITableViewService>(); } }
         protected virtual ITreeViewService TreeViewService { get { return this.GetService<ITreeViewService>(); } }
         protected virtual ITreeListControlService TreeListControlService { get { return this.GetService<ITreeListControlService>(); } }

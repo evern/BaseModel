@@ -56,7 +56,7 @@ namespace BaseModel.ViewModel.Services
 
             foreach (GridColumn grid_column in GridControl.Columns)
             {
-                grid_column.SortMode = DevExpress.XtraGrid.ColumnSortMode.Custom;
+                grid_column.SortMode = DevExpress.XtraGrid.ColumnSortMode.DisplayText;
             }
         }
 
