@@ -36,6 +36,7 @@ namespace BaseModel.Misc
 
     public interface ICanUpdate
     {
+        bool NewEntityFromView { get; set; }
         void Update();
     }
 

@@ -156,13 +156,22 @@ namespace BaseModel.ViewModel.Base
             private void OnEntityChanged(TPrimaryKey primaryKey, bool skipOnMessage)
             {
                 var existingProjectionEntity = FindLocalProjectionByKey(primaryKey);
-                if(skipOnMessage)
-                {
-                    ICanUpdate can_update_entity = existingProjectionEntity as ICanUpdate;
-                    if (can_update_entity != null)
-                        can_update_entity.Update();
+                ICanUpdate can_update_entity = existingProjectionEntity as ICanUpdate;
 
-                    return;
+                if (skipOnMessage)
+                {
+                    if (can_update_entity != null)
+                    {
+                        if(!can_update_entity.NewEntityFromView)
+                        {
+                            can_update_entity.Update();
+                            return;
+                        }
+                        else
+                        {
+                            can_update_entity.NewEntityFromView = false;
+                        }
+                    }
                 }
 
                 var projectionEntity = FindActualProjectionByKey(primaryKey);

@@ -29,6 +29,8 @@ namespace BaseModel.Misc
             set { Entity.EntityKey = value; }
         }
 
+        public bool NewEntityFromView { get; set; }
+
         public virtual void Update()
         {
             RaisePropertiesChanged();

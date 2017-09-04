@@ -565,8 +565,11 @@ namespace BaseModel.ViewModel.Base
             if (e.RowHandle == DataControlBase.NewItemRowHandle)
             {
                 EntitiesUndoRedoManager.PauseActionId();
-
+                
                 var projection = (TProjection)e.Row;
+                ICanUpdate updateProjection = projection as ICanUpdate;
+                if (updateProjection != null)
+                    updateProjection.NewEntityFromView = true;
 
                 if (IsContinueNewRowFromViewCallBack != null)
                     if (!IsContinueNewRowFromViewCallBack(e, projection))
