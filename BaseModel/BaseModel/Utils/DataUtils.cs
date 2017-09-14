@@ -367,7 +367,7 @@ namespace BaseModel.Data.Helpers
             var gridView = gridControl.View;
 
             List<TProjection> pasteProjections = new List<TProjection>();
-            if (gridView.ActiveEditor == null && (gridView.GetType() == typeof(TView)))
+            if (gridView.ActiveEditor == null && (gridView.GetType() == typeof(TView)) && !ShouldSkipPasting(gridControl))
             {
                 var gridTView = gridView as TView;
                 TableView gridTableView = gridTView as TableView;
@@ -409,6 +409,34 @@ namespace BaseModel.Data.Helpers
             }
 
             return pasteProjections;
+        }
+
+        private bool ShouldSkipPasting(GridControl gridControl)
+        {
+            DataControlDetailDescriptor detailDescriptor = gridControl.DetailDescriptor as DataControlDetailDescriptor;
+            if (detailDescriptor != null)
+            {
+                return true;
+                //GridControl grid_control = detailDescriptor.DataControl as GridControl;
+                //if (grid_control != null)
+                //{
+                //    TableView tableView = grid_control.View as TableView;
+                //    if (tableView != null)
+                //    {
+                //        if (tableView.ActiveEditor != null)
+                //            return true;
+                //        else
+                //            return ShouldSkipPasting(grid_control);
+                //    }
+                //    else
+                //        //always skip pasting of detail descriptor exists
+                //        return true;
+                //}
+                //else
+                //    return false;
+            }
+            else
+                return false;
         }
 
         public PasteResult pasteDataInProjectionColumn(TProjection projection, ColumnBase column, string pasteData, List<UndoRedoArg> undoRedoArguments = null)

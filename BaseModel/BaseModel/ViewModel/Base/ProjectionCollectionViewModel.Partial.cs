@@ -1211,9 +1211,9 @@ namespace BaseModel.ViewModel.Base
                 EntitiesUndoRedoManager.UnpauseActionId();
 
                 BulkSave(pasteProjections);
+                e.Handled = true;
             }
 
-            e.Handled = true;
             PasteListener?.Invoke(PasteStatus.Stop);
         }
 

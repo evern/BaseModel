@@ -131,6 +131,8 @@ namespace BaseModel.ViewModel.Loader
                         else
                             currentChildEntities = childEntities.Where(y => y.Entity.ParentEntityKey == displayEntityWithOriginalKey.OriginalEntityKey);
 
+                        IEnumerable<TMainProjectionEntity> filteredChildEntities = currentChildEntities.Where(x => childEntitiesFilter(x));
+
                         foreach (var currentChildEntity in currentChildEntities)
                         {
                             var currentChildEntityPOCO = new TMainProjectionEntity();
@@ -144,6 +146,11 @@ namespace BaseModel.ViewModel.Loader
 
                 return displayEntities;
             }
+        }
+
+        protected virtual bool childEntitiesFilter(TMainProjectionEntity x)
+        {
+            return true;
         }
 
         #region View Refresh
