@@ -455,6 +455,17 @@ namespace BaseModel.ViewModel.Loader
 
         }
 
+        public void PreviewKeyDown(KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                mainThreadDispatcher.BeginInvoke(new Action(() =>
+                {
+                    TableViewService.CommitEditing();
+                }));
+            }
+        }
+
         public void Refresh()
         {
             IPOCOViewModel viewModel = this as IPOCOViewModel;
@@ -573,7 +584,8 @@ namespace BaseModel.ViewModel.Loader
         protected virtual IGridControlService GridControlService { get { return null; } }
 
         //protected virtual IGridControlService GridControlService { get { return this.GetService<IGridControlService>("DefaultGridControlService"); } }
-        protected virtual ITableViewService TableViewService { get { return this.GetService<ITableViewService>(); } }
+        [ServiceProperty(Key = "DefaultTableViewService")]
+        protected virtual ITableViewService TableViewService { get { return null; } }
         protected virtual ITreeViewService TreeViewService { get { return this.GetService<ITreeViewService>(); } }
         protected virtual ITreeListControlService TreeListControlService { get { return this.GetService<ITreeListControlService>(); } }
         protected virtual IFolderBrowserDialogService FolderBrowserDialogService { get { return this.GetService<IFolderBrowserDialogService>(); } }

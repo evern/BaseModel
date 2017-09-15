@@ -15,7 +15,7 @@ namespace BaseModel.ViewModel.Loader
     public abstract class ProjectionMasterDetailCollectionsWrapper<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey,
         TMainEntityUnitOfWork> : CollectionViewModelsWrapper<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey,
         TMainEntityUnitOfWork>
-        where TMainEntity : class, IGuidEntityKey, IGuidParentEntityKey, new()
+        where TMainEntity : class, IGuidEntityKey, IHaveCreatedDate, IGuidParentEntityKey, new()
         where TMainProjectionEntity : class, IProjectionMasterDetail<TMainEntity, TMainProjectionEntity>, ICanUpdate, new()
         where TMainEntityUnitOfWork : IUnitOfWork
     {
@@ -110,7 +110,10 @@ namespace BaseModel.ViewModel.Loader
                     displayEntities = new ObservableCollection<TMainProjectionEntity>();
                     var parentEntities = MainViewModel.Entities.Where(x => x.Entity.ParentEntityKey == null).AsEnumerable();
                     var childEntities = MainViewModel.Entities.Where(x => x.Entity.ParentEntityKey != null).AsEnumerable();
-                    foreach (var parentEntity in parentEntities)
+
+                    IEnumerable<TMainProjectionEntity> filteredParentEntities = parentEntities.Where(x => parentEntitiesFilter(x));
+
+                    foreach (var parentEntity in filteredParentEntities.OrderBy(x => parentEntitiesOrder(x)))
                     {
                         var parentEntityPOCO = new TMainProjectionEntity();
                         DataUtils.ShallowCopy(parentEntityPOCO, parentEntity);
@@ -133,7 +136,7 @@ namespace BaseModel.ViewModel.Loader
 
                         IEnumerable<TMainProjectionEntity> filteredChildEntities = currentChildEntities.Where(x => childEntitiesFilter(x));
 
-                        foreach (var currentChildEntity in currentChildEntities)
+                        foreach (var currentChildEntity in filteredChildEntities.OrderBy(x => childEntitiesOrder(x)))
                         {
                             var currentChildEntityPOCO = new TMainProjectionEntity();
                             //childCOMMODITY_GROUP_DIRECTPOCO.EntityKey = childCOMMODITY_GROUP_DIRECT.EntityKey;
@@ -146,6 +149,21 @@ namespace BaseModel.ViewModel.Loader
 
                 return displayEntities;
             }
+        }
+
+        protected virtual object parentEntitiesOrder(TMainProjectionEntity x)
+        {
+            return x.Entity.EntityCreatedDate;
+        }
+
+        protected virtual object childEntitiesOrder(TMainProjectionEntity x)
+        {
+            return x.Entity.EntityCreatedDate;
+        }
+
+        protected virtual bool parentEntitiesFilter(TMainProjectionEntity x)
+        {
+            return true;
         }
 
         protected virtual bool childEntitiesFilter(TMainProjectionEntity x)

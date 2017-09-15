@@ -53,7 +53,7 @@
                         </dx:DialogService>
                         <dxmvvm:LayoutSerializationService />
                         <dxmvvm:FolderBrowserDialogService Description="Choose Folder" ShowNewFolderButton="True" RootFolder="Desktop" RestorePreviouslySelectedDirectory="True" />
-                        <services:TableViewService TableView="{Binding ElementName=tableView}" />
+                        <services:TableViewService x:Name="DefaultTableViewService" TableView="{Binding ElementName=tableView}" />
                         <services:GridControlService x:Name="DefaultGridControlService" GridControl="{Binding ElementName=GridControl}" />
                     </ItemsControl>
                 </DataTemplate>
@@ -218,26 +218,14 @@
             <Setter.Value>
                 <DataTemplate>
                     <ItemsControl>
-                        <dxmvvm:EventToCommand PassEventArgsToCommand="True"
-                                               Command="{Binding ExistingRowAddUndoAndSaveCommand}"
-                                               EventName="CellValueChanged" />
-                        <dxmvvm:EventToCommand PassEventArgsToCommand="True"
-                                               Command="{Binding NewRowAddUndoAndSaveCommand}" EventName="RowUpdated" />
-                        <dxmvvm:EventToCommand PassEventArgsToCommand="True"
-                                               Command="{Binding ValidateCellCommand}"
-                                               EventName="ValidateCell" />
-                        <dxmvvm:EventToCommand PassEventArgsToCommand="True"
-                                               Command="{Binding ValidateRowCommand}"
-                                               EventName="ValidateRow" />
-                        <dxmvvm:EventToCommand PassEventArgsToCommand="True"
-                                               Command="{Binding PastingFromClipboardCommand}"
-                                               EventName="PastingFromClipboard" />
-                        <dxmvvm:EventToCommand PassEventArgsToCommand="True"
-                                               Command="{Binding ShownEditorCommand}"
-                                               EventName="ShownEditor" />
-                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" 
-                                               Command="{Binding DataContext.CellValueChangingCommand, ElementName=userControl}"
-                                               EventName="CellValueChanging" />
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" Command="{Binding ExistingRowAddUndoAndSaveCommand}" EventName="CellValueChanged" />
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" Command="{Binding NewRowAddUndoAndSaveCommand}" EventName="RowUpdated" />
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" Command="{Binding ValidateCellCommand}" EventName="ValidateCell" />
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" Command="{Binding ValidateRowCommand}" EventName="ValidateRow" />
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" Command="{Binding PastingFromClipboardCommand}" EventName="PastingFromClipboard" />
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" Command="{Binding ShownEditorCommand}" EventName="ShownEditor" />
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" Command="{Binding DataContext.CellValueChangingCommand, ElementName=userControl}" EventName="CellValueChanging" />
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" Command="{Binding DataContext.PreviewKeyDownCommand, ElementName=userControl}" EventName="PreviewKeyDown" />
                         <dxmvvm:KeyToCommand KeyGesture="CTRL+Z" Command="{Binding UndoCommand}" />
                         <dxmvvm:KeyToCommand KeyGesture="CTRL+Y" Command="{Binding RedoCommand}" />
                     </ItemsControl>

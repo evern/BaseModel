@@ -50,6 +50,7 @@
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Windows.Interactivity, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL" />
     <Reference Include="System.Xaml" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Data" />
@@ -137,6 +138,7 @@
     <Compile Include="View\BasicMessageBox.xaml.cs">
       <DependentUpon>BasicMessageBox.xaml</DependentUpon>
     </Compile>
+    <Compile Include="View\Behaviors\DetailSyncBehavior.cs" />
     <Compile Include="View\BulkFindAndReplace.xaml.cs">
       <DependentUpon>BulkFindAndReplace.xaml</DependentUpon>
     </Compile>

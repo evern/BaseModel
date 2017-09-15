@@ -13,6 +13,7 @@ namespace BaseModel.ViewModel.Services
     public interface ITableViewService
     {
         bool ExportToXls(string exportPath);
+        void CommitEditing();
     }
 
     public class TableViewService : ServiceBase, ITableViewService
@@ -45,6 +46,15 @@ namespace BaseModel.ViewModel.Services
             }
 
             return false;
+        }
+
+        public void CommitEditing()
+        {
+            if (this.TableView == null)
+                return;
+
+            TableView.CommitEditing();
+            TableView.MoveNextRow();
         }
     }
 }
