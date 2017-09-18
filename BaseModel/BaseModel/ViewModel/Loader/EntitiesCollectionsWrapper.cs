@@ -192,6 +192,7 @@ namespace BaseModel.ViewModel.Loader
             {
                 GridControlService.SetCheckedListFilterPopUpMode();
                 GridControlService.SetGridColumnSortMode();
+                GridControlService.CombineMasterDetailSearch();
             }
 
             PersistentLayoutHelper.TryDeserializeLayout(LayoutSerializationService, ViewName);

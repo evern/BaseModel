@@ -1,5 +1,6 @@
 ﻿using BaseModel.Data.Helpers;
 using BaseModel.Misc;
+using DevExpress.Data.Filtering;
 using DevExpress.Mvvm.UI;
 using DevExpress.Xpf.Editors;
 using DevExpress.Xpf.Editors.Settings;
@@ -13,6 +14,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Data;
 
 namespace BaseModel.ViewModel.Services
 {
@@ -25,6 +27,12 @@ namespace BaseModel.ViewModel.Services
         void HighlightIncorrectText(SpellChecker spellChecker);
         void SetCheckedListFilterPopUpMode();
         void SetGridColumnSortMode();
+
+        void MasterDetail_ExpandAll();
+        void MasterDetail_CollapseAllButThis();
+        void MasterDetail_CollapseAll();
+        void CombineMasterDetailSearch();
+        void SetFilterCriteria(string filter_string);
     }
 
     public class GridControlService : ServiceBase, IGridControlService
@@ -37,6 +45,72 @@ namespace BaseModel.ViewModel.Services
         
         public static readonly DependencyProperty GridControlProperty =
             DependencyProperty.Register("GridControl", typeof(GridControl), typeof(GridControlService), new PropertyMetadata(null));
+
+        public void SetFilterCriteria(string filter_string)
+        {
+            GridControl.FilterCriteria = CriteriaOperator.Parse(filter_string);
+        }
+
+        public void CombineMasterDetailSearch()
+        {
+            if (GridControl == null)
+                return;
+
+            var detailDescriptor = GridControl.DetailDescriptor as DataControlDetailDescriptor;
+            if (detailDescriptor == null)
+                return;
+
+            TableView view = GridControl.View as TableView;
+            if(view != null)
+            {
+                operands = new List<OperandProperty>();
+                foreach(GridColumn column in GridControl.Columns)
+                {
+                    operands.Add(new OperandProperty(column.FieldName));
+                }
+
+                GridControl.SubstituteFilter += GridControl_SubstituteFilter;
+                GridControl.MasterRowExpanded += GridControl_MasterRowExpanded;
+            }
+        }
+
+        private void GridControl_SubstituteFilter(object sender, DevExpress.Data.SubstituteFilterEventArgs e)
+        {
+            TableView view = GridControl.View as TableView;
+            if (string.IsNullOrEmpty(view.SearchString))
+                return;
+            e.Filter = new GroupOperator(GroupOperatorType.Or, e.Filter, GetDetailFilter(view.SearchString));
+        }
+
+        private void GridControl_MasterRowExpanded(object sender, RowEventArgs e)
+        {
+            var detailView = GetDetailView(e.RowHandle);
+            if (detailView == null)
+                return;
+
+            TableView view = GridControl.View as TableView;
+            detailView.ShowSearchPanelMode = ShowSearchPanelMode.Never;
+            BindingOperations.SetBinding(detailView, DataViewBase.SearchStringProperty, new Binding("SearchString") { Source = view });
+        }
+
+        List<OperandProperty> operands;
+        AggregateOperand GetDetailFilter(string searchString)
+        {
+            GroupOperator detailOperator = new GroupOperator(GroupOperatorType.Or);
+            foreach (var op in operands)
+                detailOperator.Operands.Add(new FunctionOperator(FunctionOperatorType.Contains, op, new OperandValue(searchString)));
+            return new AggregateOperand("DetailEntities", Aggregate.Exists, detailOperator);
+        }
+
+        TableView GetDetailView(int rowHandle)
+        {
+            if (GridControl == null)
+                return null;
+
+            GridControl masterGrid = GridControl;
+            var detail = masterGrid.GetDetail(rowHandle) as GridControl;
+            return detail == null ? null : detail.View as TableView;
+        }
 
         public void SetCheckedListFilterPopUpMode()
         {
@@ -103,6 +177,42 @@ namespace BaseModel.ViewModel.Services
 
             GridControl.UpdateGroupSummary();
             GridControl.UpdateTotalSummary();
+        }
+
+        public void MasterDetail_ExpandAll()
+        {
+            if (GridControl == null)
+                return;
+
+            int dataRowCount = GridControl.VisibleRowCount - 1;
+            for (int rowHandle = 0; rowHandle < dataRowCount; rowHandle++)
+                GridControl.ExpandMasterRow(rowHandle);
+        }
+
+        public void MasterDetail_CollapseAllButThis()
+        {
+            if (GridControl == null)
+                return;
+
+            int dataRowCount = GridControl.VisibleRowCount - 1;
+            DataViewBase view = GridControl.View;
+            if (view.FocusedRowHandle >= 0)
+                GridControl.ExpandMasterRow(view.FocusedRowHandle);
+            for (int rowHandle = 0; rowHandle < dataRowCount; rowHandle++)
+            {
+                if (rowHandle != view.FocusedRowHandle)
+                    GridControl.CollapseMasterRow(rowHandle);
+            }
+        }
+
+        public void MasterDetail_CollapseAll()
+        {
+            if (GridControl == null)
+                return;
+
+            int dataRowCount = GridControl.VisibleRowCount - 1;
+            for (int rowHandle = 0; rowHandle < dataRowCount; rowHandle++)
+                GridControl.CollapseMasterRow(rowHandle);
         }
 
         DependencyPropertyKey HighlightedTextPropertyKey;

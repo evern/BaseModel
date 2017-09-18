@@ -98,7 +98,7 @@ namespace BaseModel.ViewModel.Loader
 
         #region Reordering
         [ServiceProperty(Key = "TreeGridControlService")]
-        protected virtual IGridControlService TreeGridControlService { get { return null; } }
+        public virtual IGridControlService TreeGridControlService { get { return null; } }
         //protected virtual IGridControlService TreeGridControlService { get { return this.GetService<IGridControlService>("TreeGridControlService"); } }
 
         private void ReorderAndSave(IEnumerable<Guid?> guid_parents)

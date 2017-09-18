@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System.Collections.ObjectModel;
 using DevExpress.Mvvm.POCO;
 using BaseModel.ViewModel.Base;
+using System.Windows.Data;
 
 namespace BaseModel.ViewModel.Loader
 {
