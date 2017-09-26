@@ -27,6 +27,7 @@ namespace BaseModel.ViewModel.Services
         void HighlightIncorrectText(SpellChecker spellChecker);
         void SetCheckedListFilterPopUpMode();
         void SetGridColumnSortMode();
+        void CopyWithHeader();
 
         void MasterDetail_ExpandAll();
         void MasterDetail_CollapseAllButThis();
@@ -168,6 +169,16 @@ namespace BaseModel.ViewModel.Services
                 return;
 
             GridControl.RefreshData();
+        }
+
+        public void CopyWithHeader()
+        {
+            if (GridControl == null)
+                return;
+
+            GridControl.ClipboardCopyMode = ClipboardCopyMode.IncludeHeader;
+            GridControl.CopySelectedItemsToClipboard();
+            GridControl.ClipboardCopyMode = ClipboardCopyMode.ExcludeHeader;
         }
 
         public void RefreshSummary()

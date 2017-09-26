@@ -578,6 +578,11 @@ namespace BaseModel.ViewModel.Loader
                     MessageBoxService.ShowMessage("Export failed because the file is in use");
             }
         }
+
+        public virtual void CopyWithHeader()
+        {
+            GridControlService.CopyWithHeader();
+        }
         #endregion
 
         #region Services

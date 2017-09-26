@@ -25,13 +25,15 @@ namespace BaseModel.Data.Helpers
         readonly Func<TProjection, bool> onBeforePasteWithValidationFunc;
         readonly IMessageBoxService messageBoxService;
         readonly Func<TProjection, string, object, bool> validateSetValueCallBack;
+        readonly Action<List<KeyValuePair<ColumnBase, string>>, TProjection> manualPasteAction;
 
-        public CopyPasteHelper(IsValidProjectionFunc isValidProjectionFunc = null, Func<TProjection, bool> onBeforePasteWithValidationFunc = null, IMessageBoxService messageBoxService = null, Func<TProjection, string, object, bool> validateSetValueCallBack = null)
+        public CopyPasteHelper(IsValidProjectionFunc isValidProjectionFunc = null, Func<TProjection, bool> onBeforePasteWithValidationFunc = null, IMessageBoxService messageBoxService = null, Func<TProjection, string, object, bool> validateSetValueCallBack = null, Action<List<KeyValuePair<ColumnBase, string>>, TProjection> manualPasteAction = null)
         {
             this.isValidProjectionFunc = isValidProjectionFunc;
             this.onBeforePasteWithValidationFunc = onBeforePasteWithValidationFunc;
             this.messageBoxService = messageBoxService;
             this.validateSetValueCallBack = validateSetValueCallBack;
+            this.manualPasteAction = manualPasteAction;
         }
 
         public class UndoRedoArg
@@ -376,15 +378,19 @@ namespace BaseModel.Data.Helpers
                 foreach (var Row in RowData)
                 {
                     TProjection projection = new TProjection();
-
+                    List<KeyValuePair<ColumnBase, string>> columnData = new List<KeyValuePair<ColumnBase, string>>();
                     var ColumnStrings = Row.Split('\t');
                     for (var i = 0; i < ColumnStrings.Count(); i++)
                     {
                         ColumnBase copyColumn = gridTableView != null ? gridTableView.VisibleColumns[i] : gridTreeListView.VisibleColumns[i];
                         PasteResult result = pasteDataInProjectionColumn(projection, copyColumn, ColumnStrings[i]);
+                        columnData.Add(new KeyValuePair<ColumnBase, string>(copyColumn, ColumnStrings[i]));
+                        
                         if (result == PasteResult.Skip)
                             continue;
                     }
+
+                    manualPasteAction?.Invoke(columnData, projection);
 
                     var errorMessage = "Duplicate exists on constraint field named: ";
                     if (isValidProjectionFunc(projection, ref errorMessage))

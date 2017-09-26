@@ -951,6 +951,7 @@ namespace BaseModel.ViewModel.Base
 
         public Func<TProjection, string, object, bool> ValidateBulkEditCallBack;
         public Func<TProjection, string, object, bool> ValidateSetValueIsContinueCallBack;
+        public Action<List<KeyValuePair<ColumnBase, string>>, TProjection> ManualPasteAction;
 
         public void BulkColumnEdit(object button)
         {
@@ -1129,7 +1130,7 @@ namespace BaseModel.ViewModel.Base
                 return;
             
             PasteListener?.Invoke(PasteStatus.Start);
-            CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, MessageBoxService, ValidateSetValueIsContinueCallBack);
+            CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, MessageBoxService, ValidateSetValueIsContinueCallBack, ManualPasteAction);
 
             bool dontSplit = false;
             if ((Keyboard.Modifiers | ModifierKeys.Shift) == Keyboard.Modifiers)
