@@ -413,29 +413,29 @@ namespace BaseModel.Data.Helpers
 
         private bool ShouldSkipPasting(GridControl gridControl)
         {
-            DataControlDetailDescriptor detailDescriptor = gridControl.DetailDescriptor as DataControlDetailDescriptor;
-            if (detailDescriptor != null)
-            {
-                return true;
-                //GridControl grid_control = detailDescriptor.DataControl as GridControl;
-                //if (grid_control != null)
-                //{
-                //    TableView tableView = grid_control.View as TableView;
-                //    if (tableView != null)
-                //    {
-                //        if (tableView.ActiveEditor != null)
-                //            return true;
-                //        else
-                //            return ShouldSkipPasting(grid_control);
-                //    }
-                //    else
-                //        //always skip pasting of detail descriptor exists
-                //        return true;
-                //}
-                //else
-                //    return false;
-            }
-            else
+            //DataControlDetailDescriptor detailDescriptor = gridControl.DetailDescriptor as DataControlDetailDescriptor;
+            //if (detailDescriptor != null)
+            //{
+            //    return true;
+            //    //GridControl grid_control = detailDescriptor.DataControl as GridControl;
+            //    //if (grid_control != null)
+            //    //{
+            //    //    TableView tableView = grid_control.View as TableView;
+            //    //    if (tableView != null)
+            //    //    {
+            //    //        if (tableView.ActiveEditor != null)
+            //    //            return true;
+            //    //        else
+            //    //            return ShouldSkipPasting(grid_control);
+            //    //    }
+            //    //    else
+            //    //        //always skip pasting of detail descriptor exists
+            //    //        return true;
+            //    //}
+            //    //else
+            //    //    return false;
+            //}
+            //else
                 return false;
         }
 
