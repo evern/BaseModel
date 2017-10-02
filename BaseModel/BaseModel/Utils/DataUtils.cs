@@ -486,6 +486,10 @@ namespace BaseModel.Data.Helpers
                             var copyColumnDisplayMember = (string)editSettings.GetType().GetProperty("DisplayMember").GetValue(editSettings);
                             var copyColumnItemsSource = (IEnumerable<object>)editSettings.GetType().GetProperty("ItemsSource").GetValue(editSettings);
                             Guid? guid_value = null;
+
+                            if (copyColumnItemsSource == null || copyColumnValueMember == null || copyColumnDisplayMember == null)
+                                return PasteResult.Skip;
+
                             foreach (var copyColumnItem in copyColumnItemsSource)
                             {
                                 var itemDisplayMemberPropertyInfo =
