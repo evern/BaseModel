@@ -163,7 +163,7 @@ namespace BaseModel.ViewModel.Document
                 NavigateCore(SelectedModule);
         }
 
-        public IDocument NavigateCore(TModule module)
+        public virtual IDocument NavigateCore(TModule module)
         {
             if (module == null || DocumentManagerService == null)
                 return null;
