@@ -36,6 +36,27 @@ namespace BaseModel.Misc
         }
     }
 
+    public class TripleEntitiesParameter<TEntity, TSecondEntity, TThirdEntity>
+        : DualEntitiesParameter<TEntity, TSecondEntity>
+        where TEntity : class
+        where TSecondEntity : class
+        where TThirdEntity : class
+    {
+        private TThirdEntity thirdEntity;
+
+        public TripleEntitiesParameter(TEntity entity, TSecondEntity secondEntity, TThirdEntity thirdEntity)
+            : base(entity, secondEntity)
+        {
+            this.thirdEntity = thirdEntity;
+        }
+
+        public TThirdEntity GetThirdEntity()
+        {
+            return this.thirdEntity;
+        }
+    }
+
+
     public class DualEntitiesParameter<TEntity, TSecondEntity>
         where TEntity : class
         where TSecondEntity : class
