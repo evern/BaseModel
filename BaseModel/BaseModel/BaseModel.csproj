@@ -85,13 +85,14 @@
     <Compile Include="DataModel\IRepository.cs" />
     <Compile Include="DataModel\IUnitOfWork.cs" />
     <Compile Include="DataModel\UnitOfWorkBase.cs" />
+    <Compile Include="Misc\CheckListColumnFilterInfoEx.cs" />
     <Compile Include="Misc\CommonResources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>CommonResources.resx</DependentUpon>
     </Compile>
     <Compile Include="Misc\Enums.cs" />
-    <Compile Include="Misc\GridControlEx.cs" />
+    <Compile Include="Misc\GridExtensions.cs" />
     <Compile Include="Misc\Interfaces.cs" />
     <Compile Include="Misc\LayoutSettings.Designer.cs" />
     <Compile Include="Misc\Messages.cs" />

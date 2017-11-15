@@ -86,4 +86,21 @@ namespace BaseModel.Misc
         //    }
         //}
     }
+
+    public class GridColumnEx : GridColumn
+    {
+        protected override ColumnFilterInfoBase CreateColumnFilterInfo()
+        {
+            switch (FilterPopupMode)
+            {
+                case FilterPopupMode.List:
+                    return new ListColumnFilterInfo(this);
+                case FilterPopupMode.CheckedList:
+                    return new CheckListColumnFilterInfoEx(this);
+                case FilterPopupMode.Custom:
+                    return new CustomColumnFilterInfo(this);
+            }
+            return null;
+        }
+    }
 }
