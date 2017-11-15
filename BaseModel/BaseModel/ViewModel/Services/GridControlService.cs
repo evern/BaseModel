@@ -120,7 +120,8 @@ namespace BaseModel.ViewModel.Services
 
             foreach(GridColumn grid_column in GridControl.Columns)
             {
-                grid_column.FilterPopupMode = FilterPopupMode.CheckedList;
+                if(grid_column.FilterPopupMode == FilterPopupMode.Default)
+                    grid_column.FilterPopupMode = FilterPopupMode.CheckedList;
             }
         }
 

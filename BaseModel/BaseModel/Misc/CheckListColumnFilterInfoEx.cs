@@ -1,7 +1,10 @@
-﻿using DevExpress.Data.Filtering;
+﻿using BaseModel.Data.Helpers;
+using DevExpress.Data.Filtering;
 using DevExpress.Xpf.Core;
 using DevExpress.Xpf.Editors;
+using DevExpress.Xpf.Editors.Settings;
 using DevExpress.Xpf.Grid;
+using DevExpress.Xpf.Grid.LookUp;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -14,14 +17,16 @@ namespace BaseModel.Misc
 {
     public class CheckListColumnFilterInfoEx : CheckedListColumnFilterInfo
     {
-        public CheckListColumnFilterInfoEx(ColumnBase column)
+        bool _useSecondMethod = false;
+        public CheckListColumnFilterInfoEx(ColumnBase column, bool useSecondMethod = false)
             : base(column)
         {
+            //second method filter does filtering by display text
+            _useSecondMethod = useSecondMethod;
         }
 
         protected override void AfterPopupOpening(PopupBaseEdit popup)
         {
-            //base.AfterPopupOpening(popup);
             ComboBoxEdit comboBox = (ComboBoxEdit)popup;
             comboBox.PopupContentSelectionChanged += new SelectionChangedEventHandler(PopupListBoxSelectionChanged);
             RecreateSelectedItems(comboBox);
@@ -30,30 +35,60 @@ namespace BaseModel.Misc
         protected override List<object> GetDefaultItems(bool addShowAllItem)
         {
             List<object> defaultItems = new List<object>();
-            defaultItems.Add(new CustomComboBoxItem() { DisplayValue = "(Blanks)", EditValue = null });
-            defaultItems.Add(new CustomComboBoxItem() { DisplayValue = "(Non blanks)", EditValue = new CustomComboBoxItem() { EditValue = new FunctionOperator(FunctionOperatorType.IsNullOrEmpty, new OperandProperty(Column.FieldName)).Not() } });
+            //defaultItems.Add(new CustomComboBoxItem() { DisplayValue = "(Blanks)", EditValue = null });
+            defaultItems.Add(new CustomComboBoxItem() { DisplayValue = "(Blanks)", EditValue = new FunctionOperator(FunctionOperatorType.IsNullOrEmpty, new OperandProperty(Column.FieldName)) });
+            defaultItems.Add(new CustomComboBoxItem() { DisplayValue = "(Non blanks)", EditValue = new FunctionOperator(FunctionOperatorType.IsNullOrEmpty, new OperandProperty(Column.FieldName)).Not() });
             return defaultItems;
         }
 
         protected override void UpdatePopupData(PopupBaseEdit popup, object[] values)
-        {   //((IDataProviderOwner)Column.View.DataControl).
-            //base.UpdatePopupData(popup, values);
+        {   
             ComboBoxEdit comboBox = (ComboBoxEdit)popup;
+            Type editSettingsType = base.Column.ActualEditSettings.GetType();
+            object editSettings = null;
+            if (editSettingsType == typeof(ComboBoxEditSettings))
+                editSettings = base.Column.ActualEditSettings as ComboBoxEditSettings;
+            else if (editSettingsType == typeof(LookUpEditSettings))
+                editSettings = base.Column.ActualEditSettings as LookUpEditSettingsBase;
+
             List<object> items = new List<object>();
-            items.AddRange(GetDefaultItems(true));
-            List<object> columnValues = GetColumnValues();
-            foreach (object value in columnValues)
+            bool addDefaultFilters;
+            if (editSettings != null)
             {
-                items.Add(new CustomComboBoxItem() { DisplayValue = value, EditValue = value });
+                var copyColumnItemsSource = (IEnumerable<object>)editSettings.GetType().GetProperty("ItemsSource").GetValue(editSettings);
+                
+                Dictionary<object, string> columnValues = GetColumnValues(copyColumnItemsSource, comboBox.DisplayMember, comboBox.ValueMember, out addDefaultFilters);
+                if(addDefaultFilters)
+                    items.AddRange(GetDefaultItems(true));
+
+                if (columnValues != null)
+                {
+                    foreach (KeyValuePair<object, string> value in columnValues.OrderBy(x => x.Key))
+                    {
+                        items.Add(new CustomComboBoxItem() { DisplayValue = value.Value, EditValue = value.Key });
+                    }
+                }
             }
-            //items.AddRange(values);			
+            else
+            {
+                List<object> columnValues = GetColumnValues(out addDefaultFilters);
+                if (addDefaultFilters)
+                    items.AddRange(GetDefaultItems(true));
+
+                foreach (object value in columnValues.OrderBy(x => x.ToString()))
+                {
+                    items.Add(new CustomComboBoxItem() { DisplayValue = value, EditValue = value });
+                }
+            }
+			
             comboBox.ItemsPanel = FilterPopupVirtualizingStackPanel.GetItemsPanelTemplate(items.Count);//GetItemsPanel(items.Count);
             comboBox.ItemsSource = items;
             RecreateSelectedItems(comboBox);
         }
 
-        private List<object> GetColumnValues()
+        private List<object> GetColumnValues(out bool addDefaultFilters)
         {
+            addDefaultFilters = false;
             List<object> result = new List<object>();
             GridControl grid = View.DataControl as GridControl;
             IList list = grid.ItemsSource as IList;
@@ -61,10 +96,74 @@ namespace BaseModel.Misc
             {
                 int rowHandle = grid.GetRowHandleByListIndex(i);
                 object value = grid.GetCellValue(rowHandle, Column.FieldName);
-                if (!result.Contains(value) && value != null)
-                    result.Add(value);
+                if (value != null)
+                {
+                    if (!result.Contains(value))
+                        result.Add(value);
+                }
+                else
+                    addDefaultFilters = true;
+
             }
             return result;
+        }
+
+        private Dictionary<object, string> GetColumnValues(IEnumerable itemSource, string displayMember, string valueMember, out bool addDefaultFilters)
+        {
+            addDefaultFilters = false;
+            if (itemSource == null)
+                return null;
+
+            try
+            {
+                Dictionary<object, string> result = new Dictionary<object, string>();
+                GridControl grid = View.DataControl as GridControl;
+                IList list = grid.ItemsSource as IList;
+                foreach(var listItem in list)
+                {
+                    object value = DataUtils.GetNestedValue(Column.FieldName, listItem);
+                    if (value != null)
+                    {
+                        string itemDisplay = getItemSourceDisplayMember(itemSource, displayMember, valueMember, value.ToString());
+                        if (_useSecondMethod)
+                        {
+                            if (itemDisplay != string.Empty && !result.Any(x => x.Key.ToString() == itemDisplay.ToString()) && itemDisplay != null)
+                                result.Add(itemDisplay, itemDisplay);
+                        }
+                        else if (itemDisplay != string.Empty && !result.Any(x => x.Key.ToString() == value.ToString()) && itemDisplay != null)
+                            result.Add(value, itemDisplay);
+
+                    }
+                    else
+                        addDefaultFilters = true;
+                }
+
+                return result;
+            }
+            catch(Exception e)
+            {
+                string s = e.ToString();
+                return null;
+            }
+        }
+
+        private string getItemSourceDisplayMember(IEnumerable itemSource, string displayMember, string valueMember, string currentValue)
+        {
+            try
+            {
+                foreach (var item in itemSource)
+                {
+                    object value = item.GetType().GetProperty(valueMember).GetValue(item);
+                    if (value.ToString() == currentValue)
+                        return item.GetType().GetProperty(displayMember).GetValue(item).ToString();
+                }
+            }
+            catch(Exception e)
+            {
+                string s = e.ToString();
+            }
+
+            return string.Empty;
         }
 
         protected override void ClearPopupData(PopupBaseEdit popup)
@@ -158,7 +257,7 @@ namespace BaseModel.Misc
             return op;
         }
 
-        internal new void UpdateColumnFilterIfNeeded(CriteriaOperator op)
+        internal void UpdateColumnFilterIfNeeded(CriteriaOperator op)
         {
             ((GridControl)((GridColumn)Column).View.DataControl).FilterCriteria = op;
         }
