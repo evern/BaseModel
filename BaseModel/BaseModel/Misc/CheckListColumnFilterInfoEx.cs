@@ -1,5 +1,6 @@
 ﻿using BaseModel.Data.Helpers;
 using DevExpress.Data.Filtering;
+using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using DevExpress.Xpf.Editors;
 using DevExpress.Xpf.Editors.Settings;
@@ -52,38 +53,45 @@ namespace BaseModel.Misc
                 editSettings = base.Column.ActualEditSettings as LookUpEditSettingsBase;
 
             List<object> items = new List<object>();
-            bool addDefaultFilters;
+            bool addDefaultFilters = false;
             if (editSettings != null)
             {
                 var copyColumnItemsSource = (IEnumerable<object>)editSettings.GetType().GetProperty("ItemsSource").GetValue(editSettings);
-                
-                Dictionary<object, string> columnValues = GetColumnValues(copyColumnItemsSource, comboBox.DisplayMember, comboBox.ValueMember, out addDefaultFilters);
-                if(addDefaultFilters)
-                    items.AddRange(GetDefaultItems(true));
-
-                if (columnValues != null)
+                if (copyColumnItemsSource != null && copyColumnItemsSource.First().GetType() == typeof(EnumMemberInfo))
+                    defaultMethod(addDefaultFilters, items);
+                else
                 {
-                    foreach (KeyValuePair<object, string> value in columnValues.OrderBy(x => x.Key))
+                    Dictionary<object, string> columnValues = GetColumnValues(copyColumnItemsSource, comboBox.DisplayMember, comboBox.ValueMember, out addDefaultFilters);
+                    if (addDefaultFilters)
+                        items.AddRange(GetDefaultItems(true));
+
+                    if (columnValues != null)
                     {
-                        items.Add(new CustomComboBoxItem() { DisplayValue = value.Value, EditValue = value.Key });
+                        foreach (KeyValuePair<object, string> value in columnValues.OrderBy(x => x.Key))
+                        {
+                            items.Add(new CustomComboBoxItem() { DisplayValue = value.Value, EditValue = value.Key });
+                        }
                     }
                 }
             }
             else
-            {
-                List<object> columnValues = GetColumnValues(out addDefaultFilters);
-                if (addDefaultFilters)
-                    items.AddRange(GetDefaultItems(true));
-
-                foreach (object value in columnValues.OrderBy(x => x.ToString()))
-                {
-                    items.Add(new CustomComboBoxItem() { DisplayValue = value, EditValue = value });
-                }
-            }
+                defaultMethod(addDefaultFilters, items);
 			
             comboBox.ItemsPanel = FilterPopupVirtualizingStackPanel.GetItemsPanelTemplate(items.Count);//GetItemsPanel(items.Count);
             comboBox.ItemsSource = items;
             RecreateSelectedItems(comboBox);
+        }
+
+        private void defaultMethod(bool addDefaultFilters, List<object> items)
+        {
+            List<object> columnValues = GetColumnValues(out addDefaultFilters);
+            if (addDefaultFilters)
+                items.AddRange(GetDefaultItems(true));
+
+            foreach (object value in columnValues.OrderBy(x => x.ToString()))
+            {
+                items.Add(new CustomComboBoxItem() { DisplayValue = value, EditValue = value });
+            }
         }
 
         private List<object> GetColumnValues(out bool addDefaultFilters)
