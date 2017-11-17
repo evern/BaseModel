@@ -147,7 +147,7 @@ namespace BaseModel.ViewModel.Document
 
         public virtual TModule DefaultModule
         {
-            get { return Modules.First(); }
+            get { return null; }
         }
 
         protected bool IsLoaded { get; set; }
