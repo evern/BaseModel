@@ -1,5 +1,6 @@
 ﻿using BaseModel.Data.Helpers;
 using BaseModel.Misc;
+using DevExpress.Data;
 using DevExpress.Data.Filtering;
 using DevExpress.Mvvm.UI;
 using DevExpress.Xpf.Editors;
@@ -28,7 +29,9 @@ namespace BaseModel.ViewModel.Services
         void SetCheckedListFilterPopUpMode();
         void SetGridColumnSortMode();
         void CopyWithHeader();
-
+        void ClearSummary();
+        void AddSummary(string fieldName, SummaryItemType summaryType, string displayFormat);
+        void ChangeSummary(string oldFieldName, string newFieldName);
         void MasterDetail_ExpandAll();
         void MasterDetail_CollapseAllButThis();
         void MasterDetail_CollapseAll();
@@ -162,6 +165,29 @@ namespace BaseModel.ViewModel.Services
                 visible_row_object.Add(dataRow);
             }
             return visible_row_object;
+        }
+
+        public void ClearSummary()
+        {
+            GridControl.TotalSummary.Clear();
+            GridControl.GroupSummary.Clear();
+        }
+
+        public void AddSummary(string fieldName, SummaryItemType summaryType, string displayFormat)
+        {
+            GridSummaryItem gridSummaryItem = new GridSummaryItem() { FieldName = fieldName, SummaryType = summaryType, DisplayFormat = displayFormat };
+            GridControl.TotalSummary.Add(gridSummaryItem);
+            GridControl.GroupSummary.Add(gridSummaryItem);
+        }
+
+        public void ChangeSummary(string oldFieldName, string newFieldName)
+        {
+            int findSummaryIndex = this.GridControl.TotalSummary.FindIndex(x => x.FieldName == oldFieldName);
+            if(findSummaryIndex != -1)
+            {
+                var findSummary = this.GridControl.TotalSummary[findSummaryIndex];
+                findSummary.FieldName = newFieldName;
+            }
         }
 
         public void RefreshData()

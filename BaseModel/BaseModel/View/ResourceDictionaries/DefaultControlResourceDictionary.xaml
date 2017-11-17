@@ -99,6 +99,32 @@
         <Setter Property="AutoExpandAllGroups" Value="False" />
         <Setter Property="ShowAllTableValuesInCheckedFilterPopup" Value="False" />
     </Style>
+    <Style x:Key="SingleProjectGridControlTemplate" TargetType="{x:Type dxg:GridControl}">
+        <Setter Property="ShowLoadingPanel" Value="{Binding DataContext.IsLoading, ElementName=userControl}" />
+        <Setter Property="ItemsSource" Value="{Binding DataContext.DisplayEntities, ElementName=userControl}" />
+        <Setter Property="ClipboardCopyMode" Value="ExcludeHeader" />
+        <Setter Property="SelectionMode" Value="{Binding SelectMode}" />
+        <Setter Property="SelectedItems" Value="{Binding DataContext.DisplaySelectedEntities, Mode=TwoWay, ElementName=userControl}" />
+        <Setter Property="ShowBorder" Value="False" />
+        <Setter Property="AutoExpandAllGroups" Value="False" />
+        <Setter Property="ShowAllTableValuesInCheckedFilterPopup" Value="False" />
+        <Setter Property="dxsc:SpellingSettings.CheckAsYouType" Value="True" />
+        <Setter Property="dxsc:SpellingSettings.ShowSpellCheckMenu" Value="True" />
+        <Setter Property="dxsc:SpellingSettings.SpellChecker" Value="{Binding DataContext.SpellCheckerModule.SpellChecker, ElementName=userControl}" />
+        <Setter Property="dxmvvm:Interaction.BehaviorsTemplate">
+            <Setter.Value>
+                <DataTemplate>
+                    <ItemsControl>
+                        <dxmvvm:KeyToCommand Command="{Binding ShowPopUpCommand}" KeyGesture="Space" CommandParameter="{Binding ElementName=GridControl}" />
+                        <dxmvvm:KeyToCommand Command="{Binding DeleteCellContentCommand}" KeyGesture="Delete" CommandParameter="{Binding ElementName=GridControl}" />
+                        <dxmvvm:EventToCommand EventName="PreviewMouseWheel" Command="{Binding Grid_MouseWheelCommand}" PassEventArgsToCommand="True" />
+                        <dxmvvm:EventToCommand EventName="CustomColumnGroup" Command="{Binding DataContext.CustomColumnGroupCommand, ElementName=userControl}" PassEventArgsToCommand="True" />
+                    </ItemsControl>
+                </DataTemplate>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="LayoutTransform" Value="{Binding Zoom, Mode=OneWay}" />
+    </Style>
     <Style x:Key="DefaultGridControlTemplate" TargetType="{x:Type dxg:GridControl}">
         <Setter Property="ShowLoadingPanel" Value="{Binding DataContext.IsLoading, ElementName=userControl}" />
         <Setter Property="ItemsSource" Value="{Binding DataContext.DisplayEntities, ElementName=userControl}" />
@@ -243,6 +269,7 @@
         <Setter Property="ShowCriteriaInAutoFilterRow" Value="True" />
         <Setter Property="ShowFixedTotalSummary" Value="False" />
         <Setter Property="UseLightweightTemplates" Value="All" />
+        <Setter Property="EditorShowMode" Value="MouseDownFocused" />
     </Style>
     <Style x:Key="DefaultDetailTableViewTemplate" TargetType="{x:Type dxg:TableView}">
         <Setter Property="dxmvvm:Interaction.BehaviorsTemplate">

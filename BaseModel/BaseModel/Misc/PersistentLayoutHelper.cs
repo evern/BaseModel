@@ -29,7 +29,8 @@ namespace BaseModel.Misc
             if (service != null && PersistentViewsLayout.TryGetValue(viewName, out state))
                 try
                 {
-                    service.Deserialize(state);
+                    if(state != string.Empty)
+                        service.Deserialize(state);
                 }
                 catch
                 {

@@ -127,20 +127,23 @@ namespace BaseModel.Misc
                 Dictionary<object, string> result = new Dictionary<object, string>();
                 GridControl grid = View.DataControl as GridControl;
                 IList list = grid.ItemsSource as IList;
-                foreach(var listItem in list)
+                List<object> columnValues = GetColumnValues(out addDefaultFilters);
+                foreach (var listItem in list)
                 {
                     object value = DataUtils.GetNestedValue(Column.FieldName, listItem);
                     if (value != null)
                     {
-                        string itemDisplay = getItemSourceDisplayMember(itemSource, displayMember, valueMember, value.ToString());
-                        if (_useSecondMethod)
+                        if(columnValues.Any(x => x.ToString() == value.ToString()))
                         {
-                            if (itemDisplay != string.Empty && !result.Any(x => x.Key.ToString() == itemDisplay.ToString()) && itemDisplay != null)
-                                result.Add(itemDisplay, itemDisplay);
+                            string itemDisplay = getItemSourceDisplayMember(itemSource, displayMember, valueMember, value.ToString());
+                            if (_useSecondMethod)
+                            {
+                                if (itemDisplay != string.Empty && !result.Any(x => x.Key.ToString() == itemDisplay.ToString()) && itemDisplay != null)
+                                    result.Add(itemDisplay, itemDisplay);
+                            }
+                            else if (itemDisplay != string.Empty && !result.Any(x => x.Key.ToString() == value.ToString()) && itemDisplay != null)
+                                result.Add(value, itemDisplay);
                         }
-                        else if (itemDisplay != string.Empty && !result.Any(x => x.Key.ToString() == value.ToString()) && itemDisplay != null)
-                            result.Add(value, itemDisplay);
-
                     }
                     else
                         addDefaultFilters = true;
@@ -267,7 +270,40 @@ namespace BaseModel.Misc
 
         internal void UpdateColumnFilterIfNeeded(CriteriaOperator op)
         {
-            ((GridControl)((GridColumn)Column).View.DataControl).FilterCriteria = op;
+            if (Equals(op, null))
+                return;
+
+            if (((GridControl)((GridColumn)Column).View.DataControl).FilterString != string.Empty)
+            {
+                string currentCriteria = removePreviousFilter(Column.FieldName, ((GridControl)((GridColumn)Column).View.DataControl).FilterCriteria.ToString());
+                currentCriteria += " And " + op.ToString();
+                try
+                {
+                    ((GridControl)((GridColumn)Column).View.DataControl).FilterCriteria = CriteriaOperator.Parse(currentCriteria);
+                }
+                catch
+                {
+                    ((GridControl)((GridColumn)Column).View.DataControl).FilterString = string.Empty;
+                }
+            }
+            else
+                ((GridControl)((GridColumn)Column).View.DataControl).FilterCriteria = op;
+        }
+
+        private string removePreviousFilter(string columnName, string currentOperatorString)
+        {
+            string newOperator = string.Empty;
+            List<string> operatorArr = currentOperatorString.Split(new string[] { " And " }, StringSplitOptions.None).ToList();
+            foreach(string op in operatorArr)
+            {
+                if (!op.Contains(columnName))
+                    newOperator += op + " And ";
+            }
+
+            if (newOperator.Contains(" And "))
+                return newOperator.Substring(0, newOperator.Length - 5);
+            else
+                return string.Empty;
         }
     }
 }
