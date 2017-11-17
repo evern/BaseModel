@@ -2,7 +2,7 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
                     xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
-                    xmlns:dxsc="clr-namespace:DevExpress.Xpf.SpellChecker;assembly=DevExpress.Xpf.SpellChecker.v17.1"
+                    xmlns:dxsc="clr-namespace:DevExpress.Xpf.SpellChecker;assembly=DevExpress.Xpf.SpellChecker.v17.2"
                     xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
                     xmlns:services="clr-namespace:BaseModel.ViewModel.Services"
                     xmlns:misc="clr-namespace:BaseModel.Misc">
@@ -61,7 +61,7 @@
         </Setter>
         <Setter Property="dx:DXSerializer.StoreLayoutMode" Value="UI" />
     </Style>
-    <Style x:Key="CollectionView.TreeListRootContainer" TargetType="FrameworkElement" >
+    <Style x:Key="CollectionView.TreeListRootContainer" TargetType="FrameworkElement">
         <Setter Property="dxmvvm:Interaction.BehaviorsTemplate">
             <Setter.Value>
                 <DataTemplate>
@@ -110,15 +110,19 @@
         <Setter Property="ShowAllTableValuesInCheckedFilterPopup" Value="False" />
         <Setter Property="dxsc:SpellingSettings.CheckAsYouType" Value="True" />
         <Setter Property="dxsc:SpellingSettings.ShowSpellCheckMenu" Value="True" />
-        <Setter Property="dxsc:SpellingSettings.SpellChecker" Value="{Binding DataContext.SpellCheckerModule.SpellChecker, ElementName=userControl}" />
+        <Setter Property="dxsc:SpellingSettings.SpellChecker"
+                Value="{Binding DataContext.SpellCheckerModule.SpellChecker, ElementName=userControl}" />
         <Setter Property="dxmvvm:Interaction.BehaviorsTemplate">
             <Setter.Value>
                 <DataTemplate>
                     <ItemsControl>
-                        <dxmvvm:KeyToCommand Command="{Binding ShowPopUpCommand}" KeyGesture="Space" CommandParameter="{Binding ElementName=GridControl}" />
+                        <dxmvvm:KeyToCommand Command="{Binding ShowPopUpCommand}" KeyGesture="Space"
+                                             CommandParameter="{Binding ElementName=GridControl}" />
                         <dxmvvm:KeyToCommand Command="{Binding DeleteCellContentCommand}" KeyGesture="Delete" CommandParameter="{Binding ElementName=GridControl}" />
-                        <dxmvvm:EventToCommand EventName="PreviewMouseWheel" Command="{Binding Grid_MouseWheelCommand}" PassEventArgsToCommand="True" />
-                        <dxmvvm:EventToCommand EventName="CustomColumnGroup" Command="{Binding DataContext.CustomColumnGroupCommand, ElementName=userControl}" PassEventArgsToCommand="True" />
+                        <dxmvvm:EventToCommand EventName="PreviewMouseWheel" Command="{Binding Grid_MouseWheelCommand}" PassEventArgsToCommand="True"
+                                               />
+                        <dxmvvm:EventToCommand EventName="CustomColumnGroup" Command="{Binding DataContext.CustomColumnGroupCommand, ElementName=userControl}" PassEventArgsToCommand="True"
+                                               />
                     </ItemsControl>
                 </DataTemplate>
             </Setter.Value>
@@ -137,15 +141,19 @@
         <Setter Property="ShowAllTableValuesInCheckedFilterPopup" Value="False" />
         <Setter Property="dxsc:SpellingSettings.CheckAsYouType" Value="True" />
         <Setter Property="dxsc:SpellingSettings.ShowSpellCheckMenu" Value="True" />
-        <Setter Property="dxsc:SpellingSettings.SpellChecker" Value="{Binding DataContext.SpellCheckerModule.SpellChecker, ElementName=userControl}" />
+        <Setter Property="dxsc:SpellingSettings.SpellChecker"
+                Value="{Binding DataContext.SpellCheckerModule.SpellChecker, ElementName=userControl}" />
         <Setter Property="dxmvvm:Interaction.BehaviorsTemplate">
             <Setter.Value>
                 <DataTemplate>
                     <ItemsControl>
-                        <dxmvvm:KeyToCommand Command="{Binding ShowPopUpCommand}" KeyGesture="Space" CommandParameter="{Binding ElementName=GridControl}" />
+                        <dxmvvm:KeyToCommand Command="{Binding ShowPopUpCommand}" KeyGesture="Space"
+                                             CommandParameter="{Binding ElementName=GridControl}" />
                         <dxmvvm:KeyToCommand Command="{Binding DeleteCellContentCommand}" KeyGesture="Delete" CommandParameter="{Binding ElementName=GridControl}" />
-                        <dxmvvm:EventToCommand EventName="PreviewMouseWheel" Command="{Binding Grid_MouseWheelCommand}" PassEventArgsToCommand="True" />
-                        <dxmvvm:EventToCommand EventName="CustomColumnGroup" Command="{Binding DataContext.CustomColumnGroupCommand, ElementName=userControl}" PassEventArgsToCommand="True" />
+                        <dxmvvm:EventToCommand EventName="PreviewMouseWheel" Command="{Binding Grid_MouseWheelCommand}" PassEventArgsToCommand="True"
+                                               />
+                        <dxmvvm:EventToCommand EventName="CustomColumnGroup" Command="{Binding DataContext.CustomColumnGroupCommand, ElementName=userControl}" PassEventArgsToCommand="True"
+                                               />
                     </ItemsControl>
                 </DataTemplate>
             </Setter.Value>
@@ -164,15 +172,19 @@
         <Setter Property="ShowAllTableValuesInCheckedFilterPopup" Value="False" />
         <Setter Property="dxsc:SpellingSettings.CheckAsYouType" Value="True" />
         <Setter Property="dxsc:SpellingSettings.ShowSpellCheckMenu" Value="True" />
-        <Setter Property="dxsc:SpellingSettings.SpellChecker" Value="{Binding DataContext.SpellCheckerModule.SpellChecker, ElementName=userControl}" />
+        <Setter Property="dxsc:SpellingSettings.SpellChecker"
+                Value="{Binding DataContext.SpellCheckerModule.SpellChecker, ElementName=userControl}" />
         <Setter Property="dxmvvm:Interaction.BehaviorsTemplate">
             <Setter.Value>
                 <DataTemplate>
                     <ItemsControl>
-                        <dxmvvm:KeyToCommand Command="{Binding MainViewModel.ShowPopUpCommand}" KeyGesture="Space" CommandParameter="{Binding ElementName=GridControl}" />
+                        <dxmvvm:KeyToCommand Command="{Binding MainViewModel.ShowPopUpCommand}" KeyGesture="Space"
+                                             CommandParameter="{Binding ElementName=GridControl}" />
                         <dxmvvm:KeyToCommand Command="{Binding MainViewModel.DeleteCellContentCommand}" KeyGesture="Delete" CommandParameter="{Binding ElementName=GridControl}" />
-                        <dxmvvm:EventToCommand EventName="PreviewMouseWheel" Command="{Binding MainViewModel.Grid_MouseWheelCommand}" PassEventArgsToCommand="True" />
-                        <dxmvvm:EventToCommand EventName="CustomColumnGroup" Command="{Binding DataContext.CustomColumnGroupCommand, ElementName=userControl}" PassEventArgsToCommand="True" />
+                        <dxmvvm:EventToCommand EventName="PreviewMouseWheel" Command="{Binding MainViewModel.Grid_MouseWheelCommand}" PassEventArgsToCommand="True"
+                                               />
+                        <dxmvvm:EventToCommand EventName="CustomColumnGroup" Command="{Binding DataContext.CustomColumnGroupCommand, ElementName=userControl}" PassEventArgsToCommand="True"
+                                               />
                     </ItemsControl>
                 </DataTemplate>
             </Setter.Value>
@@ -214,7 +226,8 @@
         <Setter Property="ShowAllTableValuesInCheckedFilterPopup" Value="False" />
         <Setter Property="dxsc:SpellingSettings.CheckAsYouType" Value="True" />
         <Setter Property="dxsc:SpellingSettings.ShowSpellCheckMenu" Value="True" />
-        <Setter Property="dxsc:SpellingSettings.SpellChecker" Value="{Binding DataContext.SpellCheckerModule.SpellChecker, ElementName=userControl}" />
+        <Setter Property="dxsc:SpellingSettings.SpellChecker"
+                Value="{Binding DataContext.SpellCheckerModule.SpellChecker, ElementName=userControl}" />
     </Style>
     <Style x:Key="DefaultOtherChildDetailGridControlTemplate" TargetType="{x:Type dxg:GridControl}">
         <Setter Property="ShowLoadingPanel" Value="{Binding DataContext.IsLoading, ElementName=userControl}" />
@@ -227,12 +240,14 @@
         <Setter Property="ShowAllTableValuesInCheckedFilterPopup" Value="False" />
         <Setter Property="dxsc:SpellingSettings.CheckAsYouType" Value="True" />
         <Setter Property="dxsc:SpellingSettings.ShowSpellCheckMenu" Value="True" />
-        <Setter Property="dxsc:SpellingSettings.SpellChecker" Value="{Binding DataContext.SpellCheckerModule.SpellChecker, ElementName=userControl}" />
+        <Setter Property="dxsc:SpellingSettings.SpellChecker"
+                Value="{Binding DataContext.SpellCheckerModule.SpellChecker, ElementName=userControl}" />
         <Setter Property="dxmvvm:Interaction.BehaviorsTemplate">
             <Setter.Value>
                 <DataTemplate>
                     <ItemsControl>
-                        <dxmvvm:KeyToCommand Command="{Binding ShowPopUpCommand}" KeyGesture="Space" CommandParameter="{Binding ElementName=GridControl}" />
+                        <dxmvvm:KeyToCommand Command="{Binding ShowPopUpCommand}" KeyGesture="Space"
+                                             CommandParameter="{Binding ElementName=GridControl}" />
                     </ItemsControl>
                 </DataTemplate>
             </Setter.Value>
@@ -243,14 +258,25 @@
             <Setter.Value>
                 <DataTemplate>
                     <ItemsControl>
-                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" Command="{Binding ExistingRowAddUndoAndSaveCommand}" EventName="CellValueChanged" />
-                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" Command="{Binding NewRowAddUndoAndSaveCommand}" EventName="RowUpdated" />
-                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" Command="{Binding ValidateCellCommand}" EventName="ValidateCell" />
-                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" Command="{Binding ValidateRowCommand}" EventName="ValidateRow" />
-                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" Command="{Binding PastingFromClipboardCommand}" EventName="PastingFromClipboard" />
-                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" Command="{Binding ShownEditorCommand}" EventName="ShownEditor" />
-                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" Command="{Binding DataContext.CellValueChangingCommand, ElementName=userControl}" EventName="CellValueChanging" />
-                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" Command="{Binding DataContext.PreviewKeyDownCommand, ElementName=userControl}" EventName="PreviewKeyDown" />
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True"
+                                               Command="{Binding ExistingRowAddUndoAndSaveCommand}"
+                                               EventName="CellValueChanged" />
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True"
+                                               Command="{Binding NewRowAddUndoAndSaveCommand}" EventName="RowUpdated" />
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True"
+                                               Command="{Binding ValidateCellCommand}"
+                                               EventName="ValidateCell" />
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True"
+                                               Command="{Binding ValidateRowCommand}"
+                                               EventName="ValidateRow" />
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True"
+                                               Command="{Binding PastingFromClipboardCommand}" EventName="PastingFromClipboard" />
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True"
+                                               Command="{Binding ShownEditorCommand}" EventName="ShownEditor" />
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True"
+                                               Command="{Binding DataContext.CellValueChangingCommand, ElementName=userControl}" EventName="CellValueChanging" />
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True"
+                                               Command="{Binding DataContext.PreviewKeyDownCommand, ElementName=userControl}" EventName="PreviewKeyDown" />
                         <dxmvvm:KeyToCommand KeyGesture="CTRL+Z" Command="{Binding UndoCommand}" />
                         <dxmvvm:KeyToCommand KeyGesture="CTRL+Y" Command="{Binding RedoCommand}" />
                     </ItemsControl>
@@ -287,7 +313,8 @@
                         <dxmvvm:EventToCommand PassEventArgsToCommand="True"
                                                Command="{Binding ValidateRowCommand}"
                                                EventName="ValidateRow" />
-                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" Command="{Binding PastingFromClipboardCommand}" EventName="PastingFromClipboard" />
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True"
+                                               Command="{Binding PastingFromClipboardCommand}" EventName="PastingFromClipboard" />
                         <!--<dxmvvm:KeyToCommand KeyGesture="Delete" Command="{Binding BulkDeleteCommand}"  />-->
                         <dxmvvm:KeyToCommand KeyGesture="CTRL+Z" Command="{Binding UndoCommand}" />
                         <dxmvvm:KeyToCommand KeyGesture="CTRL+Y" Command="{Binding RedoCommand}" />
@@ -308,10 +335,14 @@
             <Setter.Value>
                 <DataTemplate>
                     <ItemsControl>
-                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" Command="{Binding DataContext.MainEntitiesViewModel.ExistingRowAddUndoAndSaveCommand, ElementName=userControl}" EventName="CellValueChanged" />
-                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" Command="{Binding DataContext.MainEntitiesViewModel.NewRowAddUndoAndSaveCommand, ElementName=userControl}" EventName="RowUpdated" />
-                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" Command="{Binding DataContext.MainEntitiesViewModel.ValidateCellCommand, ElementName=userControl}" EventName="ValidateCell" />
-                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" Command="{Binding DataContext.MainEntitiesViewModel.ValidateRowCommand, ElementName=userControl}" EventName="ValidateRow" />
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True"
+                                               Command="{Binding DataContext.MainEntitiesViewModel.ExistingRowAddUndoAndSaveCommand, ElementName=userControl}" EventName="CellValueChanged" />
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True"
+                                               Command="{Binding DataContext.MainEntitiesViewModel.NewRowAddUndoAndSaveCommand, ElementName=userControl}" EventName="RowUpdated" />
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True"
+                                               Command="{Binding DataContext.MainEntitiesViewModel.ValidateCellCommand, ElementName=userControl}" EventName="ValidateCell" />
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True"
+                                               Command="{Binding DataContext.MainEntitiesViewModel.ValidateRowCommand, ElementName=userControl}" EventName="ValidateRow" />
                         <!--<dxmvvm:KeyToCommand KeyGesture="Delete" Command="{Binding BulkDeleteCommand}"  />-->
                         <dxmvvm:KeyToCommand KeyGesture="CTRL+Z" Command="{Binding DataContext.MainEntitiesViewModel.UndoCommand, ElementName=userControl}" />
                         <dxmvvm:KeyToCommand KeyGesture="CTRL+Y" Command="{Binding DataContext.MainEntitiesViewModel.RedoCommand, ElementName=userControl}" />
@@ -332,10 +363,14 @@
             <Setter.Value>
                 <DataTemplate>
                     <ItemsControl>
-                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" Command="{Binding DataContext.ChildEntitiesViewModel.ExistingRowAddUndoAndSaveCommand, ElementName=userControl}" EventName="CellValueChanged" />
-                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" Command="{Binding DataContext.ChildEntitiesViewModel.NewRowAddUndoAndSaveCommand, ElementName=userControl}" EventName="RowUpdated" />
-                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" Command="{Binding DataContext.ChildEntitiesViewModel.ValidateCellCommand, ElementName=userControl}" EventName="ValidateCell" />
-                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" Command="{Binding DataContext.ChildEntitiesViewModel.ValidateRowCommand, ElementName=userControl}" EventName="ValidateRow" />
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True"
+                                               Command="{Binding DataContext.ChildEntitiesViewModel.ExistingRowAddUndoAndSaveCommand, ElementName=userControl}" EventName="CellValueChanged" />
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True"
+                                               Command="{Binding DataContext.ChildEntitiesViewModel.NewRowAddUndoAndSaveCommand, ElementName=userControl}" EventName="RowUpdated" />
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True"
+                                               Command="{Binding DataContext.ChildEntitiesViewModel.ValidateCellCommand, ElementName=userControl}" EventName="ValidateCell" />
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True"
+                                               Command="{Binding DataContext.ChildEntitiesViewModel.ValidateRowCommand, ElementName=userControl}" EventName="ValidateRow" />
                         <!--<dxmvvm:KeyToCommand KeyGesture="Delete" Command="{Binding BulkDeleteCommand}"  />-->
                         <dxmvvm:KeyToCommand KeyGesture="CTRL+Z" Command="{Binding DataContext.ChildEntitiesViewModel.UndoCommand, ElementName=userControl}" />
                         <dxmvvm:KeyToCommand KeyGesture="CTRL+Y" Command="{Binding DataContext.ChildEntitiesViewModel.RedoCommand, ElementName=userControl}" />
@@ -356,10 +391,16 @@
             <Setter.Value>
                 <DataTemplate>
                     <ItemsControl>
-                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" Command="{Binding TreelistExistingRowAddUndoAndSaveCommand}" EventName="CellValueChanged" />
-                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" Command="{Binding PastingFromClipboardTreeListCommand}" EventName="PastingFromClipboard" />
-                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" Command="{Binding ValidateCellCommand}" EventName="ValidateCell" />
-                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" Command="{Binding ValidateRowCommand}" EventName="ValidateRow" />
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True"
+                                               Command="{Binding TreelistExistingRowAddUndoAndSaveCommand}" EventName="CellValueChanged" />
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True"
+                                               Command="{Binding PastingFromClipboardTreeListCommand}" EventName="PastingFromClipboard" />
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True"
+                                               Command="{Binding ValidateCellCommand}"
+                                               EventName="ValidateCell" />
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True"
+                                               Command="{Binding ValidateRowCommand}"
+                                               EventName="ValidateRow" />
                         <dxmvvm:KeyToCommand KeyGesture="CTRL+Z" Command="{Binding UndoCommand}" />
                         <dxmvvm:KeyToCommand KeyGesture="CTRL+Y" Command="{Binding RedoCommand}" />
                     </ItemsControl>
@@ -384,10 +425,14 @@
             <Setter.Value>
                 <DataTemplate>
                     <ItemsControl>
-                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" Command="{Binding MainViewModel.TreelistExistingRowAddUndoAndSaveCommand}" EventName="CellValueChanged" />
-                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" Command="{Binding MainViewModel.PastingFromClipboardTreeListCommand}" EventName="PastingFromClipboard" />
-                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" Command="{Binding MainViewModel.ValidateCellCommand}" EventName="ValidateCell" />
-                        <dxmvvm:EventToCommand PassEventArgsToCommand="True" Command="{Binding MainViewModel.ValidateRowCommand}" EventName="ValidateRow" />
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True"
+                                               Command="{Binding MainViewModel.TreelistExistingRowAddUndoAndSaveCommand}" EventName="CellValueChanged" />
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True"
+                                               Command="{Binding MainViewModel.PastingFromClipboardTreeListCommand}" EventName="PastingFromClipboard" />
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True"
+                                               Command="{Binding MainViewModel.ValidateCellCommand}" EventName="ValidateCell" />
+                        <dxmvvm:EventToCommand PassEventArgsToCommand="True"
+                                               Command="{Binding MainViewModel.ValidateRowCommand}" EventName="ValidateRow" />
                         <dxmvvm:KeyToCommand KeyGesture="CTRL+Z" Command="{Binding MainViewModel.UndoCommand}" />
                         <dxmvvm:KeyToCommand KeyGesture="CTRL+Y" Command="{Binding MainViewModel.RedoCommand}" />
                     </ItemsControl>
