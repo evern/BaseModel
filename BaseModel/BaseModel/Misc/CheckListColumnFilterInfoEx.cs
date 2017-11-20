@@ -276,13 +276,18 @@ namespace BaseModel.Misc
             if (((GridControl)((GridColumn)Column).View.DataControl).FilterString != string.Empty)
             {
                 string currentCriteria = removePreviousFilter(Column.FieldName, ((GridControl)((GridColumn)Column).View.DataControl).FilterCriteria.ToString());
-                currentCriteria += " And " + op.ToString();
+                if (currentCriteria != string.Empty)
+                    currentCriteria += " And " + op.ToString();
+                else
+                    currentCriteria = op.ToString();
+
                 try
                 {
                     ((GridControl)((GridColumn)Column).View.DataControl).FilterCriteria = CriteriaOperator.Parse(currentCriteria);
                 }
-                catch
+                catch(Exception e)
                 {
+                    string s = e.ToString();
                     ((GridControl)((GridColumn)Column).View.DataControl).FilterString = string.Empty;
                 }
             }
