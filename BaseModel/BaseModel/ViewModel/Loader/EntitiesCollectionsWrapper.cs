@@ -65,7 +65,7 @@ namespace BaseModel.ViewModel.Loader
         {
             MainViewModel = null;
             this.RaisePropertyChanged(x => x.IsLoading);
-            cleanUpEntitiesLoader();
+            CleanUpEntitiesLoader();
             initializeEntitiesLoadersDescription();
             loadEntitiesCollection();
         }
@@ -144,6 +144,7 @@ namespace BaseModel.ViewModel.Loader
 
         protected abstract Func<IRepositoryQuery<TMainEntity>, IQueryable<TMainProjectionEntity>> specifyMainViewModelProjection();
         public Action<IEnumerable<TMainProjectionEntity>, object> OnEntitiesLoadedCallBack { get; set; }
+        public bool OnEntitiesLoadedCallBackManualDispose { get; set; }
         public Func<object> OnEntitiesLoadedCallBackRelateParam { get; set; }
         protected virtual bool OnMainViewModelLoaded(IEnumerable<TMainProjectionEntity> entities)
         {
@@ -159,13 +160,14 @@ namespace BaseModel.ViewModel.Loader
 
         protected virtual void AssignCallBacksAndRaisePropertyChange(IEnumerable<TMainProjectionEntity> entities)
         {
-            if (OnEntitiesLoadedCallBack != null)
+            if (!OnEntitiesLoadedCallBackManualDispose && OnEntitiesLoadedCallBack != null)
             {
                 OnEntitiesLoadedCallBack?.Invoke(entities, OnEntitiesLoadedCallBackRelateParam == null ? null : OnEntitiesLoadedCallBackRelateParam());
                 OnEntitiesLoadedCallBack = null;
                 OnEntitiesLoadedCallBackRelateParam = null;
                 //Self destruct after entities has been returned
-                cleanUpEntitiesLoader();
+
+                CleanUpEntitiesLoader();
                 return;
             }
             
@@ -183,6 +185,14 @@ namespace BaseModel.ViewModel.Loader
         private void post_loaded_dispatcher_timer_tick(object sender, EventArgs e)
         {
             post_loaded_dispatcher_timer.Stop();
+            if(OnEntitiesLoadedCallBackManualDispose && OnEntitiesLoadedCallBack != null)
+            {
+                OnEntitiesLoadedCallBack?.Invoke(MainViewModel.Entities, OnEntitiesLoadedCallBackRelateParam == null ? null : OnEntitiesLoadedCallBackRelateParam());
+                OnEntitiesLoadedCallBack = null;
+                OnEntitiesLoadedCallBackRelateParam = null;
+                return;
+            }
+
             mainThreadDispatcher.BeginInvoke(new Action(() => OnAfterAssignedCallbackAndRaisePropertyChanged()));
         }
 
@@ -524,7 +534,7 @@ namespace BaseModel.ViewModel.Loader
         /// <summary>
         /// Unregister any messaging listener
         /// </summary>
-        public virtual void cleanUpEntitiesLoader()
+        public virtual void CleanUpEntitiesLoader()
         {
             compulsoryLoaders = null;
             if (mainEntityLoaderDescription != null)
@@ -543,7 +553,7 @@ namespace BaseModel.ViewModel.Loader
 
         void IDocumentContent.OnDestroy()
         {
-            cleanUpEntitiesLoader();
+            CleanUpEntitiesLoader();
         }
 
         IDocumentOwner IDocumentContent.DocumentOwner
