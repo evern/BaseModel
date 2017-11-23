@@ -27,13 +27,14 @@ namespace BaseModel.Data.Helpers
         readonly Func<TProjection, string, object, bool> validateSetValueCallBack;
         readonly Action<List<KeyValuePair<ColumnBase, string>>, TProjection> manualPasteAction;
 
-        public CopyPasteHelper(IsValidProjectionFunc isValidProjectionFunc = null, Func<TProjection, bool> onBeforePasteWithValidationFunc = null, IMessageBoxService messageBoxService = null, Func<TProjection, string, object, bool> validateSetValueCallBack = null, Action<List<KeyValuePair<ColumnBase, string>>, TProjection> manualPasteAction = null)
+        public CopyPasteHelper(IsValidProjectionFunc isValidProjectionFunc = null, Func<TProjection, bool> onBeforePasteWithValidationFunc = null, IMessageBoxService messageBoxService = null, Func<TProjection, string, object, bool> validateSetValueCallBack = null, Action<List<KeyValuePair<ColumnBase, string>>, TProjection> manualPasteAction = null, Action<IEnumerable<TProjection>> onAfterCellLevelPasting = null)
         {
             this.isValidProjectionFunc = isValidProjectionFunc;
             this.onBeforePasteWithValidationFunc = onBeforePasteWithValidationFunc;
             this.messageBoxService = messageBoxService;
             this.validateSetValueCallBack = validateSetValueCallBack;
             this.manualPasteAction = manualPasteAction;
+            this.onAfterCellLevelPasting = onAfterCellLevelPasting;
         }
 
         public class UndoRedoArg
@@ -52,6 +53,7 @@ namespace BaseModel.Data.Helpers
             FailOnRequired
         }
 
+        public Action<IEnumerable<TProjection>> onAfterCellLevelPasting;
         public List<TProjection> PastingFromClipboardCellLevel<TView>(GridControl gridControl, string[] RowData, EntitiesUndoRedoManager<TProjection> undo_redo_manager)
             where TView : DataViewBase
         {
@@ -204,6 +206,7 @@ namespace BaseModel.Data.Helpers
 
             }
 
+            onAfterCellLevelPasting?.Invoke(pasteProjections);
             undo_redo_manager.UnpauseActionId();
             return pasteProjections;
         }
