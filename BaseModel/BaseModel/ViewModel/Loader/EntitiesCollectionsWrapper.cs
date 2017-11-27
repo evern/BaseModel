@@ -597,7 +597,7 @@ namespace BaseModel.ViewModel.Loader
 
         #region Services
         [ServiceProperty(Key = "DefaultGridControlService")]
-        protected virtual IGridControlService GridControlService { get { return null; } }
+        public virtual IGridControlService GridControlService { get { return null; } }
 
         //protected virtual IGridControlService GridControlService { get { return this.GetService<IGridControlService>("DefaultGridControlService"); } }
         [ServiceProperty(Key = "DefaultTableViewService")]

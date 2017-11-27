@@ -51,6 +51,13 @@
                                 </Style>
                             </dx:DialogService.DialogStyle>
                         </dx:DialogService>
+                        <dx:DialogService x:Name="FilterDialogService">
+                            <dx:DialogService.DialogStyle>
+                                <Style TargetType="dx:DXDialogWindow">
+                                    <Setter Property="SizeToContent" Value="WidthAndHeight"/>
+                                </Style>
+                            </dx:DialogService.DialogStyle>
+                        </dx:DialogService>
                         <dxmvvm:LayoutSerializationService />
                         <dxmvvm:FolderBrowserDialogService Description="Choose Folder" ShowNewFolderButton="True" RootFolder="Desktop" RestorePreviouslySelectedDirectory="True" />
                         <services:TableViewService x:Name="DefaultTableViewService" TableView="{Binding ElementName=tableView}" />

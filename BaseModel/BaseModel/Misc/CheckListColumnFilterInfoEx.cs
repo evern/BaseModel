@@ -194,7 +194,10 @@ namespace BaseModel.Misc
                 editor.SelectedItems.Clear();
                 SelectedItems.Clear();
                 editor.SelectAllItems();
-                editor.SelectedItems.RemoveAt(1);
+
+                if(editor.SelectedItems.Count > 1)
+                    editor.SelectedItems.RemoveAt(1);
+
                 foreach (object obj in editor.SelectedItems)
                     SelectedItems.Add(obj);
                 editor.PopupContentSelectionChanged += new SelectionChangedEventHandler(PopupListBoxSelectionChanged);
