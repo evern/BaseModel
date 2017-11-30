@@ -67,7 +67,7 @@ namespace BaseModel.Misc
 
                     if (columnValues != null)
                     {
-                        foreach (KeyValuePair<object, string> value in columnValues.OrderBy(x => x.Key))
+                        foreach (KeyValuePair<object, string> value in columnValues.OrderBy(x => x.Value))
                         {
                             items.Add(new CustomComboBoxItem() { DisplayValue = value.Value, EditValue = value.Key });
                         }

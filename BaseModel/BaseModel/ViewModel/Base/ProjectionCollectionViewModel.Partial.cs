@@ -929,7 +929,9 @@ namespace BaseModel.ViewModel.Base
                 columnPropertyInfo.PropertyType.BaseType == typeof(Enum) ||
                 columnPropertyInfo.PropertyType == typeof(decimal) ||
                 columnPropertyInfo.PropertyType == typeof(decimal?) ||
-                columnPropertyInfo.PropertyType == typeof(string))
+                columnPropertyInfo.PropertyType == typeof(string) ||
+                columnPropertyInfo.PropertyType == typeof(int) ||
+                columnPropertyInfo.PropertyType == typeof(int?))
             {
                 var constraintString = DataUtils.GetConstraintPropertyStrings(firstSelectedEntity.GetType());
                 if (constraintString == null)
@@ -1013,10 +1015,10 @@ namespace BaseModel.ViewModel.Base
                     }
                 }
                 else if (columnPropertyInfo.PropertyType == typeof(decimal) ||
-                         columnPropertyInfo.PropertyType == typeof(decimal?))
+                         columnPropertyInfo.PropertyType == typeof(decimal?) || columnPropertyInfo.PropertyType == typeof(int) || columnPropertyInfo.PropertyType == typeof(int?))
                 {
                     var selectedEntityValue =
-                        (decimal)DataUtils.GetNestedValue(info.Column.FieldName, SelectedEntities.First());
+                        Decimal.Parse(DataUtils.GetNestedValue(info.Column.FieldName, SelectedEntities.First()).ToString());
                     var bulkEditNumbersViewModel = BulkEditNumbersViewModel.Create(selectedEntityValue);
                     if (
                         BulkColumnEditDialogService.ShowDialog(MessageButton.OKCancel,
@@ -1054,10 +1056,10 @@ namespace BaseModel.ViewModel.Base
                             !ValidateBulkEditCallBack(selectedProjection, info.Column.FieldName, newValue))
                             continue;
 
-                        if (newValue != null && newValue.GetType() == typeof(decimal) && operation != Arithmetic.None)
+                        if (newValue != null && (newValue.GetType() == typeof(decimal) || newValue.GetType() == typeof(int)) && operation != Arithmetic.None)
                         {
                             var currentValue =
-                                (decimal)DataUtils.GetNestedValue(info.Column.FieldName, selectedProjection);
+                                decimal.Parse(DataUtils.GetNestedValue(info.Column.FieldName, selectedProjection).ToString());
                             var currentOldValue = currentValue;
 
                             if (operation == Arithmetic.Add)
@@ -1083,6 +1085,10 @@ namespace BaseModel.ViewModel.Base
                             if (ValidateSetValueIsContinueCallBack == null || ValidateSetValueIsContinueCallBack.Invoke(selectedProjection, info.Column.FieldName, newValue))
                             {
                                 oldValue = DataUtils.GetNestedValue(info.Column.FieldName, selectedProjection);
+
+                                if (oldValue.GetType() == typeof(int) || newValue != null)
+                                    newValue = Int32.Parse(newValue.ToString());
+
                                 DataUtils.SetNestedValue(info.Column.FieldName, selectedProjection, newValue);
                                 EntitiesUndoRedoManager.AddUndo(selectedProjection, info.Column.FieldName, oldValue,
                                     newValue, EntityMessageType.Changed);

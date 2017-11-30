@@ -24,6 +24,7 @@ namespace BaseModel.ViewModel.Services
         void SetRowExpandedByColumnValue(string field_name, IHaveExpandState row);
         void SetFilterCriteria(CriteriaOperator criteriaOperator);
         CriteriaOperator GetFilterCriteria();
+        void ClearFilterCriteria();
         void RefreshSummary();
         void RefreshData();
         IEnumerable<object> GetVisibleRowObjects();
@@ -132,6 +133,14 @@ namespace BaseModel.ViewModel.Services
                 return null;
 
             return GridControl.FilterCriteria;
+        }
+
+        public void ClearFilterCriteria()
+        {
+            if (GridControl == null)
+                return;
+
+            GridControl.FilterCriteria = null;
         }
 
         public void SetCheckedListFilterPopUpMode()
