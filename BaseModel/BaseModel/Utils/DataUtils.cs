@@ -112,9 +112,10 @@ namespace BaseModel.Data.Helpers
 
                         foreach (var selected_cell in selected_column.Cells)
                         {
-                            int column_visible_index = selected_cell.Column.VisibleIndex;
+                            //int column_visible_index = selected_cell.Column.VisibleIndex;
                             int row_handle = selected_cell.RowHandle;
-                            GridColumn current_column = visible_columns[column_visible_index];
+                            //GridColumn current_column = visible_columns[column_visible_index];
+                            GridColumn current_column = selected_cell.Column;
                             TProjection editing_row = (TProjection)gridControl.GetRow(row_handle);
                             PasteResult result = pasteDataInProjectionColumn(editing_row, current_column, paste_data, undoRedoArguments);
 
@@ -136,8 +137,11 @@ namespace BaseModel.Data.Helpers
                     GridCell first_selected_cell = selected_cells.First();
                     int first_row_handle = first_selected_cell.RowHandle;
                     int first_row_visible_index = gridControl.GetRowVisibleIndexByHandle(first_row_handle);
-                    int first_column_visible_index = first_selected_cell.Column.VisibleIndex;
+
                     List<GridColumn> visible_columns = gridTableView.VisibleColumns.ToList();
+                    //commented out because not accurate during banded view
+                    //int first_column_visible_index = first_selected_cell.Column.VisibleIndex;
+                    int first_column_visible_index = visible_columns.First(x => x.FieldName == first_selected_cell.Column.FieldName).VisibleIndex;
 
                     for (int i = 0; i < grouped_results.Count; i++)
                     {

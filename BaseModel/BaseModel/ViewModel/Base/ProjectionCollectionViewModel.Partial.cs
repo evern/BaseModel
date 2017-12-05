@@ -1086,12 +1086,16 @@ namespace BaseModel.ViewModel.Base
                             {
                                 oldValue = DataUtils.GetNestedValue(info.Column.FieldName, selectedProjection);
 
-                                if (oldValue.GetType() == typeof(int) || newValue != null)
+                                if (oldValue.GetType() == typeof(decimal))
+                                    newValue = decimal.Parse(newValue.ToString());
+                                else if (oldValue.GetType() == typeof(int))
                                     newValue = Int32.Parse(newValue.ToString());
 
-                                DataUtils.SetNestedValue(info.Column.FieldName, selectedProjection, newValue);
-                                EntitiesUndoRedoManager.AddUndo(selectedProjection, info.Column.FieldName, oldValue,
-                                    newValue, EntityMessageType.Changed);
+                                if(newValue != null)
+                                {
+                                    DataUtils.SetNestedValue(info.Column.FieldName, selectedProjection, newValue);
+                                    EntitiesUndoRedoManager.AddUndo(selectedProjection, info.Column.FieldName, oldValue, newValue, EntityMessageType.Changed);
+                                }
                             }
                             else
                                 isError = true;
@@ -1115,6 +1119,8 @@ namespace BaseModel.ViewModel.Base
         public Func<TProjection, bool> OnBeforePasteWithValidation;
         public Action<PasteStatus> PasteListener;
         public bool DisablePasting { get; set; }
+        public bool CanPasteRowLevel { get; set; }
+
         bool isPasteCellLevel;
         public bool IsPasteCellLevel
         {
@@ -1160,8 +1166,10 @@ namespace BaseModel.ViewModel.Base
 
             if (IsPasteCellLevel)
                 pasteProjections = copyPasteHelper.PastingFromClipboardCellLevel<TableView>(gridControl, RowData, EntitiesUndoRedoManager);
-            else
+            else if (CanPasteRowLevel)
                 pasteProjections = copyPasteHelper.PastingFromClipboard<TableView>(gridControl, RowData);
+            else
+                pasteProjections = new List<TProjection>();
 
             if (pasteProjections.Count > 0)
             {
