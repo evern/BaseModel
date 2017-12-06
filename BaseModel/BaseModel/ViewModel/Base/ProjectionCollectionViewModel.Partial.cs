@@ -1119,7 +1119,7 @@ namespace BaseModel.ViewModel.Base
         public Func<TProjection, bool> OnBeforePasteWithValidation;
         public Action<PasteStatus> PasteListener;
         public bool DisablePasting { get; set; }
-        public bool CanPasteRowLevel { get; set; }
+        public bool DisablePasteRowLevel { get; set; }
 
         bool isPasteCellLevel;
         public bool IsPasteCellLevel
@@ -1166,7 +1166,7 @@ namespace BaseModel.ViewModel.Base
 
             if (IsPasteCellLevel)
                 pasteProjections = copyPasteHelper.PastingFromClipboardCellLevel<TableView>(gridControl, RowData, EntitiesUndoRedoManager);
-            else if (CanPasteRowLevel)
+            else if (!DisablePasteRowLevel)
                 pasteProjections = copyPasteHelper.PastingFromClipboard<TableView>(gridControl, RowData);
             else
                 pasteProjections = new List<TProjection>();

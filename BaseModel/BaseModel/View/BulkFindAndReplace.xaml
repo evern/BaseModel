@@ -1,41 +1,30 @@
-﻿<UserControl
-    x:Name="userControl"
-    x:Class="BaseModel.View.BulkFindAndReplace"
-    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
-    xmlns:dxlc="http://schemas.devexpress.com/winfx/2008/xaml/layoutcontrol"
-    xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
-    xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
-    xmlns:services="clr-namespace:BaseModel.ViewModel.Services"
-    Height="200" Width="500">
+﻿<UserControl x:Class="BaseModel.View.BulkFindAndReplace" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core" xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors" xmlns:dxlc="http://schemas.devexpress.com/winfx/2008/xaml/layoutcontrol" xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm" xmlns:services="clr-namespace:BaseModel.ViewModel.Services" x:Name="userControl" Width="500" Height="200">
     <dxlc:LayoutControl Orientation="Vertical">
         <dxmvvm:Interaction.Behaviors>
             <services:TextEditService TextEdit="{Binding ElementName=txtFind}" />
         </dxmvvm:Interaction.Behaviors>
-        <dxlc:LayoutGroup Name="LayoutGroupFind" View="Group" Header="Edit Value" Orientation="Vertical">
-            <dxlc:LayoutGroup Height="50" View="Group" Orientation="Horizontal">
-                <dxlc:LayoutItem Height="50" Label="Find:">
+        <dxlc:LayoutGroup Header="Edit Value" Name="LayoutGroupFind" Orientation="Vertical" View="Group">
+            <dxlc:LayoutGroup Height="50" Orientation="Horizontal" View="Group">
+                <dxlc:LayoutItem Height="50" Label="Find what:">
                     <dxe:TextEdit x:Name="txtFind" Text="{Binding FindValue, Mode=TwoWay}" />
                 </dxlc:LayoutItem>
-                <dxlc:LayoutItem Height="50" Width="150">
-                    <Button Command="{Binding DataContext.TrimToSelectionCommand, ElementName=userControl}" >
+                <dxlc:LayoutItem Width="150" Height="50">
+                    <Button Command="{Binding DataContext.TrimToSelectionCommand, ElementName=userControl}">
                         <StackPanel Orientation="Horizontal">
-                            <Image Source="{dx:DXImageOffice2013 Image=Edit_16x16.png}" Width="16" Height="16" Margin="0, 0, 3, 0" />
-                            <TextBlock Text="Trim to Selection" VerticalAlignment="Center" />
+                            <Image Width="16" Height="16" Margin="0,0,3,0" Source="{dx:DXImageOffice2013 Image=Edit_16x16.png}" />
+                            <TextBlock VerticalAlignment="Center" Text="Trim to Selection" />
                         </StackPanel>
                     </Button>
                 </dxlc:LayoutItem>
             </dxlc:LayoutGroup>
         </dxlc:LayoutGroup>
-        <dxlc:LayoutGroup Name="LayoutGroupReplace" View="Group" Header="Edit Value" Orientation="Vertical">
-            <dxlc:LayoutGroup Height="50" View="Group" Orientation="Horizontal">
-                <dxlc:LayoutItem Height="50" Label="Replace:">
+        <dxlc:LayoutGroup Header="Edit Value" Name="LayoutGroupReplace" Orientation="Vertical" View="Group">
+            <dxlc:LayoutGroup Height="50" Orientation="Horizontal" View="Group">
+                <dxlc:LayoutItem Height="50" Label="Replace with:">
                     <dxe:TextEdit x:Name="txtReplace" Text="{Binding ReplaceValue, Mode=TwoWay}" />
                 </dxlc:LayoutItem>
             </dxlc:LayoutGroup>
-            <dxlc:LayoutGroup Height="30" HorizontalAlignment="Right" View="Group"
-                              Orientation="Horizontal" />
+            <dxlc:LayoutGroup Height="30" HorizontalAlignment="Right" Orientation="Horizontal" View="Group" />
         </dxlc:LayoutGroup>
     </dxlc:LayoutControl>
 </UserControl>
