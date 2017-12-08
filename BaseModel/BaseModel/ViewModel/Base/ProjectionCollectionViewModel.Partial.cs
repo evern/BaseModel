@@ -743,7 +743,7 @@ namespace BaseModel.ViewModel.Base
                 }
             }
 
-            OnFillOrCellLevelPasting?.Invoke(bulkSaveEntities);
+            OnFillOrCellLevelPasting?.Invoke(bulkSaveEntities, info.Column.FieldName);
 
             BulkSave(bulkSaveEntities);
             EntitiesUndoRedoManager.UnpauseActionId();
@@ -956,7 +956,7 @@ namespace BaseModel.ViewModel.Base
         public Func<TProjection, string, object, bool> ValidateBulkEditCallBack;
         public Func<TProjection, string, object, bool> ValidateSetValueIsContinueCallBack;
         public Action<List<KeyValuePair<ColumnBase, string>>, TProjection> ManualPasteAction;
-        public Action<IEnumerable<TProjection>> OnFillOrCellLevelPasting;
+        public Action<IEnumerable<TProjection>, string> OnFillOrCellLevelPasting;
         public void BulkColumnEdit(object button)
         {
             var info = GridPopupMenuBase.GetGridMenuInfo((DependencyObject)button) as GridMenuInfo;
