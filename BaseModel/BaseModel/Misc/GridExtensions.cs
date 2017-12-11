@@ -96,9 +96,10 @@ namespace BaseModel.Misc
                 case FilterPopupMode.List:
                     return new ListColumnFilterInfo(this);
                 case FilterPopupMode.CheckedList:
-                    return new CheckListColumnFilterInfoEx(this);
+                    return new CheckedListColumnFilterInfo(this);
                 case FilterPopupMode.Custom:
-                    return new CheckListColumnFilterInfoEx(this, true);
+                    return new CheckedListColumnFilterInfo(this);
+                    //return new CheckListColumnFilterInfoEx(this, true);
                     //return new CustomColumnFilterInfo(this);
             }
             return null;
