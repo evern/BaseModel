@@ -201,7 +201,7 @@ namespace BaseModel.ViewModel.Loader
             if (GridControlService != null)
             {
                 GridControlService.SetCheckedListFilterPopUpMode();
-                GridControlService.SetGridColumnSortMode();
+                //GridControlService.SetGridColumnSortMode();
                 GridControlService.CombineMasterDetailSearch();
             }
 
