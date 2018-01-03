@@ -154,6 +154,12 @@ namespace BaseModel.Data.Helpers
                             int current_row_visible_index = first_row_visible_index + row_visible_index_offset;
                             int current_row_handle = gridControl.GetRowHandleByVisibleIndex(current_row_visible_index);
                             TProjection editing_row = (TProjection)gridControl.GetRow(current_row_handle);
+                            if (editing_row == null)
+                            {
+                                messageBoxService.ShowMessage("Please remove all line break from paste data or double click into cell to paste your data with line breaks");
+                                break;
+                            }
+
                             row_visible_index_offset += 1;
 
                             PasteResult result = pasteDataInProjectionColumn(editing_row, current_column, rowValue, undoRedoArguments);
@@ -392,6 +398,9 @@ namespace BaseModel.Data.Helpers
                     var ColumnStrings = Row.Split('\t');
                     for (var i = 0; i < ColumnStrings.Count(); i++)
                     {
+                        if (i > gridTableView.VisibleColumns.Count - 1)
+                            continue;
+
                         ColumnBase copyColumn = gridTableView != null ? gridTableView.VisibleColumns[i] : gridTreeListView.VisibleColumns[i];
                         PasteResult result = pasteDataInProjectionColumn(projection, copyColumn, ColumnStrings[i]);
                         columnData.Add(new KeyValuePair<ColumnBase, string>(copyColumn, ColumnStrings[i]));
