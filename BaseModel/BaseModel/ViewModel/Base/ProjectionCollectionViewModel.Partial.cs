@@ -1222,6 +1222,10 @@ namespace BaseModel.ViewModel.Base
                     rowCache += currentChar;
             }
 
+            //when only a single row is pasted
+            if (rowCache != string.Empty)
+                rowData.Add(rowCache);
+
             return rowData;
         }
 
