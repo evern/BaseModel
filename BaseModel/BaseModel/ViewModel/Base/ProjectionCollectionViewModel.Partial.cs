@@ -53,16 +53,10 @@ namespace BaseModel.ViewModel.Base
         public Action OnSelectedEntitiesChangedCallBack;
 
         /// <summary>
-        /// Used when multiple existing rows are affected by a single save operation
-        /// Cannot be substituted by OnAfterEntitySavedCallBack in CollectionViewModelBase because edited fieldname is required
-        /// </summary>
-        public Action<TreeListCellValueChangedEventArgs> OnAfterTreelistExistingRowAddUndoAndSaveCallBack;
-
-        /// <summary>
         /// Additional initialization parameter apart from SetParentAssociationCallBack from CollectionViewModelBase when RowEventArgs is needed
         /// e.g. Retrieving master row from child to set parent association
         /// </summary>
-        public Func<RowEventArgs, TProjection, bool> IsContinueNewRowFromViewCallBack;
+        public Func<RowEventArgs, TProjection, bool> OnBeforeViewNewRowSavedIsContinueCallBack;
 
         /// <summary>
         /// Additional validation for cell
@@ -75,16 +69,11 @@ namespace BaseModel.ViewModel.Base
         public Action<GridRowValidationEventArgs> AdditionalValidateRowCallBack { get; set; }
 
         /// <summary>
-        /// Allows only certain fields to be edited in existing row
-        /// Allows only associated entity to be saved in existing row
-        /// Allows children entities to be saved and undo/redo action to be added
-        /// </summary>
-        public Func<TProjection, CellValueChangedEventArgs, bool> ExistingRowAddUndoAndSaveCallBack;
-
-        /// <summary>
         /// Allows only specific rows be to deleted
         /// </summary>
-        public Func<IEnumerable<TProjection>, bool> CanBulkDeleteCallBack; 
+        public Func<IEnumerable<TProjection>, bool> CanBulkDeleteCallBack;
+
+        public Action<string, object, object, TProjection, bool> RowValueChangingCallBack;
         #endregion
 
         /// <summary>
@@ -511,6 +500,32 @@ namespace BaseModel.ViewModel.Base
         }
 
         /// <summary>
+        /// Remembers an entity added for undoing
+        /// Since CollectionViewModelBase is a POCO view model, an the instance of this class will also expose the AddUndoCommand property that can be used as a binding source in views.
+        /// </summary>
+        public virtual void NewRowAddUndoAndSave(RowEventArgs e)
+        {
+            if (e.RowHandle == DataControlBase.NewItemRowHandle)
+            {
+                EntitiesUndoRedoManager.PauseActionId();
+
+                var projection = (TProjection)e.Row;
+                ICanUpdate updateProjection = projection as ICanUpdate;
+                if (updateProjection != null)
+                    updateProjection.NewEntityFromView = true;
+
+                if (OnBeforeViewNewRowSavedIsContinueCallBack != null)
+                    if (!OnBeforeViewNewRowSavedIsContinueCallBack(e, projection))
+                        return;
+
+                Save(projection);
+                //add undo must be after so that Guid is populated
+                EntitiesUndoRedoManager.AddUndo(projection, null, null, null, EntityMessageType.Added);
+                EntitiesUndoRedoManager.UnpauseActionId();
+            }
+        }
+
+        /// <summary>
         /// Remembers an entity property old value for undoing
         /// Since CollectionViewModelBase is a POCO view model, an the instance of this class will also expose the AddUndoCommand property that can be used as a binding source in views.
         /// </summary>
@@ -521,15 +536,7 @@ namespace BaseModel.ViewModel.Base
                 var projection = (TProjection)e.Row;
 
                 EntitiesUndoRedoManager.PauseActionId();
-                if (ExistingRowAddUndoAndSaveCallBack != null)
-                    if (!ExistingRowAddUndoAndSaveCallBack(projection, e))
-                    {
-                        EntitiesUndoRedoManager.UnpauseActionId();
-                        return;
-                    }
-
-                EntitiesUndoRedoManager.AddUndo(projection, e.Column.FieldName, e.OldValue, e.Value,
-                    EntityMessageType.Changed);
+                EntitiesUndoRedoManager.AddUndo(projection, e.Column.FieldName, e.OldValue, e.Value, EntityMessageType.Changed);
                 EntitiesUndoRedoManager.UnpauseActionId();
 
                 Save(projection);
@@ -546,40 +553,10 @@ namespace BaseModel.ViewModel.Base
             var projection = (TProjection)e.Row;
 
             EntitiesUndoRedoManager.PauseActionId();
-            EntitiesUndoRedoManager.AddUndo(projection, e.Column.FieldName, e.OldValue, e.Value,
-                EntityMessageType.Changed);
-
+            EntitiesUndoRedoManager.AddUndo(projection, e.Column.FieldName, e.OldValue, e.Value, EntityMessageType.Changed);
             EntitiesUndoRedoManager.UnpauseActionId();
 
             Save(projection);
-
-            OnAfterTreelistExistingRowAddUndoAndSaveCallBack?.Invoke(e);
-        }
-
-        /// <summary>
-        /// Remembers an entity added for undoing
-        /// Since CollectionViewModelBase is a POCO view model, an the instance of this class will also expose the AddUndoCommand property that can be used as a binding source in views.
-        /// </summary>
-        public virtual void NewRowAddUndoAndSave(RowEventArgs e)
-        {
-            if (e.RowHandle == DataControlBase.NewItemRowHandle)
-            {
-                EntitiesUndoRedoManager.PauseActionId();
-                
-                var projection = (TProjection)e.Row;
-                ICanUpdate updateProjection = projection as ICanUpdate;
-                if (updateProjection != null)
-                    updateProjection.NewEntityFromView = true;
-
-                if (IsContinueNewRowFromViewCallBack != null)
-                    if (!IsContinueNewRowFromViewCallBack(e, projection))
-                        return;
-
-                Save(projection);
-                //add undo must be after so that Guid is populated
-                EntitiesUndoRedoManager.AddUndo(projection, null, null, null, EntityMessageType.Added);
-                EntitiesUndoRedoManager.UnpauseActionId();
-            }
         }
 
         protected override void OnBeforeEntitySaved(TEntity entity)
@@ -743,8 +720,6 @@ namespace BaseModel.ViewModel.Base
                 }
             }
 
-            OnFillOrCellLevelPasting?.Invoke(bulkSaveEntities, info.Column.FieldName);
-
             BulkSave(bulkSaveEntities);
             EntitiesUndoRedoManager.UnpauseActionId();
 
@@ -825,8 +800,8 @@ namespace BaseModel.ViewModel.Base
                 return;
 
             var OldValue = DataUtils.GetNestedValue(info.Column.FieldName, editEntity);
-            EntitiesUndoRedoManager.AddUndo(editEntity, info.Column.FieldName, OldValue, valueToFill,
-                EntityMessageType.Changed);
+            RowValueChangingCallBack?.Invoke(info.Column.FieldName, OldValue, valueToFill, editEntity, false);
+            EntitiesUndoRedoManager.AddUndo(editEntity, info.Column.FieldName, OldValue, valueToFill, EntityMessageType.Changed);
             DataUtils.SetNestedValue(info.Column.FieldName, editEntity, valueToFill);
         }
 
@@ -956,7 +931,6 @@ namespace BaseModel.ViewModel.Base
         public Func<TProjection, string, object, bool> ValidateBulkEditCallBack;
         public Func<TProjection, string, object, bool> ValidateSetValueIsContinueCallBack;
         public Action<List<KeyValuePair<ColumnBase, string>>, TProjection> ManualPasteAction;
-        public Action<IEnumerable<TProjection>, string> OnFillOrCellLevelPasting;
         public void BulkColumnEdit(object button)
         {
             var info = GridPopupMenuBase.GetGridMenuInfo((DependencyObject)button) as GridMenuInfo;
@@ -1144,7 +1118,7 @@ namespace BaseModel.ViewModel.Base
                 return;
             
             PasteListener?.Invoke(PasteStatus.Start);
-            CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, MessageBoxService, ValidateSetValueIsContinueCallBack, ManualPasteAction, OnFillOrCellLevelPasting);
+            CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, MessageBoxService, ValidateSetValueIsContinueCallBack, ManualPasteAction, RowValueChangingCallBack);
 
             bool dontSplit = false;
             if ((Keyboard.Modifiers | ModifierKeys.Shift) == Keyboard.Modifiers)
@@ -1287,13 +1261,11 @@ namespace BaseModel.ViewModel.Base
             //this.CanBulkDeleteCallBack = null;
             //this.CanFillDownCallBack = null;
             //this.CreateNewProjectionFromNewEntityCallBack = null;
-            //this.ExistingRowAddUndoAndSaveCallBack = null;
             //this.IsContinueNewRowFromViewCallBack = null;
             //this.IsContinueSaveCallBack = null;
             //this.IsValidFromViewCallBack = null;
             //this.OnAfterEntitiesDeletedCallBack = null;
             //this.OnAfterEntitySavedCallBack = null;
-            //this.OnAfterTreelistExistingRowAddUndoAndSaveCallBack = null;
             //this.OnBeforeBulkEditSaveCallBack = null;
             //this.OnBeforeEntitiesDeleteCallBack = null;
             //this.OnBeforeEntityDeleteCallBack = null;

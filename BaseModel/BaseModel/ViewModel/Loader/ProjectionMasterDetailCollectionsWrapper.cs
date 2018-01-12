@@ -27,7 +27,7 @@ namespace BaseModel.ViewModel.Loader
         protected override void AssignCallBacksAndRaisePropertyChange(IEnumerable<TMainProjectionEntity> entities)
         {
             MainViewModel.OnBeforeEntitiesDeleteCallBack = EntitiesBeforeDeletion;
-            MainViewModel.IsContinueNewRowFromViewCallBack = NewRowAddUndoAndSave;
+            MainViewModel.OnBeforeViewNewRowSavedIsContinueCallBack = NewRowAddUndoAndSave;
 
             MainViewModel.SetParentViewModel(this);
             base.AssignCallBacksAndRaisePropertyChange(entities);

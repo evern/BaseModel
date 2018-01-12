@@ -29,14 +29,14 @@ namespace BaseModel.ViewModel.Loader
 
         protected override void AssignCallBacksAndRaisePropertyChange(IEnumerable<TMainProjectionEntity> entities)
         {
-            ChildEntitiesViewModel.OnBeforeEntitySavedIsContinueCallBack = onBeforeSavedIsContinue;
-            ChildEntitiesViewModel.IsContinueNewRowFromViewCallBack = newRowAddUndoAndSave;
+            ChildEntitiesViewModel.OnBeforeEntitySavedIsContinueCallBack = onBeforeEntitySavedIsContinue;
+            ChildEntitiesViewModel.OnBeforeViewNewRowSavedIsContinueCallBack = onBeforeViewNewRowSavedIsContinue;
             MainViewModel.SetParentViewModel(this);
             base.AssignCallBacksAndRaisePropertyChange(entities);
         }
 
         #region Call Backs
-        private bool newRowAddUndoAndSave(RowEventArgs e, TChildEntity childEntity)
+        private bool onBeforeViewNewRowSavedIsContinue(RowEventArgs e, TChildEntity childEntity)
         {
             var gridView = (GridViewBase)e.Source;
             var grid = gridView.Grid;
@@ -60,7 +60,7 @@ namespace BaseModel.ViewModel.Loader
             return true;
         }
 
-        protected virtual bool onBeforeSavedIsContinue(TChildEntity childEntity)
+        protected virtual bool onBeforeEntitySavedIsContinue(TChildEntity childEntity)
         {
             IHaveCreatedDate childEntityCreatedDate = childEntity as IHaveCreatedDate;
             if (childEntityCreatedDate != null)
@@ -68,7 +68,6 @@ namespace BaseModel.ViewModel.Loader
                 if(childEntityCreatedDate.EntityCreatedDate.Year == 1)
                     childEntityCreatedDate.EntityCreatedDate = DateTime.Now;
             }
-
 
             return true;
         }

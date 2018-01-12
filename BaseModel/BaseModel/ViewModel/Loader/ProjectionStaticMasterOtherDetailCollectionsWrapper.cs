@@ -34,9 +34,9 @@ namespace BaseModel.ViewModel.Loader
         protected override void AssignCallBacksAndRaisePropertyChange(IEnumerable<TStaticEntity> entities)
         {
             MainEntitiesViewModel.OnBeforeEntitySavedIsContinueCallBack = onMainBeforeSavedIsContinue;
-            MainEntitiesViewModel.IsContinueNewRowFromViewCallBack = newMainRowAddUndoAndSave;
+            MainEntitiesViewModel.OnBeforeViewNewRowSavedIsContinueCallBack = newMainRowAddUndoAndSave;
             ChildEntitiesViewModel.OnBeforeEntitySavedIsContinueCallBack = onChildrenBeforeSavedIsContinue;
-            ChildEntitiesViewModel.IsContinueNewRowFromViewCallBack = newChildrenRowAddUndoAndSave;
+            ChildEntitiesViewModel.OnBeforeViewNewRowSavedIsContinueCallBack = newChildrenRowAddUndoAndSave;
             MainViewModel.SetParentViewModel(this);
             base.AssignCallBacksAndRaisePropertyChange(entities);
         }

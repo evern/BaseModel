@@ -172,6 +172,7 @@ namespace BaseModel.ViewModel.Loader
             }
             
             MainViewModel.SelectedEntities = this.DisplaySelectedEntities;
+            MainViewModel.RowValueChangingCallBack = this.UnifiedCellValueChanging;
             //MainViewModel.AfterBulkOperationRefreshCallBack = this.FullRefresh;
             MainViewModel.ApplyProjectionPropertiesToEntityCallBack = ApplyProjectionPropertiesToEntity;
             BackgroundRefresh();
@@ -681,29 +682,22 @@ namespace BaseModel.ViewModel.Loader
             if (e.RowHandle == GridControl.AutoFilterRowHandle)
                 return;
 
-            CellValueAnyRowChanging(e);
             if(!e.Handled)
-            {
-                if (e.RowHandle == DataControlBase.NewItemRowHandle)
-                    CellValueNewRowChanging(e);
-                else
-                    CellValueExistingRowChanging(e);
-            }
+                UnifiedCellValueChanging(e.Column.FieldName, e.OldValue, e.Value, (TMainProjectionEntity)e.Row, e.RowHandle == DataControlBase.NewItemRowHandle);
 
             if(!disable_immediate_post)
                 CellValueChangingImmediatePost(e);
         }
 
-        protected virtual void CellValueAnyRowChanging(CellValueChangedEventArgs e)
-        {
-        }
-
-        protected virtual void CellValueNewRowChanging(CellValueChangedEventArgs e)
-        {
-
-        }
-
-        protected virtual void CellValueExistingRowChanging(CellValueChangedEventArgs e)
+        /// <summary>
+        /// Routine used by copy paste, fill, new and existing row cell value changing to determine which other cells to affect
+        /// </summary>
+        /// <param name="field_name">Field name changed</param>
+        /// <param name="old_value">Old value currently in projection</param>
+        /// <param name="new_value">New value that projection is going to use</param>
+        /// <param name="projection">Changed projection</param>
+        /// <param name="isNew">Is new row</param>
+        public virtual void UnifiedCellValueChanging(string field_name, object old_value, object new_value, TMainProjectionEntity projection, bool isNew)
         {
 
         }

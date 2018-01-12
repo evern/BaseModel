@@ -27,14 +27,14 @@ namespace BaseModel.Data.Helpers
         readonly Func<TProjection, string, object, bool> validateSetValueCallBack;
         readonly Action<List<KeyValuePair<ColumnBase, string>>, TProjection> manualPasteAction;
 
-        public CopyPasteHelper(IsValidProjectionFunc isValidProjectionFunc = null, Func<TProjection, bool> onBeforePasteWithValidationFunc = null, IMessageBoxService messageBoxService = null, Func<TProjection, string, object, bool> validateSetValueCallBack = null, Action<List<KeyValuePair<ColumnBase, string>>, TProjection> manualPasteAction = null, Action<IEnumerable<TProjection>, string> onAfterCellLevelPasting = null)
+        public CopyPasteHelper(IsValidProjectionFunc isValidProjectionFunc = null, Func<TProjection, bool> onBeforePasteWithValidationFunc = null, IMessageBoxService messageBoxService = null, Func<TProjection, string, object, bool> validateSetValueCallBack = null, Action<List<KeyValuePair<ColumnBase, string>>, TProjection> manualPasteAction = null, Action<string, object, object, TProjection, bool> cellValueChanging = null)
         {
             this.isValidProjectionFunc = isValidProjectionFunc;
             this.onBeforePasteWithValidationFunc = onBeforePasteWithValidationFunc;
             this.messageBoxService = messageBoxService;
             this.validateSetValueCallBack = validateSetValueCallBack;
             this.manualPasteAction = manualPasteAction;
-            this.onAfterCellLevelPasting = onAfterCellLevelPasting;
+            this.cellValueChanging = cellValueChanging;
         }
 
         public class UndoRedoArg
@@ -53,7 +53,7 @@ namespace BaseModel.Data.Helpers
             FailOnRequired
         }
 
-        public Action<IEnumerable<TProjection>,string> onAfterCellLevelPasting;
+        public Action<string, object, object, TProjection, bool> cellValueChanging;
         public List<TProjection> PastingFromClipboardCellLevel<TView>(GridControl gridControl, string[] RowData, EntitiesUndoRedoManager<TProjection> undo_redo_manager)
             where TView : DataViewBase
         {
@@ -189,7 +189,10 @@ namespace BaseModel.Data.Helpers
                             {
                                 IEnumerable<UndoRedoArg> projection_undo_redos = undoRedoArguments.Where(x => x.Projection == preValidatedProjection);
                                 foreach (UndoRedoArg projection_undo_redo in projection_undo_redos)
+                                {
+                                    cellValueChanging?.Invoke(projection_undo_redo.FieldName, projection_undo_redo.OldValue, projection_undo_redo.NewValue, projection_undo_redo.Projection, false);
                                     undo_redo_manager.AddUndo(projection_undo_redo.Projection, projection_undo_redo.FieldName, projection_undo_redo.OldValue, projection_undo_redo.NewValue, EntityMessageType.Changed);
+                                }
 
                                 pasteProjections.Add(preValidatedProjection);
                             }
@@ -198,7 +201,10 @@ namespace BaseModel.Data.Helpers
                         {
                             IEnumerable<UndoRedoArg> projection_undo_redos = undoRedoArguments.Where(x => x.Projection == preValidatedProjection);
                             foreach (UndoRedoArg projection_undo_redo in projection_undo_redos)
+                            {
+                                cellValueChanging?.Invoke(projection_undo_redo.FieldName, projection_undo_redo.OldValue, projection_undo_redo.NewValue, projection_undo_redo.Projection, false);
                                 undo_redo_manager.AddUndo(projection_undo_redo.Projection, projection_undo_redo.FieldName, projection_undo_redo.OldValue, projection_undo_redo.NewValue, EntityMessageType.Changed);
+                            }
 
                             pasteProjections.Add(preValidatedProjection);
                         }
@@ -212,11 +218,6 @@ namespace BaseModel.Data.Helpers
 
                         break;
                     }
-                }
-
-                if (selected_cells.Count > 0)
-                {
-                    onAfterCellLevelPasting?.Invoke(pasteProjections, selected_cells.First().Column.FieldName);
                 }
             }
 
