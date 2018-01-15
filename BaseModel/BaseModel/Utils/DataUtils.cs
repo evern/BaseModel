@@ -24,15 +24,15 @@ namespace BaseModel.Data.Helpers
         readonly IsValidProjectionFunc isValidProjectionFunc;
         readonly Func<TProjection, bool> onBeforePasteWithValidationFunc;
         readonly IMessageBoxService messageBoxService;
-        readonly Func<TProjection, string, object, bool> validateSetValueCallBack;
+        readonly Func<TProjection, string, object, string> unifiedValueValidationCallback;
         readonly Action<List<KeyValuePair<ColumnBase, string>>, TProjection> manualPasteAction;
 
-        public CopyPasteHelper(IsValidProjectionFunc isValidProjectionFunc = null, Func<TProjection, bool> onBeforePasteWithValidationFunc = null, IMessageBoxService messageBoxService = null, Func<TProjection, string, object, bool> validateSetValueCallBack = null, Action<List<KeyValuePair<ColumnBase, string>>, TProjection> manualPasteAction = null, Action<string, object, object, TProjection, bool> cellValueChanging = null)
+        public CopyPasteHelper(IsValidProjectionFunc isValidProjectionFunc = null, Func<TProjection, bool> onBeforePasteWithValidationFunc = null, IMessageBoxService messageBoxService = null, Func<TProjection, string, object, string> unifiedValueValidationCallback = null, Action<List<KeyValuePair<ColumnBase, string>>, TProjection> manualPasteAction = null, Action<string, object, object, TProjection, bool> cellValueChanging = null)
         {
             this.isValidProjectionFunc = isValidProjectionFunc;
             this.onBeforePasteWithValidationFunc = onBeforePasteWithValidationFunc;
             this.messageBoxService = messageBoxService;
-            this.validateSetValueCallBack = validateSetValueCallBack;
+            this.unifiedValueValidationCallback = unifiedValueValidationCallback;
             this.manualPasteAction = manualPasteAction;
             this.cellValueChanging = cellValueChanging;
         }
@@ -667,15 +667,26 @@ namespace BaseModel.Data.Helpers
 
         private PasteResult tryPasteNewValueInProjectionColumn(TProjection projection, string column_name, object new_value, List<UndoRedoArg> undoRedoArguments = null)
         {
-            if (validateSetValueCallBack == null || validateSetValueCallBack(projection, column_name, new_value))
+            if (unifiedValueValidationCallback != null)
             {
-                object old_value = DataUtils.GetNestedValue(column_name, projection);
-                if (!DataUtils.TrySetNestedValue(column_name, projection, new_value))
-                    return PasteResult.Skip;
-                else if (undoRedoArguments != null)
-                    undoRedoArguments.Add(new UndoRedoArg() { FieldName = column_name, Projection = projection, OldValue = old_value, NewValue = new_value });
+                string error_message = unifiedValueValidationCallback(projection, column_name, new_value);
+                if (error_message == string.Empty)
+                {
+                    object old_value = DataUtils.GetNestedValue(column_name, projection);
+                    if (!DataUtils.TrySetNestedValue(column_name, projection, new_value))
+                        return PasteResult.Skip;
+                    else if (undoRedoArguments != null)
+                        undoRedoArguments.Add(new UndoRedoArg() { FieldName = column_name, Projection = projection, OldValue = old_value, NewValue = new_value });
 
-                return PasteResult.Success;
+                    return PasteResult.Success;
+                }
+                else
+                {
+                    if (messageBoxService != null)
+                        messageBoxService.ShowMessage(error_message);
+
+                    return PasteResult.Skip;
+                }
             }
             else
                 return PasteResult.Skip;

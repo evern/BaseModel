@@ -172,7 +172,8 @@ namespace BaseModel.ViewModel.Loader
             }
             
             MainViewModel.SelectedEntities = this.DisplaySelectedEntities;
-            MainViewModel.RowValueChangingCallBack = this.UnifiedCellValueChanging;
+            MainViewModel.UnifiedValueChangingCallback = this.UnifiedCellValueChanging;
+            MainViewModel.UnifiedValueValidationCallback = this.UnifiedValueValidation;
             //MainViewModel.AfterBulkOperationRefreshCallBack = this.FullRefresh;
             MainViewModel.ApplyProjectionPropertiesToEntityCallBack = ApplyProjectionPropertiesToEntity;
             BackgroundRefresh();
@@ -701,6 +702,15 @@ namespace BaseModel.ViewModel.Loader
         {
 
         }
+
+        /// <summary>
+        /// Routine used by copy paste, fill, new and existing row cell value changing to determine whether value is valid
+        /// </summary>
+        /// <param name="projection">Changed projection</param>
+        /// <param name="field_name">Field name changed</param>
+        /// <param name="new_value">New value that projection is going to use</param>
+        /// <param name="error_message">Default is empty string, set value to indicate error</param>
+        public abstract string UnifiedValueValidation(TMainProjectionEntity projection, string field_name, object new_value);
 
         private void CellValueChangingImmediatePost(CellValueChangedEventArgs e)
         {

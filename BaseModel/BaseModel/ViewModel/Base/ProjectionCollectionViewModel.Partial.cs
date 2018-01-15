@@ -58,10 +58,10 @@ namespace BaseModel.ViewModel.Base
         /// </summary>
         public Func<RowEventArgs, TProjection, bool> OnBeforeViewNewRowSavedIsContinueCallBack;
 
-        /// <summary>
-        /// Additional validation for cell
-        /// </summary>
-        public Action<GridCellValidationEventArgs> AdditionalValidateCellCallBack;
+        ///// <summary>
+        ///// Additional validation for cell
+        ///// </summary>
+        //public Action<GridCellValidationEventArgs> AdditionalValidateCellCallBack;
 
         /// <summary>
         /// Additional validation for row
@@ -73,7 +73,15 @@ namespace BaseModel.ViewModel.Base
         /// </summary>
         public Func<IEnumerable<TProjection>, bool> CanBulkDeleteCallBack;
 
-        public Action<string, object, object, TProjection, bool> RowValueChangingCallBack;
+        /// <summary>
+        /// External call back used by copy paste, fill, new and existing row cell value changing to determine which other cells to affect
+        /// </summary>
+        public Action<string, object, object, TProjection, bool> UnifiedValueChangingCallback;
+
+        /// <summary>
+        /// External call back used by copy paste, fill, new and existing row cell value changing to determine whether value is valid
+        /// </summary>
+        public Func<TProjection, string, object, string> UnifiedValueValidationCallback;
         #endregion
 
         /// <summary>
@@ -581,7 +589,16 @@ namespace BaseModel.ViewModel.Base
                 e.ErrorContent = constraintName + " is not unique";
             }
 
-            AdditionalValidateCellCallBack?.Invoke(e);
+            if(UnifiedValueValidationCallback != null)
+            {
+                string error_message = UnifiedValueValidationCallback((TProjection)e.Row, e.Column.FieldName, e.Value);
+                if (error_message != string.Empty)
+                {
+                    e.IsValid = false;
+                    e.ErrorType = DevExpress.XtraEditors.DXErrorProvider.ErrorType.Critical;
+                    e.ErrorContent = error_message;
+                }
+            }
         }
 
         public virtual void ValidateRow(GridRowValidationEventArgs e)
@@ -603,7 +620,7 @@ namespace BaseModel.ViewModel.Base
         public virtual void DeleteCellContent(GridControl gridControl)
         {
             string[] RowData = new string[] { string.Empty };
-            CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, MessageBoxService, ValidateSetValueIsContinueCallBack);
+            CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, MessageBoxService, UnifiedValueValidationCallback);
             List<TProjection> pasteProjections;
             if(gridControl.View.GetType() == typeof(TableView))
                 pasteProjections = copyPasteHelper.PastingFromClipboardCellLevel<TableView>(gridControl, RowData, EntitiesUndoRedoManager);
@@ -691,10 +708,16 @@ namespace BaseModel.ViewModel.Base
 
 
                     TProjection seletedEntity = SelectedEntities[i];
-                    if (ValidateSetValueIsContinueCallBack == null || ValidateSetValueIsContinueCallBack.Invoke(seletedEntity, info.Column.FieldName, valueToFill))
+                    if (UnifiedValueValidationCallback != null)
                     {
-                        setEntityProperty(seletedEntity, info, valueToFill, numericIndex, enumerator, numericFieldLength);
-                        bulkSaveEntities.Add(seletedEntity);
+                        string error_message = UnifiedValueValidationCallback.Invoke(seletedEntity, info.Column.FieldName, valueToFill);
+                        if (error_message == string.Empty)
+                        {
+                            setEntityProperty(seletedEntity, info, valueToFill, numericIndex, enumerator, numericFieldLength);
+                            bulkSaveEntities.Add(seletedEntity);
+                        }
+                        else if(MessageBoxService != null)
+                            MessageBoxService.ShowMessage(error_message);
                     }
                 }
             }
@@ -712,10 +735,14 @@ namespace BaseModel.ViewModel.Base
                     }
 
                     TProjection seletedEntity = SelectedEntities[i];
-                    if (ValidateSetValueIsContinueCallBack == null || ValidateSetValueIsContinueCallBack.Invoke(seletedEntity, info.Column.FieldName, valueToFill))
+                    if (UnifiedValueValidationCallback != null)
                     {
-                        setEntityProperty(seletedEntity, info, valueToFill, numericIndex, enumerator, numericFieldLength);
-                        bulkSaveEntities.Add(seletedEntity);
+                        string error_message = UnifiedValueValidationCallback.Invoke(seletedEntity, info.Column.FieldName, valueToFill);
+                        if (error_message == string.Empty)
+                        {
+                            setEntityProperty(seletedEntity, info, valueToFill, numericIndex, enumerator, numericFieldLength);
+                            bulkSaveEntities.Add(seletedEntity);
+                        }
                     }
                 }
             }
@@ -800,7 +827,7 @@ namespace BaseModel.ViewModel.Base
                 return;
 
             var OldValue = DataUtils.GetNestedValue(info.Column.FieldName, editEntity);
-            RowValueChangingCallBack?.Invoke(info.Column.FieldName, OldValue, valueToFill, editEntity, false);
+            UnifiedValueChangingCallback?.Invoke(info.Column.FieldName, OldValue, valueToFill, editEntity, false);
             EntitiesUndoRedoManager.AddUndo(editEntity, info.Column.FieldName, OldValue, valueToFill, EntityMessageType.Changed);
             DataUtils.SetNestedValue(info.Column.FieldName, editEntity, valueToFill);
         }
@@ -928,8 +955,6 @@ namespace BaseModel.ViewModel.Base
             return false;
         }
 
-        public Func<TProjection, string, object, bool> ValidateBulkEditCallBack;
-        public Func<TProjection, string, object, bool> ValidateSetValueIsContinueCallBack;
         public Action<List<KeyValuePair<ColumnBase, string>>, TProjection> ManualPasteAction;
         public void BulkColumnEdit(object button)
         {
@@ -1026,10 +1051,6 @@ namespace BaseModel.ViewModel.Base
                 if(commence_bulk_edit)
                     foreach (var selectedProjection in SelectedEntities)
                     {
-                        if (ValidateBulkEditCallBack != null &&
-                            !ValidateBulkEditCallBack(selectedProjection, info.Column.FieldName, newValue))
-                            continue;
-
                         if (newValue != null && (newValue.GetType() == typeof(decimal) || newValue.GetType() == typeof(int)) && operation != Arithmetic.None)
                         {
                             var currentValue =
@@ -1045,31 +1066,42 @@ namespace BaseModel.ViewModel.Base
                             else if (operation == Arithmetic.Divide && (decimal)newValue > 0)
                                 currentValue = currentValue / (decimal)newValue;
 
-                            if (ValidateSetValueIsContinueCallBack == null || ValidateSetValueIsContinueCallBack.Invoke(selectedProjection, info.Column.FieldName, currentValue))
+                            if (UnifiedValueValidationCallback == null)
                             {
-                                DataUtils.SetNestedValue(info.Column.FieldName, selectedProjection, currentValue);
-                                EntitiesUndoRedoManager.AddUndo(selectedProjection, info.Column.FieldName, currentOldValue,
-                                    currentValue, EntityMessageType.Changed);
+                                string error_message = UnifiedValueValidationCallback.Invoke(selectedProjection, info.Column.FieldName, newValue);
+                                if (error_message == string.Empty)
+                                {
+                                    DataUtils.SetNestedValue(info.Column.FieldName, selectedProjection, newValue);
+                                    EntitiesUndoRedoManager.AddUndo(selectedProjection, info.Column.FieldName, currentOldValue, currentValue, EntityMessageType.Changed);
+                                }
+                                else
+                                    isError = true;
                             }
                             else
                                 isError = true;
                         }
                         else
                         {
-                            if (ValidateSetValueIsContinueCallBack == null || ValidateSetValueIsContinueCallBack.Invoke(selectedProjection, info.Column.FieldName, newValue))
+                            if (UnifiedValueValidationCallback == null)
                             {
-                                oldValue = DataUtils.GetNestedValue(info.Column.FieldName, selectedProjection);
-
-                                if (oldValue.GetType() == typeof(decimal))
-                                    newValue = decimal.Parse(newValue.ToString());
-                                else if (oldValue.GetType() == typeof(int))
-                                    newValue = Int32.Parse(newValue.ToString());
-
-                                if(newValue != null)
+                                string error_message = UnifiedValueValidationCallback.Invoke(selectedProjection, info.Column.FieldName, newValue);
+                                if (error_message == string.Empty)
                                 {
-                                    DataUtils.SetNestedValue(info.Column.FieldName, selectedProjection, newValue);
-                                    EntitiesUndoRedoManager.AddUndo(selectedProjection, info.Column.FieldName, oldValue, newValue, EntityMessageType.Changed);
+                                    oldValue = DataUtils.GetNestedValue(info.Column.FieldName, selectedProjection);
+
+                                    if (oldValue.GetType() == typeof(decimal))
+                                        newValue = decimal.Parse(newValue.ToString());
+                                    else if (oldValue.GetType() == typeof(int))
+                                        newValue = Int32.Parse(newValue.ToString());
+
+                                    if (newValue != null)
+                                    {
+                                        DataUtils.SetNestedValue(info.Column.FieldName, selectedProjection, newValue);
+                                        EntitiesUndoRedoManager.AddUndo(selectedProjection, info.Column.FieldName, oldValue, newValue, EntityMessageType.Changed);
+                                    }
                                 }
+                                else
+                                    isError = true;
                             }
                             else
                                 isError = true;
@@ -1118,7 +1150,7 @@ namespace BaseModel.ViewModel.Base
                 return;
             
             PasteListener?.Invoke(PasteStatus.Start);
-            CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, MessageBoxService, ValidateSetValueIsContinueCallBack, ManualPasteAction, RowValueChangingCallBack);
+            CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, MessageBoxService, UnifiedValueValidationCallback, ManualPasteAction, UnifiedValueChangingCallback);
 
             bool dontSplit = false;
             if ((Keyboard.Modifiers | ModifierKeys.Shift) == Keyboard.Modifiers)
@@ -1213,7 +1245,7 @@ namespace BaseModel.ViewModel.Base
                 return;
 
             PasteListener?.Invoke(PasteStatus.Start);
-            CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, MessageBoxService, ValidateSetValueIsContinueCallBack);
+            CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, MessageBoxService, UnifiedValueValidationCallback);
             bool dontSplit = false;
             if ((Keyboard.Modifiers | ModifierKeys.Shift) == Keyboard.Modifiers)
             {
