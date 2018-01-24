@@ -684,9 +684,13 @@ namespace BaseModel.ViewModel.Loader
                 return;
 
             if(!e.Handled)
+            {
+                MainViewModel.EntitiesUndoRedoManager.PauseActionId();
                 UnifiedCellValueChanging(e.Column.FieldName, e.OldValue, e.Value, (TMainProjectionEntity)e.Row, e.RowHandle == DataControlBase.NewItemRowHandle);
+                //will be unpaused in existingrow or newrow save
+            }
 
-            if(!disable_immediate_post)
+            if (!disable_immediate_post)
                 CellValueChangingImmediatePost(e);
         }
 
