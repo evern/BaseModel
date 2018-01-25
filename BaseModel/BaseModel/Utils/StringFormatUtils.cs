@@ -86,7 +86,11 @@ namespace BaseModel.Helpers
             }
 
             string stringOnlyValue = fullStringValue.Substring(0, fullStringValue.Length - numberLength);
-            numberComponent = Int64.Parse(fullStringValue.Substring(numericIndex.Value, fullStringValue.Length - numericIndex.Value));
+            if (numericIndex != null)
+                numberComponent = Int64.Parse(fullStringValue.Substring(numericIndex.Value, fullStringValue.Length - numericIndex.Value));
+            else
+                numberComponent = 0;
+
             numericFieldlength = numberLength;
 
             return stringOnlyValue;
