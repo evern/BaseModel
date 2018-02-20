@@ -268,6 +268,7 @@
         <Setter Property="ShowFixedTotalSummary" Value="False" />
         <Setter Property="UseLightweightTemplates" Value="All" />
         <Setter Property="EditorShowMode" Value="MouseDownFocused" />
+        <Setter Property="ImmediateUpdateRowPosition" Value="False" />
     </Style>
     <Style x:Key="DefaultDetailTableViewTemplate" TargetType="{x:Type dxg:TableView}">
         <Setter Property="dxmvvm:Interaction.BehaviorsTemplate">
