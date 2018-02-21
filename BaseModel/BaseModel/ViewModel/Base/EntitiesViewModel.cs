@@ -90,7 +90,14 @@ namespace BaseModel.ViewModel.Base
 
             void IEntitiesChangeTracker.UnregisterMessageHandler()
             {
-                Messenger.Default.Unregister(this);
+                try
+                {
+                    Messenger.Default.Unregister(this);
+                }
+                catch
+                {
+
+                }
             }
 
             public TProjection FindLocalProjectionByKey(TPrimaryKey primaryKey)
