@@ -90,14 +90,7 @@ namespace BaseModel.ViewModel.Base
 
             void IEntitiesChangeTracker.UnregisterMessageHandler()
             {
-                try
-                {
-                    Messenger.Default.Unregister(this);
-                }
-                catch
-                {
-
-                }
+                Messenger.Default.Unregister(this);
             }
 
             public TProjection FindLocalProjectionByKey(TPrimaryKey primaryKey)
@@ -472,6 +465,7 @@ namespace BaseModel.ViewModel.Base
         /// The loaded collection of entities.
         /// </summary>
         ObservableCollection<TProjection> Entities { get; }
+
         IReadOnlyRepository<TProjection> RepositoryForProjectionQuery { get; }
 
         /// <summary>
