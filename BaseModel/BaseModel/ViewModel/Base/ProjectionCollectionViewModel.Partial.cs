@@ -1066,7 +1066,7 @@ namespace BaseModel.ViewModel.Base
                             else if (operation == Arithmetic.Divide && (decimal)newValue > 0)
                                 currentValue = currentValue / (decimal)newValue;
 
-                            if (UnifiedValueValidationCallback == null)
+                            if (UnifiedValueValidationCallback != null)
                             {
                                 string error_message = UnifiedValueValidationCallback.Invoke(selectedProjection, info.Column.FieldName, newValue);
                                 if (error_message == string.Empty)
@@ -1088,13 +1088,10 @@ namespace BaseModel.ViewModel.Base
                                 if (error_message == string.Empty)
                                 {
                                     oldValue = DataUtils.GetNestedValue(info.Column.FieldName, selectedProjection);
-                                    if(oldValue != null)
-                                    {
-                                        if (oldValue.GetType() == typeof(decimal))
-                                            newValue = decimal.Parse(newValue.ToString());
-                                        else if (oldValue.GetType() == typeof(int))
-                                            newValue = Int32.Parse(newValue.ToString());
-                                    }
+                                    if (columnPropertyInfo.PropertyType == typeof(decimal) || columnPropertyInfo.PropertyType == typeof(decimal?))
+                                        newValue = decimal.Parse(newValue.ToString());
+                                    else if (columnPropertyInfo.PropertyType == typeof(int) || columnPropertyInfo.PropertyType == typeof(int?))
+                                        newValue = Int32.Parse(newValue.ToString());
 
                                     if (newValue != null)
                                     {
