@@ -1053,8 +1053,7 @@ namespace BaseModel.ViewModel.Base
                     {
                         if (newValue != null && (newValue.GetType() == typeof(decimal) || newValue.GetType() == typeof(int)) && operation != Arithmetic.None)
                         {
-                            var currentValue =
-                                decimal.Parse(DataUtils.GetNestedValue(info.Column.FieldName, selectedProjection).ToString());
+                            var currentValue = decimal.Parse(DataUtils.GetNestedValue(info.Column.FieldName, selectedProjection).ToString());
                             var currentOldValue = currentValue;
 
                             if (operation == Arithmetic.Add)
@@ -1068,10 +1067,10 @@ namespace BaseModel.ViewModel.Base
 
                             if (UnifiedValueValidationCallback != null)
                             {
-                                string error_message = UnifiedValueValidationCallback.Invoke(selectedProjection, info.Column.FieldName, newValue);
+                                string error_message = UnifiedValueValidationCallback.Invoke(selectedProjection, info.Column.FieldName, currentValue);
                                 if (error_message == string.Empty)
                                 {
-                                    DataUtils.SetNestedValue(info.Column.FieldName, selectedProjection, newValue);
+                                    DataUtils.SetNestedValue(info.Column.FieldName, selectedProjection, currentValue);
                                     EntitiesUndoRedoManager.AddUndo(selectedProjection, info.Column.FieldName, currentOldValue, currentValue, EntityMessageType.Changed);
                                 }
                                 else
