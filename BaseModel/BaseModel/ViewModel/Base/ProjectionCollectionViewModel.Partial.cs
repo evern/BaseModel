@@ -1082,17 +1082,19 @@ namespace BaseModel.ViewModel.Base
                         }
                         else
                         {
-                            if (UnifiedValueValidationCallback == null)
+                            if (UnifiedValueValidationCallback != null)
                             {
                                 string error_message = UnifiedValueValidationCallback.Invoke(selectedProjection, info.Column.FieldName, newValue);
                                 if (error_message == string.Empty)
                                 {
                                     oldValue = DataUtils.GetNestedValue(info.Column.FieldName, selectedProjection);
-
-                                    if (oldValue.GetType() == typeof(decimal))
-                                        newValue = decimal.Parse(newValue.ToString());
-                                    else if (oldValue.GetType() == typeof(int))
-                                        newValue = Int32.Parse(newValue.ToString());
+                                    if(oldValue != null)
+                                    {
+                                        if (oldValue.GetType() == typeof(decimal))
+                                            newValue = decimal.Parse(newValue.ToString());
+                                        else if (oldValue.GetType() == typeof(int))
+                                            newValue = Int32.Parse(newValue.ToString());
+                                    }
 
                                     if (newValue != null)
                                     {

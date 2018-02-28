@@ -422,7 +422,9 @@ namespace BaseModel.ViewModel.Loader
             if (MainViewModel == null)
                 return;
 
-            MainViewModel.Refresh();
+            //Since notification is turned off full refresh demands reloading entities
+            //MainViewModel.Refresh();
+            ReloadEntitiesCollection();
             BackgroundRefresh();
         }
 
