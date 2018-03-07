@@ -14,6 +14,7 @@ namespace BaseModel.ViewModel.Services
     {
         bool ExportToXls(string exportPath);
         void CommitEditing();
+        void AddFormatCondition(FormatConditionBase item);
     }
 
     public class TableViewService : ServiceBase, ITableViewService
@@ -46,6 +47,14 @@ namespace BaseModel.ViewModel.Services
             }
 
             return false;
+        }
+
+        public void AddFormatCondition(FormatConditionBase item)
+        {
+            if (this.TableView == null)
+                return;
+
+            TableView.FormatConditions.Add(item);
         }
 
         public void CommitEditing()

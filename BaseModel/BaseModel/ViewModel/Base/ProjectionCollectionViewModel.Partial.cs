@@ -26,6 +26,7 @@ using DevExpress.Xpf.Grid.LookUp;
 using System.Windows.Media;
 using System.Windows.Input;
 using DevExpress.Xpf.Editors.Filtering;
+using System.Windows.Forms;
 
 namespace BaseModel.ViewModel.Base
 {
@@ -485,7 +486,7 @@ namespace BaseModel.ViewModel.Base
             if (textEditor == null)
                 return;
 
-            Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+            System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() =>
             {
                 textEditor.SelectionStart = textEditor.Text.Length;
                 textEditor.SelectionLength = 0;
@@ -889,6 +890,16 @@ namespace BaseModel.ViewModel.Base
             EntitiesUndoRedoManager.UnpauseActionId();
         }
 
+        public void KeyboardCopy()
+        {
+            SendKeys.SendWait("^c");
+        }
+
+        public void KeyboardPaste()
+        {
+            SendKeys.SendWait("^v");
+        }
+
         public bool IsInBulkOperation { get; set; }
         /// <summary>
         /// Deletes a given entity from the repository and saves changes if confirmed by the user.
@@ -1156,7 +1167,7 @@ namespace BaseModel.ViewModel.Base
 
             List<TProjection> pasteProjections;
 
-            var PasteString = Clipboard.GetText();
+            var PasteString = System.Windows.Clipboard.GetText();
             string[] RowData;
             if (dontSplit)
             {
@@ -1250,7 +1261,7 @@ namespace BaseModel.ViewModel.Base
                 dontSplit = true;
             }
 
-            var PasteString = Clipboard.GetText();
+            var PasteString = System.Windows.Clipboard.GetText();
             string[] RowData;
             if (dontSplit)
             {

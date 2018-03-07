@@ -358,10 +358,18 @@ namespace BaseModel.ViewModel.Loader
         #endregion
 
         #region Presentation
+        protected virtual TMainProjectionEntity returnDisplaySelectedEntity()
+        {
+            return displaySelectedEntity;
+        }
+
         TMainProjectionEntity displaySelectedEntity;
         public TMainProjectionEntity DisplaySelectedEntity
         {
-            get { return displaySelectedEntity;  }
+            get
+            {
+                return returnDisplaySelectedEntity();
+            }
             set
             {
                 displaySelectedEntity = value;
@@ -680,7 +688,7 @@ namespace BaseModel.ViewModel.Loader
         /// <summary>
         /// Influence column(s) when changes happens in other column
         /// </summary>
-        public void CellValueChanging(CellValueChangedEventArgs e)
+        public virtual void CellValueChanging(CellValueChangedEventArgs e)
         {
             if (e.RowHandle == GridControl.AutoFilterRowHandle)
                 return;
