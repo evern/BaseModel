@@ -124,7 +124,6 @@ namespace BaseModel.ViewModel.Loader
             return getCollectionFunc();
         }
 
-
         protected abstract void resolveParameters(object parameter);
 
         protected abstract void initializeEntitiesLoadersDescription();
@@ -563,8 +562,14 @@ namespace BaseModel.ViewModel.Loader
             loaderCollection = null;
         }
 
+        protected virtual void onBeforeDestroy()
+        {
+
+        }
+
         void IDocumentContent.OnDestroy()
         {
+            onBeforeDestroy();
             CleanUpEntitiesLoader();
         }
 

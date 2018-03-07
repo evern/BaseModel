@@ -134,7 +134,7 @@ namespace BaseModel.ViewModel.Base
                         message.MessageType, message.Sender, message.WillPerformBulkRefresh))
                     return;
 
-                bool skipOnMessage = message.Sender.ToString() == owner.ToString() && message.HWID == owner.CurrentHWID;
+                bool skipOnMessage = message.Sender == null ? false : message.Sender.ToString() == owner.ToString() && message.HWID == owner.CurrentHWID;
 
                 switch (message.MessageType)
                 {
@@ -165,21 +165,21 @@ namespace BaseModel.ViewModel.Base
                 var existingProjectionEntity = FindLocalProjectionByKey(primaryKey);
                 ICanUpdate can_update_entity = existingProjectionEntity as ICanUpdate;
 
-                if (skipOnMessage)
-                {
-                    if (can_update_entity != null)
-                    {
-                        if(!can_update_entity.NewEntityFromView)
-                        {
-                            can_update_entity.Update();
-                            return;
-                        }
-                        else
-                        {
-                            can_update_entity.NewEntityFromView = false;
-                        }
-                    }
-                }
+                //if (skipOnMessage)
+                //{
+                //    if (can_update_entity != null)
+                //    {
+                //        if(!can_update_entity.NewEntityFromView)
+                //        {
+                //            can_update_entity.Update();
+                //            return;
+                //        }
+                //        else
+                //        {
+                //            can_update_entity.NewEntityFromView = false;
+                //        }
+                //    }
+                //}
 
                 var projectionEntity = FindActualProjectionByKey(primaryKey);
 
