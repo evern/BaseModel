@@ -639,6 +639,7 @@ namespace BaseModel.ViewModel.Loader
         }
 
         public bool SupressCompulsoryEntityNotFoundMessage { get; set; }
+        public bool InViewModelOnlyMode { get; set; }
         #endregion
 
         #region Layout
@@ -777,6 +778,8 @@ namespace BaseModel.ViewModel.Loader
         bool SuppressNotification { get; set; }
 
         bool SupressCompulsoryEntityNotFoundMessage { get; set; }
+
+        bool InViewModelOnlyMode { get; set; }
 
         string CurrentHWID { get; set; }
     }

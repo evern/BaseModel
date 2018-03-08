@@ -271,8 +271,6 @@ namespace BaseModel.ViewModel.Base
                 projectionEntitiesWithTag.Add(new KeyValuePair<int, TProjection>(i, projectionEntitiesList[i]));
             }
 
-            if(OnBeforeEntityDeletedIsContinueCallBack != null)
-                return;
             try
             {
                 LoadingScreenManager.ShowLoadingScreen(projectionEntitiesWithTag.Count);
