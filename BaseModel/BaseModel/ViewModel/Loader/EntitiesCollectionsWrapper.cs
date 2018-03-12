@@ -206,6 +206,11 @@ namespace BaseModel.ViewModel.Loader
                 GridControlService.CombineMasterDetailSearch();
             }
 
+            if (TableViewService != null)
+            {
+                TableViewService.ApplyDefaultF2Behavior();
+            }
+
             PersistentLayoutHelper.TryDeserializeLayout(LayoutSerializationService, ViewName);
         }
 

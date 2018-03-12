@@ -339,9 +339,13 @@ namespace BaseModel.ViewModel.Base
                     continue;
                 }
 
-
                 var findOrAddNewEntity = Repository.FindExistingOrAddNewEntity(projectionEntityWithTag.Value,
                     (p, e) => { ApplyProjectionPropertiesToEntity(p, e); }, out isNewEntity);
+
+                if (IsContinueSaveCallBack != null)
+                    if (!IsContinueSaveCallBack(projectionEntityWithTag.Value, isNewEntity))
+                        continue;
+
                 entitiesWithTag.Add(new KeyValuePair<int, TEntity>(projectionEntityWithTag.Key, findOrAddNewEntity));
                 isNewEntityWithTag.Add(new KeyValuePair<int, bool>(projectionEntityWithTag.Key, isNewEntity));
                 OnBeforeEntitySaved(findOrAddNewEntity);

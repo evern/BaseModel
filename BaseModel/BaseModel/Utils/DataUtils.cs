@@ -652,6 +652,18 @@ namespace BaseModel.Data.Helpers
                         else
                             return PasteResult.Skip;
                     }
+                    else if(column.ActualEditSettings is CheckEditSettings)
+                    {
+                        CheckEditSettings editSettings = column.ActualEditSettings as CheckEditSettings;
+                        if (editSettings != null)
+                        {
+                            bool? booleanValue = pasteData.ToString().ToUpper().Contains("UNCHECKED") ? false : pasteData.ToString().ToUpper().Contains("CHECKED") ? true : (bool?)null;
+                            if (booleanValue == null)
+                                return PasteResult.Skip;
+                            else
+                                return tryPasteNewValueInProjectionColumn(projection, column_name, (bool)booleanValue, undoRedoArguments);
+                        }
+                    }
                     else
                         return PasteResult.Skip;
                 else

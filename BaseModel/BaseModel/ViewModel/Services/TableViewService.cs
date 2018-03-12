@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Input;
 
 namespace BaseModel.ViewModel.Services
 {
@@ -15,6 +16,8 @@ namespace BaseModel.ViewModel.Services
         bool ExportToXls(string exportPath);
         void CommitEditing();
         void AddFormatCondition(FormatConditionBase item);
+        void ApplyDefaultF2Behavior();
+        void SetImmediateUpdateRowPosition(bool updatePositionImmediately);
     }
 
     public class TableViewService : ServiceBase, ITableViewService
@@ -49,6 +52,40 @@ namespace BaseModel.ViewModel.Services
             return false;
         }
 
+        public void ApplyDefaultF2Behavior()
+        {
+            if (this.TableView == null)
+                return;
+
+            TableView.HiddenEditor += TableView_HiddenEditor;
+            TableView.PreviewKeyDown += TableView_PreviewKeyDown;
+            TableView.PreviewMouseDown += TableView_PreviewMouseDown;
+        }
+
+        private void TableView_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if(e.ChangedButton == MouseButton.Left)
+            {
+                string s = e.Source.ToString();
+                TableView.AllowEditing = true;
+                //TableView.ShowEditor();
+            }
+        }
+
+        private void TableView_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key == Key.F2 || e.Key == Key.Return)
+            {
+                TableView.AllowEditing = true;
+                //TableView.ShowEditor();
+            }
+        }
+
+        private void TableView_HiddenEditor(object sender, EditorEventArgs e)
+        {
+            TableView.AllowEditing = false;
+        }
+
         public void AddFormatCondition(FormatConditionBase item)
         {
             if (this.TableView == null)
@@ -64,6 +101,14 @@ namespace BaseModel.ViewModel.Services
 
             TableView.CommitEditing();
             TableView.MoveNextRow();
+        }
+
+        public void SetImmediateUpdateRowPosition(bool updatePositionImmediately)
+        {
+            if (this.TableView == null)
+                return;
+
+            this.TableView.ImmediateUpdateRowPosition = updatePositionImmediately;
         }
     }
 }

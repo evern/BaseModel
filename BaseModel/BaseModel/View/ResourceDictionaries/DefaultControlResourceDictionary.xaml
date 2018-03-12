@@ -255,6 +255,7 @@
                 </DataTemplate>
             </Setter.Value>
         </Setter>
+        <Setter Property="AllowEditing" Value="False" />
         <Setter Property="ShowTotalSummary" Value="True" />
         <Setter Property="GroupSummaryDisplayMode" Value="AlignByColumns" />
         <Setter Property="NewItemRowPosition" Value="Top" />
