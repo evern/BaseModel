@@ -1,5 +1,6 @@
 ﻿using BaseModel.Attributes;
 using BaseModel.Misc;
+using BaseModel.View;
 using BaseModel.ViewModel.UndoRedo;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Editors;
@@ -392,6 +393,7 @@ namespace BaseModel.Data.Helpers
                 TableView gridTableView = gridTView as TableView;
                 TreeListView gridTreeListView = gridTView as TreeListView;
 
+                LoadingScreenManager.ShowLoadingScreen(RowData.Count());
                 foreach (var Row in RowData)
                 {
                     TProjection projection = new TProjection();
@@ -431,7 +433,10 @@ namespace BaseModel.Data.Helpers
 
                         break;
                     }
+
+                    LoadingScreenManager.Progress();
                 }
+                LoadingScreenManager.CloseLoadingScreen();
             }
 
             return pasteProjections;

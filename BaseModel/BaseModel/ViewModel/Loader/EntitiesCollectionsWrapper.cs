@@ -173,7 +173,7 @@ namespace BaseModel.ViewModel.Loader
             MainViewModel.SelectedEntities = this.DisplaySelectedEntities;
             MainViewModel.UnifiedValueChangingCallback = this.UnifiedCellValueChanging;
             MainViewModel.UnifiedValueValidationCallback = this.UnifiedValueValidation;
-            //MainViewModel.AfterBulkOperationRefreshCallBack = this.FullRefresh;
+            MainViewModel.AfterBulkOperationRefreshCallBack = this.FullRefreshWithoutClearingUndoRedo;
             MainViewModel.ApplyProjectionPropertiesToEntityCallBack = ApplyProjectionPropertiesToEntity;
             BackgroundRefresh();
 
@@ -445,8 +445,9 @@ namespace BaseModel.ViewModel.Loader
             if (MainViewModel == null)
                 return;
 
-            MainViewModel.RefreshWithoutClearingUndoManager();
-            BackgroundRefresh();
+            MainViewModel.LoadEntities(false, BackgroundRefresh);
+            //MainViewModel.RefreshWithoutClearingUndoManager();
+            //BackgroundRefresh();
         }
 
         private bool doNotAutoRefresh { get; set; }
@@ -457,16 +458,15 @@ namespace BaseModel.ViewModel.Loader
         }
 
         //Delay to make sure entities are fully loaded before refreshing the view
-        int viewRefreshDelay = 500;
-        protected virtual void BackgroundRefresh(bool forceGridRefresh = false)
+        int viewRefreshDelay = 1000;
+        protected virtual void BackgroundRefresh()
         {
             if (refreshBackgroundWorker != null && !refreshBackgroundWorker.IsBusy)
-                refreshBackgroundWorker.RunWorkerAsync(forceGridRefresh);
+                refreshBackgroundWorker.RunWorkerAsync();
         }
 
         private void refreshBackgroundWorker_DoWork(object sender, DoWorkEventArgs e)
         {
-            bool forceGridRefresh = (bool)e.Argument;
             System.Threading.Thread.Sleep(viewRefreshDelay);
             if (refreshBackgroundWorker.CancellationPending)
             {

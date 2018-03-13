@@ -274,7 +274,7 @@ namespace BaseModel.ViewModel.Base
             get { return ReadOnlyRepository != null; }
         }
 
-        protected void LoadEntities(bool forceLoad)
+        public void LoadEntities(bool forceLoad, Action refreshAction = null)
         {
             if (forceLoad)
             {
@@ -286,6 +286,7 @@ namespace BaseModel.ViewModel.Base
                 return;
             }
             loadCancellationTokenSource = LoadCore();
+            refreshAction?.Invoke();
         }
 
         private void CancelLoading()

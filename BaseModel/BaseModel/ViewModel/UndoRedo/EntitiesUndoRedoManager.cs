@@ -9,14 +9,22 @@ namespace BaseModel.ViewModel.UndoRedo
     public class EntitiesUndoRedoManager<TEntity>
         where TEntity : class
     {
-        public Action<UndoRedoEntityInfo<TEntity>> FuncUndo { get; set; }
-        public Action<UndoRedoEntityInfo<TEntity>> FuncRedo { get; set; }
+        readonly Action<UndoRedoEntityInfo<TEntity>> FuncUndo;
+        readonly Action<UndoRedoEntityInfo<TEntity>> FuncRedo;
+        readonly Action<IEnumerable<UndoRedoEntityInfo<TEntity>>> BulkFuncUndo;
+        readonly Action<IEnumerable<UndoRedoEntityInfo<TEntity>>> BulkFuncRedo;
 
         public EntitiesUndoRedoManager(Action<UndoRedoEntityInfo<TEntity>> funcUndo,
             Action<UndoRedoEntityInfo<TEntity>> funcRedo)
         {
             FuncUndo = funcUndo;
             FuncRedo = funcRedo;
+        }
+
+        public EntitiesUndoRedoManager(Action<IEnumerable<UndoRedoEntityInfo<TEntity>>> bulkFuncUndo, Action<IEnumerable<UndoRedoEntityInfo<TEntity>>> bulkFuncRedo)
+        {
+            BulkFuncUndo = bulkFuncUndo;
+            BulkFuncRedo = bulkFuncRedo;
         }
 
         #region Public Methods
@@ -68,6 +76,7 @@ namespace BaseModel.ViewModel.UndoRedo
         {
             _IsInUndoRedoOperation = true;
 
+            List<UndoRedoEntityInfo<TEntity>> bulkUndoList = new List<UndoRedoEntityInfo<TEntity>>();
             if (UndoList.Count > 0)
             {
                 // Extract the item from the undo list.
@@ -87,7 +96,10 @@ namespace BaseModel.ViewModel.UndoRedo
                         copyRedoList.Add(item);
                         // We need to copy the undo list here.
                         var copyUndoList = UndoList.ToList();
-                        FuncUndo(item);
+                        if (BulkFuncUndo == null)
+                            FuncUndo(item);
+                        else
+                            bulkUndoList.Add(item);
                         LoadingScreenManager.Progress();
                         // Now repopulate the undo and redo lists.
                         UpdateRedoList(copyRedoList);
@@ -98,6 +110,8 @@ namespace BaseModel.ViewModel.UndoRedo
 
                 SetActionId(_ActionId - 1);
             }
+
+            BulkFuncUndo?.Invoke(bulkUndoList);
 
             _IsInUndoRedoOperation = false;
         }
@@ -114,6 +128,7 @@ namespace BaseModel.ViewModel.UndoRedo
         {
             _IsInUndoRedoOperation = true;
 
+            List<UndoRedoEntityInfo<TEntity>> bulkRedoList = new List<UndoRedoEntityInfo<TEntity>>();
             if (RedoList.Count > 0)
             {
                 // Extract the item from the redo list.
@@ -135,8 +150,15 @@ namespace BaseModel.ViewModel.UndoRedo
                         var redoList = RedoList.ToList();
                         //Redo actionId should be the same as undo action id
                         SetActionId(item.ActionId);
-                        // Redo the last operation.
-                        FuncRedo(item);
+
+                        if(BulkFuncRedo == null)
+                            // Redo the last operation.
+                            FuncRedo(item);
+                        else
+                        {
+                            bulkRedoList.Add(item);
+                        }
+
                         LoadingScreenManager.Progress();
                         // Add the last redo item into undo list
                         AddUndo(item.ChangedEntity, item.PropertyName, item.OldValue, item.NewValue, item.MessageType);
@@ -144,6 +166,8 @@ namespace BaseModel.ViewModel.UndoRedo
                         UpdateRedoList(redoList);
                     }
                 }
+
+                BulkFuncRedo?.Invoke(bulkRedoList);
             }
 
             _IsInUndoRedoOperation = false;

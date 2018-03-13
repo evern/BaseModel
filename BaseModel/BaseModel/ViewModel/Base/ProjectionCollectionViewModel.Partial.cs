@@ -176,7 +176,7 @@ namespace BaseModel.ViewModel.Base
             get
             {
                 if (entitiesundoredomanager == null)
-                    entitiesundoredomanager = new EntitiesUndoRedoManager<TProjection>(PropertyUndo, PropertyRedo);
+                    entitiesundoredomanager = new EntitiesUndoRedoManager<TProjection>(BulkPropertyUndo, BulkPropertyRedo);
 
                 return entitiesundoredomanager;
             }
@@ -200,6 +200,44 @@ namespace BaseModel.ViewModel.Base
 
                 Save(entityProperty.ChangedEntity);
             }
+        }
+
+        /// <summary>
+        /// Function to undo the entity changes
+        /// Must be used in conjunction of EntitiesUndoManager
+        /// </summary>
+        /// <param name="entityProperty">Entity passed over from EntitiesUndoRedo</param>
+        public virtual void BulkPropertyUndo(IEnumerable<UndoRedoEntityInfo<TProjection>> entityProperties)
+        {
+            IEnumerable<UndoRedoEntityInfo<TProjection>> bulkSaveProperties = entityProperties.Where(x => x.MessageType == EntityMessageType.Changed);
+            IEnumerable<UndoRedoEntityInfo<TProjection>> bulkDeleteProperties = entityProperties.Where(x => x.MessageType == EntityMessageType.Added);
+
+            //use ignore refresh here because it'll be refreshed in basebulksave
+            BaseBulkDelete(bulkDeleteProperties.Select(x => x.ChangedEntity), true);
+            foreach(UndoRedoEntityInfo<TProjection> entityProperty in bulkSaveProperties)
+            {
+                DataUtils.SetNestedValue(entityProperty.PropertyName, entityProperty.ChangedEntity, entityProperty.OldValue);
+            }
+            BaseBulkSave(bulkSaveProperties.Select(x => x.ChangedEntity));
+        }
+
+        /// <summary>
+        /// Function to redo the entity changes
+        /// Must be used in conjunction of EntitiesUndoManager
+        /// </summary>
+        /// <param name="entityProperty">Entity passed over from EntitiesUndoRedo</param>
+        public virtual void BulkPropertyRedo(IEnumerable<UndoRedoEntityInfo<TProjection>> entityProperties)
+        {
+            IEnumerable<UndoRedoEntityInfo<TProjection>> bulkSaveProperties = entityProperties.Where(x => x.MessageType == EntityMessageType.Changed);
+            IEnumerable<UndoRedoEntityInfo<TProjection>> bulkDeleteProperties = entityProperties.Where(x => x.MessageType == EntityMessageType.Added);
+
+            //use ignore refresh here because it'll be refreshed in basebulksave
+            BaseBulkDelete(bulkDeleteProperties.Select(x => x.ChangedEntity), true);
+            foreach (UndoRedoEntityInfo<TProjection> entityProperty in bulkSaveProperties)
+            {
+                DataUtils.SetNestedValue(entityProperty.PropertyName, entityProperty.ChangedEntity, entityProperty.NewValue);
+            }
+            BaseBulkSave(bulkSaveProperties.Select(x => x.ChangedEntity));
         }
 
         /// <summary>
@@ -749,9 +787,8 @@ namespace BaseModel.ViewModel.Base
             }
 
             BulkSave(bulkSaveEntities);
-            EntitiesUndoRedoManager.UnpauseActionId();
-
             OnFillDownCompletedCallBack?.Invoke();
+            EntitiesUndoRedoManager.UnpauseActionId();
         }
 
         private EnumerationType getEnumerateType(string value, string nextvalue, out long? differences, out long? startEnumeration, out int? numericIndex, out int numericFieldLength)
@@ -906,9 +943,9 @@ namespace BaseModel.ViewModel.Base
         /// Since CollectionViewModelBase is a POCO view model, an the instance of this class will also expose the DeleteCommand property that can be used as a binding source in views.
         /// </summary>
         /// <param name="projectionEntity">An entity to edit.</param>
-        public void BulkSave(IEnumerable<TProjection> entities)
+        public void BulkSave(IEnumerable<TProjection> entities, bool doNotRefresh = false)
         {
-            BaseBulkSave(entities);
+            BaseBulkSave(entities, doNotRefresh);
         }
         #endregion
 

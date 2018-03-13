@@ -247,7 +247,7 @@ namespace BaseModel.ViewModel.Base
             get { return typeof(TEntity).Name + "CollectionView"; }
         }
 
-        public virtual void BaseBulkDelete(IEnumerable<TProjection> projectionEntities)
+        public virtual void BaseBulkDelete(IEnumerable<TProjection> projectionEntities, bool ignoreRefresh = false)
         {
             var projectionEntitiesWithTag = new List<KeyValuePair<int, TProjection>>();
             var entitiesWithTag = new List<KeyValuePair<int, TEntity>>();
@@ -309,12 +309,13 @@ namespace BaseModel.ViewModel.Base
                 MessageBoxService.ShowMessage(e.ErrorMessage, e.ErrorCaption, MessageButton.OK, MessageIcon.Error);
             }
 
-            AfterBulkOperationRefreshCallBack?.Invoke();
+            if(!ignoreRefresh)
+                AfterBulkOperationRefreshCallBack?.Invoke();
         }
 
         public Action AfterBulkOperationRefreshCallBack;
 
-        public virtual void BaseBulkSave(IEnumerable<TProjection> projectionEntities)
+        public virtual void BaseBulkSave(IEnumerable<TProjection> projectionEntities, bool doNotRefresh = false)
         {
             var projectionEntitiesWithTag = new List<KeyValuePair<int, TProjection>>();
             var entitiesWithTag = new List<KeyValuePair<int, TEntity>>();
@@ -358,17 +359,20 @@ namespace BaseModel.ViewModel.Base
             try
             {
                 Repository.UnitOfWork.SaveChanges();
-
                 foreach (var entityWithTag in entitiesWithTag)
                 {
                     var primaryKey = Repository.GetPrimaryKey(entityWithTag.Value);
                     var projectionEntity = projectionEntitiesWithTag.First(x => x.Key == entityWithTag.Key).Value;
                     var isNewEntity = isNewEntityWithTag.First(x => x.Key == entityWithTag.Key).Value;
-                    Repository.SetProjectionPrimaryKey(projectionEntity, primaryKey);
+
+                    if(isNewEntity)
+                        Repository.SetProjectionPrimaryKey(projectionEntity, primaryKey);
 
                     //Need to put here because any updates associated with the entity need to be committed before sending message
                     OnAfterEntitySavedCallBack?.Invoke(projectionEntity, entityWithTag.Value, isNewEntity);
-                    SendMessage(primaryKey, projectionEntity, entityWithTag.Value, isNewEntity);
+
+                    if(AfterBulkOperationRefreshCallBack == null)
+                        SendMessage(primaryKey, projectionEntity, entityWithTag.Value, isNewEntity);
                 }
             }
             catch (DbException e)
@@ -376,7 +380,8 @@ namespace BaseModel.ViewModel.Base
                 MessageBoxService.ShowMessage(e.ErrorMessage, e.ErrorCaption, MessageButton.OK, MessageIcon.Error);
             }
 
-            AfterBulkOperationRefreshCallBack?.Invoke();
+            if(!doNotRefresh && AfterBulkOperationRefreshCallBack != null)
+                AfterBulkOperationRefreshCallBack.Invoke();
         }
 
         public override void Refresh()
@@ -554,6 +559,10 @@ namespace BaseModel.ViewModel.Base
 
                 //Need to put here because any updates associated with the entity need to be committed before sending message
                 OnAfterEntitySavedCallBack?.Invoke(projectionEntity, entity, isNewEntity);
+
+                //ICanUpdate canUpdateEntity = projectionEntity as ICanUpdate;
+                //if (canUpdateEntity != null)
+                //    canUpdateEntity.Update();
                 SendMessage(primaryKey, projectionEntity, entity, isNewEntity);
             }
             catch (DbException e)
