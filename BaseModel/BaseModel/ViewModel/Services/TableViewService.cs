@@ -18,6 +18,7 @@ namespace BaseModel.ViewModel.Services
         void AddFormatCondition(FormatConditionBase item);
         void ApplyDefaultF2Behavior();
         void SetImmediateUpdateRowPosition(bool updatePositionImmediately);
+        void ScrollToLast();
     }
 
     public class TableViewService : ServiceBase, ITableViewService
@@ -40,7 +41,6 @@ namespace BaseModel.ViewModel.Services
                 {
                     TableView.ExportToXlsx(exportPath);
                     Process.Start(exportPath);
-
                     return true;
                 }
                 catch
@@ -50,6 +50,16 @@ namespace BaseModel.ViewModel.Services
             }
 
             return false;
+        }
+
+        public void ScrollToLast()
+        {
+            if (this.TableView == null)
+                return;
+
+            var lastColumn = TableView.VisibleColumns != null ? TableView.VisibleColumns.LastOrDefault() : null;
+            if (lastColumn != null)
+                ((ITableView)TableView).TableViewBehavior.MakeColumnVisible(lastColumn);
         }
 
         public void ApplyDefaultF2Behavior()

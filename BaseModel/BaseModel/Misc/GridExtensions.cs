@@ -2,13 +2,15 @@
 using DevExpress.Xpf.Core.Serialization;
 using DevExpress.Xpf.Grid;
 using System;
+using System.Linq;
 using System.Collections.ObjectModel;
+using System.Windows;
 
 namespace BaseModel.Misc
 {
     public class GridControlEx : GridControl
     {
-        public GridControlEx()
+        static GridControlEx()
         {
         }
 
