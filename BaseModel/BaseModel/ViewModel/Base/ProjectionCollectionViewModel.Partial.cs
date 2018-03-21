@@ -211,7 +211,7 @@ namespace BaseModel.ViewModel.Base
         {
             IEnumerable<UndoRedoEntityInfo<TProjection>> bulkSaveProperties = entityProperties.Where(x => x.MessageType == EntityMessageType.Changed);
             IEnumerable<UndoRedoEntityInfo<TProjection>> bulkDeleteProperties = entityProperties.Where(x => x.MessageType == EntityMessageType.Added);
-
+            IEnumerable<UndoRedoEntityInfo<TProjection>> bulkAddProperties = entityProperties.Where(x => x.MessageType == EntityMessageType.Deleted);
             //use ignore refresh here because it'll be refreshed in basebulksave
             BaseBulkDelete(bulkDeleteProperties.Select(x => x.ChangedEntity), true);
             foreach(UndoRedoEntityInfo<TProjection> entityProperty in bulkSaveProperties)
@@ -219,6 +219,7 @@ namespace BaseModel.ViewModel.Base
                 DataUtils.SetNestedValue(entityProperty.PropertyName, entityProperty.ChangedEntity, entityProperty.OldValue);
             }
             BaseBulkSave(bulkSaveProperties.Select(x => x.ChangedEntity));
+            BaseBulkSave(bulkAddProperties.Select(x => x.ChangedEntity));
         }
 
         /// <summary>
@@ -229,7 +230,8 @@ namespace BaseModel.ViewModel.Base
         public virtual void BulkPropertyRedo(IEnumerable<UndoRedoEntityInfo<TProjection>> entityProperties)
         {
             IEnumerable<UndoRedoEntityInfo<TProjection>> bulkSaveProperties = entityProperties.Where(x => x.MessageType == EntityMessageType.Changed);
-            IEnumerable<UndoRedoEntityInfo<TProjection>> bulkDeleteProperties = entityProperties.Where(x => x.MessageType == EntityMessageType.Added);
+            IEnumerable<UndoRedoEntityInfo<TProjection>> bulkAddProperties = entityProperties.Where(x => x.MessageType == EntityMessageType.Added);
+            IEnumerable<UndoRedoEntityInfo<TProjection>> bulkDeleteProperties = entityProperties.Where(x => x.MessageType == EntityMessageType.Deleted);
 
             //use ignore refresh here because it'll be refreshed in basebulksave
             BaseBulkDelete(bulkDeleteProperties.Select(x => x.ChangedEntity), true);
@@ -238,6 +240,7 @@ namespace BaseModel.ViewModel.Base
                 DataUtils.SetNestedValue(entityProperty.PropertyName, entityProperty.ChangedEntity, entityProperty.NewValue);
             }
             BaseBulkSave(bulkSaveProperties.Select(x => x.ChangedEntity));
+            BaseBulkSave(bulkAddProperties.Select(x => x.ChangedEntity));
         }
 
         /// <summary>

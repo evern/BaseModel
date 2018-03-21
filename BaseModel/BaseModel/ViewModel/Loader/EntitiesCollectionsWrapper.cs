@@ -445,7 +445,8 @@ namespace BaseModel.ViewModel.Loader
             if (MainViewModel == null)
                 return;
 
-            MainViewModel.LoadEntities(false, BackgroundRefresh);
+            //need to force load or else addition/deletion won't be refreshed
+            MainViewModel.LoadEntities(true, BackgroundRefresh);
             //MainViewModel.RefreshWithoutClearingUndoManager();
             //BackgroundRefresh();
         }

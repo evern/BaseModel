@@ -84,11 +84,11 @@ namespace BaseModel.ViewModel.Services
 
         private void TableView_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
         {
-            if (e.Key == Key.F2 || e.Key == Key.Return)
-            {
+            //if (e.Key == Key.F2 || e.Key == Key.Return)
+            //{
                 TableView.AllowEditing = true;
                 //TableView.ShowEditor();
-            }
+            //}
         }
 
         private void TableView_HiddenEditor(object sender, EditorEventArgs e)

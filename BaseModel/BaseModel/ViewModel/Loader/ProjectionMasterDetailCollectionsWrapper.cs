@@ -177,11 +177,17 @@ namespace BaseModel.ViewModel.Loader
             mainThreadDispatcher.BeginInvoke(new Action(() => RefreshDisplayEntities()));
         }
 
+        public override void FullRefresh()
+        {
+            base.FullRefresh();
+            RefreshDisplayEntities();
+        }
+
         protected void RefreshDisplayEntities()
         {
             displayEntities = null;
             this.RaisePropertyChanged(x => x.DisplayEntities);
-            onAfterRefresh();
+            restoreRowExpansionState();
         }
 
         protected abstract string expand_key_field_name { get; }
@@ -189,7 +195,14 @@ namespace BaseModel.ViewModel.Loader
         //public Action<TMainProjectionEntity> SetIsRowExpanded;
         protected override void onAfterRefresh()
         {
-            if(DisplayEntities != null)
+            displayEntities = null;
+            this.RaisePropertyChanged(x => x.DisplayEntities);
+            restoreRowExpansionState();
+        }
+
+        private void restoreRowExpansionState()
+        {
+            if (DisplayEntities != null)
                 foreach (var entity in DisplayEntities)
                 {
                     GridControlService.SetRowExpandedByColumnValue(expand_key_field_name, entity);
