@@ -593,7 +593,9 @@ namespace BaseModel.ViewModel.Base
                 EntitiesUndoRedoManager.AddUndo(projection, e.Column.FieldName, e.OldValue, e.Value, EntityMessageType.Changed);
                 EntitiesUndoRedoManager.UnpauseActionId();
 
+                isBackgroundEdit = true;
                 Save(projection);
+                isBackgroundEdit = false;
             }
         }
 
