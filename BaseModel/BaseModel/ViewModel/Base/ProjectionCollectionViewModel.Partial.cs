@@ -209,6 +209,7 @@ namespace BaseModel.ViewModel.Base
         /// <param name="entityProperty">Entity passed over from EntitiesUndoRedo</param>
         public virtual void BulkPropertyUndo(IEnumerable<UndoRedoEntityInfo<TProjection>> entityProperties)
         {
+            isBackgroundEdit = true;
             IEnumerable<UndoRedoEntityInfo<TProjection>> bulkSaveProperties = entityProperties.Where(x => x.MessageType == EntityMessageType.Changed);
             IEnumerable<UndoRedoEntityInfo<TProjection>> bulkDeleteProperties = entityProperties.Where(x => x.MessageType == EntityMessageType.Added);
             IEnumerable<UndoRedoEntityInfo<TProjection>> bulkAddProperties = entityProperties.Where(x => x.MessageType == EntityMessageType.Deleted);
@@ -220,6 +221,7 @@ namespace BaseModel.ViewModel.Base
             }
             BaseBulkSave(bulkSaveProperties.Select(x => x.ChangedEntity));
             BaseBulkSave(bulkAddProperties.Select(x => x.ChangedEntity));
+            isBackgroundEdit = false;
         }
 
         /// <summary>
@@ -229,6 +231,7 @@ namespace BaseModel.ViewModel.Base
         /// <param name="entityProperty">Entity passed over from EntitiesUndoRedo</param>
         public virtual void BulkPropertyRedo(IEnumerable<UndoRedoEntityInfo<TProjection>> entityProperties)
         {
+            isBackgroundEdit = true;
             IEnumerable<UndoRedoEntityInfo<TProjection>> bulkSaveProperties = entityProperties.Where(x => x.MessageType == EntityMessageType.Changed);
             IEnumerable<UndoRedoEntityInfo<TProjection>> bulkAddProperties = entityProperties.Where(x => x.MessageType == EntityMessageType.Added);
             IEnumerable<UndoRedoEntityInfo<TProjection>> bulkDeleteProperties = entityProperties.Where(x => x.MessageType == EntityMessageType.Deleted);
@@ -241,6 +244,7 @@ namespace BaseModel.ViewModel.Base
             }
             BaseBulkSave(bulkSaveProperties.Select(x => x.ChangedEntity));
             BaseBulkSave(bulkAddProperties.Select(x => x.ChangedEntity));
+            isBackgroundEdit = false;
         }
 
         /// <summary>
@@ -1006,6 +1010,8 @@ namespace BaseModel.ViewModel.Base
             return false;
         }
 
+        //Denotes that edit operation comes from the background so onBeforeEntitySaved will not perform default actions
+        public bool isBackgroundEdit = false;
         public Action<List<KeyValuePair<ColumnBase, string>>, TProjection> ManualPasteAction;
         public void BulkColumnEdit(object button)
         {
@@ -1015,7 +1021,7 @@ namespace BaseModel.ViewModel.Base
             object newValue = null;
             var SaveEntities = new List<TProjection>();
             var operation = Arithmetic.None;
-
+            isBackgroundEdit = true;
             EntitiesUndoRedoManager.PauseActionId();
             try
             {
@@ -1167,6 +1173,7 @@ namespace BaseModel.ViewModel.Base
             }
 
             EntitiesUndoRedoManager.UnpauseActionId();
+            isBackgroundEdit = false;
         }
         #endregion
 
