@@ -711,6 +711,7 @@ namespace BaseModel.ViewModel.Base
         
         public void Fill(object button, bool isUp)
         {
+            isBackgroundEdit = true;
             GridMenuInfo info = GridPopupMenuBase.GetGridMenuInfo((DependencyObject)button) as GridMenuInfo;
             object valueToFill;
             object nextValueInSequence;
@@ -796,6 +797,7 @@ namespace BaseModel.ViewModel.Base
             BulkSave(bulkSaveEntities);
             OnFillDownCompletedCallBack?.Invoke();
             EntitiesUndoRedoManager.UnpauseActionId();
+            isBackgroundEdit = false;
         }
 
         private EnumerationType getEnumerateType(string value, string nextvalue, out long? differences, out long? startEnumeration, out int? numericIndex, out int numericFieldLength)
