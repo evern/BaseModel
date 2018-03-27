@@ -11,6 +11,7 @@ using DevExpress.XtraSpellChecker;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -40,6 +41,8 @@ namespace BaseModel.ViewModel.Services
         void MasterDetail_CollapseAll();
         void CombineMasterDetailSearch();
         void SetFilterCriteria(string filter_string);
+        ObservableCollection<Misc.GroupInfo> GetExpansionState();
+        void SetExpansionState(ObservableCollection<Misc.GroupInfo> states);
     }
 
     public class GridControlService : ServiceBase, IGridControlService
@@ -78,6 +81,26 @@ namespace BaseModel.ViewModel.Services
 
                 GridControl.SubstituteFilter += GridControl_SubstituteFilter;
                 GridControl.MasterRowExpanded += GridControl_MasterRowExpanded;
+            }
+        }
+
+        public ObservableCollection<Misc.GroupInfo> GetExpansionState()
+        {
+            GridControlEx gridControlEx = GridControl as GridControlEx;
+            if(gridControlEx != null)
+            {
+                return gridControlEx.States;
+            }
+
+            return new ObservableCollection<Misc.GroupInfo>();
+        }
+
+        public void SetExpansionState(ObservableCollection<Misc.GroupInfo> states)
+        {
+            GridControlEx gridControlEx = GridControl as GridControlEx;
+            if (gridControlEx != null)
+            {
+                gridControlEx.States = states;
             }
         }
 

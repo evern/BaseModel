@@ -445,10 +445,27 @@ namespace BaseModel.ViewModel.Loader
             if (MainViewModel == null)
                 return;
 
+
             //need to force load or else addition/deletion won't be refreshed
             MainViewModel.LoadEntities(true, BackgroundRefresh);
             //MainViewModel.RefreshWithoutClearingUndoManager();
             //BackgroundRefresh();
+            //GridControlService.SetExpansionState(groupExpansionState);
+        }
+
+        private void onAfterBulkChangeRefresh()
+        {
+            ObservableCollection<Misc.GroupInfo> groupExpansionState = GridControlService.GetExpansionState();
+            IPOCOViewModel viewModel = this as IPOCOViewModel;
+            if (viewModel != null)
+            {
+                viewModel.RaisePropertiesChanged();
+                if (GridControlService != null)
+                    GridControlService.RefreshSummary();
+
+                onAfterRefresh();
+            }
+            GridControlService.SetExpansionState(groupExpansionState);
         }
 
         private bool doNotAutoRefresh { get; set; }
@@ -499,9 +516,16 @@ namespace BaseModel.ViewModel.Loader
             IPOCOViewModel viewModel = this as IPOCOViewModel;
             if (viewModel != null)
             {
+                ObservableCollection<Misc.GroupInfo> groupExpansionState = new ObservableCollection<Misc.GroupInfo>();
+                if (GridControlService != null)
+                    groupExpansionState = GridControlService.GetExpansionState();
+
                 viewModel.RaisePropertiesChanged();
                 if (GridControlService != null)
+                {
                     GridControlService.RefreshSummary();
+                    GridControlService.SetExpansionState(groupExpansionState);
+                }
 
                 onAfterRefresh();
             }
