@@ -21,6 +21,7 @@ using System.Windows.Media;
 using System.Timers;
 using System.Collections;
 using DevExpress.Mvvm.DataAnnotations;
+using DevExpress.Data.Filtering;
 
 namespace BaseModel.ViewModel.Loader
 {
@@ -517,14 +518,19 @@ namespace BaseModel.ViewModel.Loader
             if (viewModel != null)
             {
                 ObservableCollection<Misc.GroupInfo> groupExpansionState = new ObservableCollection<Misc.GroupInfo>();
+                CriteriaOperator filterCriteria = null; 
                 if (GridControlService != null)
+                {
                     groupExpansionState = GridControlService.GetExpansionState();
+                    filterCriteria = GridControlService.GetFilterCriteria();
+                }
 
                 viewModel.RaisePropertiesChanged();
                 if (GridControlService != null)
                 {
                     GridControlService.RefreshSummary();
                     GridControlService.SetExpansionState(groupExpansionState);
+                    GridControlService.SetFilterCriteria(filterCriteria);
                 }
 
                 onAfterRefresh();
