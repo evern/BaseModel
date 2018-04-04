@@ -41,7 +41,7 @@ namespace BaseModel.ViewModel.Loader
         //allows view state to interact with OnMainViewModelRefreshed
         protected object onMessageSender;
         protected Dispatcher mainThreadDispatcher = Application.Current.Dispatcher;
-
+        private DispatcherTimer selectedEntitiesChangedDispatchTimer;
         DispatcherTimer bulk_refresh_dispatcher_timer;
         Timer post_loaded_dispatcher_timer;
         public void CollectionViewModelWrapper()
@@ -56,6 +56,8 @@ namespace BaseModel.ViewModel.Loader
 
         public virtual void OnParameterChanged(object parameter)
         {
+            selectedEntitiesChangedDispatchTimer = new DispatcherTimer();
+            selectedEntitiesChangedDispatchTimer.Interval = new TimeSpan(0, 0, 0, 0, 1);
             initializePresentationProperties();
             resolveParameters(parameter);
             initializeEntitiesLoadersDescription();
@@ -383,7 +385,6 @@ namespace BaseModel.ViewModel.Loader
         }
 
         public ObservableCollection<TMainProjectionEntity> DisplaySelectedEntities { get; set; }
-        public Action<object, System.Collections.Specialized.NotifyCollectionChangedEventArgs> OnSelectedEntitiesChangedCallBack;
         private BackgroundWorker refreshBackgroundWorker;
 
         private void initializePresentationProperties()
@@ -398,7 +399,21 @@ namespace BaseModel.ViewModel.Loader
 
         private void DisplaySelectedEntities_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
-            OnSelectedEntitiesChangedCallBack?.Invoke(sender, e);
+            //multiple selection will call this multiple times. so this is used to remove unecessary calls
+            selectedEntitiesChangedDispatchTimer.Tick -= dispatchTimer_Tick;
+            selectedEntitiesChangedDispatchTimer.Tick += dispatchTimer_Tick;
+            selectedEntitiesChangedDispatchTimer.Start();
+        }
+
+        private void dispatchTimer_Tick(object sender, EventArgs e)
+        {
+            selectedEntitiesChangedDispatchTimer.Stop();
+            OnSelectedEntitiesChanged();
+        }
+
+        protected virtual void OnSelectedEntitiesChanged()
+        {
+
         }
 
         public virtual void RefreshSelectedEntity()
