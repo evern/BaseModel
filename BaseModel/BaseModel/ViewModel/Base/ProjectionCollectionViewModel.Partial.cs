@@ -1016,7 +1016,8 @@ namespace BaseModel.ViewModel.Base
 
         //Denotes that edit operation comes from the background so onBeforeEntitySaved will not perform default actions
         public bool isBackgroundEdit = false;
-        public Action<List<KeyValuePair<ColumnBase, string>>, TProjection> ManualPasteAction;
+        public Func<List<KeyValuePair<ColumnBase, string>>, TProjection, bool> ManualPasteAction;
+        public Action<IEnumerable<string>> RawPasteOverride;
         public void BulkColumnEdit(object button)
         {
             var info = GridPopupMenuBase.GetGridMenuInfo((DependencyObject)button) as GridMenuInfo;
@@ -1230,26 +1231,31 @@ namespace BaseModel.ViewModel.Base
 
             var gridControl = (GridControl)e.Source;
 
-            if (IsPasteCellLevel)
-                pasteProjections = copyPasteHelper.PastingFromClipboardCellLevel<TableView>(gridControl, RowData, EntitiesUndoRedoManager);
-            else if (!DisablePasteRowLevel)
-                pasteProjections = copyPasteHelper.PastingFromClipboard<TableView>(gridControl, RowData);
+            if(RawPasteOverride != null)
+                RawPasteOverride.Invoke(RowData);
             else
-                pasteProjections = new List<TProjection>();
-
-            if (pasteProjections.Count > 0)
             {
-                if (!IsPasteCellLevel)
-                {
-                    EntitiesUndoRedoManager.PauseActionId();
-                    pasteProjections.ForEach(x => EntitiesUndoRedoManager.AddUndo(x, null, null, null, EntityMessageType.Added));
-                    EntitiesUndoRedoManager.UnpauseActionId();
-                }
+                if (IsPasteCellLevel)
+                    pasteProjections = copyPasteHelper.PastingFromClipboardCellLevel<TableView>(gridControl, RowData, EntitiesUndoRedoManager);
+                else if (!DisablePasteRowLevel)
+                    pasteProjections = copyPasteHelper.PastingFromClipboard<TableView>(gridControl, RowData);
+                else
+                    pasteProjections = new List<TProjection>();
 
-                BulkSave(pasteProjections);
-                e.Handled = true;
+                if (pasteProjections.Count > 0)
+                {
+                    if (!IsPasteCellLevel)
+                    {
+                        EntitiesUndoRedoManager.PauseActionId();
+                        pasteProjections.ForEach(x => EntitiesUndoRedoManager.AddUndo(x, null, null, null, EntityMessageType.Added));
+                        EntitiesUndoRedoManager.UnpauseActionId();
+                    }
+
+                    BulkSave(pasteProjections);
+                }
             }
 
+            e.Handled = true;
             PasteListener?.Invoke(PasteStatus.Stop);
         }
 

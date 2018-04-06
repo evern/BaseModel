@@ -26,9 +26,9 @@ namespace BaseModel.Data.Helpers
         readonly Func<TProjection, bool> onBeforePasteWithValidationFunc;
         readonly IMessageBoxService messageBoxService;
         readonly Func<TProjection, string, object, string> unifiedValueValidationCallback;
-        readonly Action<List<KeyValuePair<ColumnBase, string>>, TProjection> manualPasteAction;
+        readonly Func<List<KeyValuePair<ColumnBase, string>>, TProjection, bool> manualPasteAction;
 
-        public CopyPasteHelper(IsValidProjectionFunc isValidProjectionFunc = null, Func<TProjection, bool> onBeforePasteWithValidationFunc = null, IMessageBoxService messageBoxService = null, Func<TProjection, string, object, string> unifiedValueValidationCallback = null, Action<List<KeyValuePair<ColumnBase, string>>, TProjection> manualPasteAction = null, Action<string, object, object, TProjection, bool> cellValueChanging = null)
+        public CopyPasteHelper(IsValidProjectionFunc isValidProjectionFunc = null, Func<TProjection, bool> onBeforePasteWithValidationFunc = null, IMessageBoxService messageBoxService = null, Func<TProjection, string, object, string> unifiedValueValidationCallback = null, Func<List<KeyValuePair<ColumnBase, string>>, TProjection, bool> manualPasteAction = null, Action<string, object, object, TProjection, bool> cellValueChanging = null)
         {
             this.isValidProjectionFunc = isValidProjectionFunc;
             this.onBeforePasteWithValidationFunc = onBeforePasteWithValidationFunc;
@@ -382,7 +382,7 @@ namespace BaseModel.Data.Helpers
         }
 
         public List<TProjection> PastingFromClipboard<TView>(GridControl gridControl, string[] RowData)
-        where TView : DataViewBase
+            where TView : DataViewBase
         {
             var gridView = gridControl.View;
 
@@ -412,7 +412,11 @@ namespace BaseModel.Data.Helpers
                             continue;
                     }
 
-                    manualPasteAction?.Invoke(columnData, projection);
+                    if(manualPasteAction != null)
+                    {
+                        if (!manualPasteAction.Invoke(columnData, projection))
+                            continue;
+                    }
 
                     var errorMessage = "Duplicate exists on constraint field named: ";
                     if (isValidProjectionFunc(projection, ref errorMessage))
