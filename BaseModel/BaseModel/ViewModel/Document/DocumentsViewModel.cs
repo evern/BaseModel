@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using System.Windows.Controls;
 
 namespace BaseModel.ViewModel.Document
 {
@@ -64,6 +65,10 @@ namespace BaseModel.ViewModel.Document
         /// Since DocumentsViewModel is a POCO view model, this property will raise INotifyPropertyChanged.PropertyEvent when modified so it can be used as a binding source in views.
         /// </summary>
         public virtual TModule SelectedModule { get; set; }
+
+        public virtual void OnSelectedModuleChanged(TModule test)
+        {
+        }
 
         /// <summary>
         /// A navigation list entry that corresponds to the currently active document. If the active document does not have the corresponding entry in the navigation list, the property value is null. This property is read-only.
@@ -174,6 +179,19 @@ namespace BaseModel.ViewModel.Document
             //    x => NavigateToDocument(module));
             //document.Show();
             return document;
+        }
+
+        /// <summary>
+        /// Used for context menu
+        /// </summary>
+        public void NavigateCoreCommand(object module)
+        {
+            if (module == null || DocumentManagerService == null)
+                return;
+
+            TModule navigateModule = (TModule)module;
+            DocumentInfo documentInfo = new DocumentInfo(navigateModule.Id, navigateModule.DocumentParameter, navigateModule.DocumentType, navigateModule.ModuleTitle);
+            var document = DocumentManagerService.ShowExistingEntityDocument(documentInfo, this);
         }
 
         IDocument preloadDocument;

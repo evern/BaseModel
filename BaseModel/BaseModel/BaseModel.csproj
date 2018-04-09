@@ -151,6 +151,7 @@
     <Compile Include="ViewModel\Base\EntitiesViewModel.cs" />
     <Compile Include="ViewModel\Base\ProjectionCollectionViewModel.Partial.cs" />
     <Compile Include="ViewModel\Base\ReadOnlyCollectionViewModel.cs" />
+    <Compile Include="ViewModel\Base\RelayCommand.cs" />
     <Compile Include="ViewModel\Dialogs\BasicMessageBoxViewModel.cs" />
     <Compile Include="ViewModel\Dialogs\BulkEditEnumsViewModel.cs" />
     <Compile Include="ViewModel\Dialogs\BulkEditNumbersViewModel.cs" />

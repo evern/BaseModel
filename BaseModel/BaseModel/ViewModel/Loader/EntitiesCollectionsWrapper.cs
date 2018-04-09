@@ -527,7 +527,7 @@ namespace BaseModel.ViewModel.Loader
             }
         }
 
-        public void Refresh()
+        public virtual void Refresh()
         {
             IPOCOViewModel viewModel = this as IPOCOViewModel;
             if (viewModel != null)
