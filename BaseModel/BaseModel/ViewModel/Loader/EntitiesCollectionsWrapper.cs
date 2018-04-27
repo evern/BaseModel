@@ -181,7 +181,7 @@ namespace BaseModel.ViewModel.Loader
             BackgroundRefresh();
 
             post_loaded_dispatcher_timer = new Timer();
-            post_loaded_dispatcher_timer.Interval = 500;
+            post_loaded_dispatcher_timer.Interval = 1500;
             post_loaded_dispatcher_timer.Elapsed += post_loaded_dispatcher_timer_tick;
             post_loaded_dispatcher_timer.Start();
         }
@@ -384,7 +384,24 @@ namespace BaseModel.ViewModel.Loader
             }
         }
 
-        public ObservableCollection<TMainProjectionEntity> DisplaySelectedEntities { get; set; }
+
+        protected ObservableCollection<TMainProjectionEntity> displaySelectedEntities;
+        public ObservableCollection<TMainProjectionEntity> DisplaySelectedEntities
+        {
+            get
+            {
+                mainThreadDispatcher.BeginInvoke(new Action(() => onBeforeDisplaySelectedEntitiesGet()));
+                return displaySelectedEntities;
+            }
+
+            set { displaySelectedEntities = value; }
+        }
+
+        protected virtual void onBeforeDisplaySelectedEntitiesGet()
+        {
+
+        }
+
         private BackgroundWorker refreshBackgroundWorker;
 
         private void initializePresentationProperties()
