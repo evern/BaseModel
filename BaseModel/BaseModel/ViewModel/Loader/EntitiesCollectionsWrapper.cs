@@ -279,8 +279,8 @@ namespace BaseModel.ViewModel.Loader
         public virtual bool OnBeforeEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender, bool isBulkRefresh)
         {
             onMessageSender = sender;
-            if (sender != null && sender == MainViewModel)
-                return true;
+            //if (sender != null && sender == MainViewModel)
+            //    return true;
             return true;
         }
 

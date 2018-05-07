@@ -133,14 +133,15 @@ namespace BaseModel.ViewModel.Base
                 if (owner.OnBeforeEntitiesChangedCallBack != null && !owner.OnBeforeEntitiesChangedCallBack(message.PrimaryKey, typeof(TEntity), message.MessageType, message.Sender, message.WillPerformBulkRefresh))
                     return;
 
-                bool skipOnMessage = message.Sender == null ? false : message.Sender.ToString() == owner.ToString() && message.HWID == owner.CurrentHWID;
+                //bool skipOnMessage = message.Sender == null ? false : message.Sender.ToString() == owner.ToString() && message.HWID == owner.CurrentHWID;
                 switch (message.MessageType)
                 {
                     case EntityMessageType.Added:
                         OnEntityAdded(message.PrimaryKey);
                         break;
                     case EntityMessageType.Changed:
-                        OnEntityChanged(message.PrimaryKey, skipOnMessage);
+                        //OnEntityChanged(message.PrimaryKey, skipOnMessage);
+                        OnEntityChanged(message.PrimaryKey, false);
                         break;
                     case EntityMessageType.Deleted:
                         OnEntityDeleted(message.PrimaryKey);

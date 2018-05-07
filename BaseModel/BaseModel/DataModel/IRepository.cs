@@ -111,6 +111,24 @@ namespace BaseModel.DataModel
         }
 
         /// <summary>
+        /// Builds a lambda expression that compares an entity primary key with the given constant value.
+        /// </summary>
+        /// <typeparam name="TEntity">A repository entity type.</typeparam>
+        /// <typeparam name="TProjection">A projection entity type.</typeparam>
+        /// <typeparam name="TPrimaryKey">An entity primary key type.</typeparam>
+        /// <param name="repository">A repository.</param>
+        /// <param name="primaryKey">A value to compare with the entity primary key.</param>
+        public static Expression<Func<TEntity, bool>> GetPrimaryKeyEqualsExpression
+            <TEntity, TPrimaryKey>(this IRepository<TEntity, TPrimaryKey> repository,
+                TPrimaryKey primaryKey) where TEntity : class
+        {
+            return
+                ExpressionHelper.GetKeyEqualsExpression<TEntity, TEntity, TPrimaryKey>(
+                    repository.GetPrimaryKeyExpression, primaryKey);
+        }
+
+
+        /// <summary>
         /// Returns a primary key of the given entity.
         /// </summary>
         /// <typeparam name="TEntity">A repository entity type.</typeparam>
@@ -307,12 +325,10 @@ namespace BaseModel.DataModel
             where TEntity : class
         {
             var primaryKeyEqualsExpression =
-                GetProjectionPrimaryKeyEqualsExpression<TEntity, TProjection, TPrimaryKey>(repository, primaryKey);
+                GetPrimaryKeyEqualsExpression<TEntity, TPrimaryKey>(repository, primaryKey);
 
             var result =
-                repository.GetFilteredEntities(null, projection)
-                    .Where(primaryKeyEqualsExpression)
-                    .Take(1)
+                repository.GetFilteredEntities(primaryKeyEqualsExpression, projection)
                     .ToArray()
                     .FirstOrDefault(); //WCF incorrect FirstOrDefault implementation workaround
 
