@@ -324,13 +324,22 @@ namespace BaseModel.DataModel
             Func<IRepositoryQuery<TEntity>, IQueryable<TProjection>> projection, TPrimaryKey primaryKey)
             where TEntity : class
         {
-            var primaryKeyEqualsExpression =
-                GetPrimaryKeyEqualsExpression<TEntity, TPrimaryKey>(repository, primaryKey);
+            var primaryKeyEqualsExpression = GetProjectionPrimaryKeyEqualsExpression<TEntity, TProjection, TPrimaryKey>(repository, primaryKey);
 
             var result =
-                repository.GetFilteredEntities(primaryKeyEqualsExpression, projection)
+                repository.GetFilteredEntities(null, projection)
+                    .Where(primaryKeyEqualsExpression)
+                    .Take(1)
                     .ToArray()
                     .FirstOrDefault(); //WCF incorrect FirstOrDefault implementation workaround
+
+            //var primaryKeyEqualsExpression =
+            //    GetPrimaryKeyEqualsExpression(repository, primaryKey);
+
+            //var result =
+            //    repository.GetFilteredEntities(primaryKeyEqualsExpression, projection).Take(1)
+            //        .ToArray()
+            //        .FirstOrDefault(); //WCF incorrect FirstOrDefault implementation workaround
 
             //Start fix an issue where projection doesn't get reloaded
             var actualEntity = repository.Find(primaryKey);

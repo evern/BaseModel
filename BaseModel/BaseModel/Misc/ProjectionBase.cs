@@ -12,7 +12,7 @@ namespace BaseModel.Misc
     {
         public TEntity Entity { get; set; }
 
-        public ProjectionBase()
+         public ProjectionBase()
         {
             Entity = new TEntity();
         }
