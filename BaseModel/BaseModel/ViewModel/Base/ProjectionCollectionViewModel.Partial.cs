@@ -312,6 +312,9 @@ namespace BaseModel.ViewModel.Base
         /// <returns>Returns true if no other entity contains similar constraint member values</returns>
         public bool IsValidEntity(TProjection entity, ref string errorMessage)
         {
+            if (OnBeforeEntitySavedIsContinueCallBack != null && !OnBeforeEntitySavedIsContinueCallBack(entity))
+                return false;
+
             if (!isRequiredAttributesHasValue(entity, ref errorMessage))
                 return false;
 

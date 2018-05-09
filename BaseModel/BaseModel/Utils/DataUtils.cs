@@ -393,7 +393,7 @@ namespace BaseModel.Data.Helpers
                 TableView gridTableView = gridTView as TableView;
                 TreeListView gridTreeListView = gridTView as TreeListView;
 
-                LoadingScreenManager.ShowLoadingScreen(RowData.Count());
+                //LoadingScreenManager.ShowLoadingScreen(RowData.Count());
                 foreach (var Row in RowData)
                 {
                     TProjection projection = new TProjection();
@@ -438,9 +438,9 @@ namespace BaseModel.Data.Helpers
                         break;
                     }
 
-                    LoadingScreenManager.Progress();
+                    //LoadingScreenManager.Progress();
                 }
-                LoadingScreenManager.CloseLoadingScreen();
+                //LoadingScreenManager.CloseLoadingScreen();
             }
 
             return pasteProjections;
@@ -688,31 +688,25 @@ namespace BaseModel.Data.Helpers
 
         private PasteResult tryPasteNewValueInProjectionColumn(TProjection projection, string column_name, object new_value, List<UndoRedoArg> undoRedoArguments = null)
         {
-            if (unifiedValueValidationCallback != null)
+            string error_message = unifiedValueValidationCallback == null ? string.Empty : unifiedValueValidationCallback(projection, column_name, new_value);
+            if (error_message == string.Empty)
             {
-                string error_message = unifiedValueValidationCallback(projection, column_name, new_value);
-                if (error_message == string.Empty)
-                {
-                    object old_value = DataUtils.GetNestedValue(column_name, projection);
-                    if (!DataUtils.TrySetNestedValue(column_name, projection, new_value))
-                        return PasteResult.Skip;
-                    else if (undoRedoArguments != null)
-                        undoRedoArguments.Add(new UndoRedoArg() { FieldName = column_name, Projection = projection, OldValue = old_value, NewValue = new_value });
-
-                    return PasteResult.Success;
-                }
-                else
-                {
-                    if (messageBoxService != null)
-                        messageBoxService.ShowMessage(error_message);
-
+                object old_value = DataUtils.GetNestedValue(column_name, projection);
+                if (!DataUtils.TrySetNestedValue(column_name, projection, new_value))
                     return PasteResult.Skip;
-                }
+                else if (undoRedoArguments != null)
+                    undoRedoArguments.Add(new UndoRedoArg() { FieldName = column_name, Projection = projection, OldValue = old_value, NewValue = new_value });
+
+                return PasteResult.Success;
             }
             else
-                return PasteResult.Skip;
-        }
+            {
+                if (messageBoxService != null)
+                    messageBoxService.ShowMessage(error_message);
 
+                return PasteResult.Skip;
+            }
+        }
     }
 
     public static class MorphUtils<TFromEntity, TToEntity>

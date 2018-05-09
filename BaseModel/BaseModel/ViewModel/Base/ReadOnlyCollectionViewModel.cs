@@ -142,10 +142,24 @@ namespace BaseModel.ViewModel.Base
         }
 
         /// <summary>
+        /// Fires when selected entity is changed
+        /// </summary>
+        public Action<TProjection> OnSelectedEntityChangedCallBack;
+
+        /// <summary>
         /// The selected entity.
         /// Since ReadOnlyCollectionViewModelBase is a POCO view model, this property will raise INotifyPropertyChanged.PropertyEvent when modified so it can be used as a binding source in views.
         /// </summary>
-        public virtual TProjection SelectedEntity { get; set; }
+        TProjection selectedEntity;
+        public virtual TProjection SelectedEntity
+        {
+            get => selectedEntity;
+            set
+            {
+                selectedEntity = value;
+                OnSelectedEntityChangedCallBack?.Invoke(selectedEntity);
+            }
+        }
 
         /// <summary>
         /// The lambda expression used to filter which entities will be loaded locally from the unit of work.
