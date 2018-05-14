@@ -588,10 +588,9 @@ namespace BaseModel.ViewModel.Base
         /// </summary>
         public virtual void ExistingRowAddUndoAndSave(CellValueChangedEventArgs e)
         {
+            var projection = (TProjection)e.Row;
             if (e.RowHandle != DataControlBase.NewItemRowHandle)
             {
-                var projection = (TProjection)e.Row;
-
                 EntitiesUndoRedoManager.PauseActionId();
                 EntitiesUndoRedoManager.AddUndo(projection, e.Column.FieldName, e.OldValue, e.Value, EntityMessageType.Changed);
                 EntitiesUndoRedoManager.UnpauseActionId();
@@ -600,6 +599,9 @@ namespace BaseModel.ViewModel.Base
                 Save(projection);
                 isBackgroundEdit = false;
             }
+            //allow for new row initialization here
+            else
+                UnifiedValueChangingCallback?.Invoke(e.Column.FieldName, e.OldValue, e.Value, projection, false);
         }
 
 
