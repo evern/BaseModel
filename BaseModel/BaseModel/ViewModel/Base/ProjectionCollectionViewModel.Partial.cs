@@ -312,8 +312,8 @@ namespace BaseModel.ViewModel.Base
         /// <returns>Returns true if no other entity contains similar constraint member values</returns>
         public bool IsValidEntity(TProjection entity, ref string errorMessage)
         {
-            if (OnBeforeEntitySavedIsContinueCallBack != null && !OnBeforeEntitySavedIsContinueCallBack(entity))
-                return false;
+            //if (OnBeforeEntitySavedIsContinueCallBack != null && !OnBeforeEntitySavedIsContinueCallBack(entity))
+            //    return false;
 
             if (!isRequiredAttributesHasValue(entity, ref errorMessage))
                 return false;
@@ -601,7 +601,7 @@ namespace BaseModel.ViewModel.Base
             }
             //allow for new row initialization here
             else
-                UnifiedValueChangingCallback?.Invoke(e.Column.FieldName, e.OldValue, e.Value, projection, false);
+                UnifiedValueChangingCallback?.Invoke(e.Column.FieldName, e.OldValue, e.Value, projection, true);
         }
 
 
@@ -673,7 +673,7 @@ namespace BaseModel.ViewModel.Base
         public virtual void DeleteCellContent(GridControl gridControl)
         {
             string[] RowData = new string[] { string.Empty };
-            CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, MessageBoxService, UnifiedValueValidationCallback);
+            CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, MessageBoxService, UnifiedValueValidationCallback, ManualPasteAction, UnifiedValueChangingCallback);
             List<TProjection> pasteProjections;
             if(gridControl.View.GetType() == typeof(TableView))
                 pasteProjections = copyPasteHelper.PastingFromClipboardCellLevel<TableView>(gridControl, RowData, EntitiesUndoRedoManager);
