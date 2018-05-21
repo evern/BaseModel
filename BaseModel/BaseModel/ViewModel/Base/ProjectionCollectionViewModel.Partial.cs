@@ -67,7 +67,7 @@ namespace BaseModel.ViewModel.Base
         /// <summary>
         /// Additional validation for row
         /// </summary>
-        public Action<GridRowValidationEventArgs> AdditionalValidateRowCallBack { get; set; }
+        public Func<TProjection, string> UnifiedValidateRow { get; set; }
 
         /// <summary>
         /// Allows only specific rows be to deleted
@@ -664,7 +664,16 @@ namespace BaseModel.ViewModel.Base
                 e.ErrorContent = errorMessage;
             }
 
-            AdditionalValidateRowCallBack?.Invoke(e);
+            if(UnifiedValidateRow != null)
+            {
+                string error = UnifiedValidateRow.Invoke((TProjection)e.Row);
+                if(error != string.Empty)
+                {
+                    e.IsValid = false;
+                    e.ErrorType = DevExpress.XtraEditors.DXErrorProvider.ErrorType.Critical;
+                    e.ErrorContent = error;
+                }
+            }
         }
 
         #endregion

@@ -176,6 +176,7 @@ namespace BaseModel.ViewModel.Loader
             MainViewModel.SelectedEntities = this.DisplaySelectedEntities;
             MainViewModel.UnifiedValueChangingCallback = this.UnifiedCellValueChanging;
             MainViewModel.UnifiedValueValidationCallback = this.UnifiedValueValidation;
+            MainViewModel.UnifiedValidateRow = this.UnifiedRowValidation;
             MainViewModel.AfterBulkOperationRefreshCallBack = this.FullRefreshWithoutClearingUndoRedo;
             MainViewModel.ApplyProjectionPropertiesToEntityCallBack = ApplyProjectionPropertiesToEntity;
             BackgroundRefresh();
@@ -799,6 +800,8 @@ namespace BaseModel.ViewModel.Loader
         /// <param name="new_value">New value that projection is going to use</param>
         /// <param name="error_message">Default is empty string, set value to indicate error</param>
         public abstract string UnifiedValueValidation(TMainProjectionEntity projection, string field_name, object new_value);
+
+        public abstract string UnifiedRowValidation(TMainProjectionEntity projection);
 
         private void CellValueChangingImmediatePost(CellValueChangedEventArgs e)
         {
