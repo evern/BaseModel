@@ -69,6 +69,12 @@ namespace BaseModel.ViewModel.UndoRedo
             RedoList.Clear();
         }
 
+        public void AddRedo(TEntity changedEntity, string propertyName, object oldValue, object newValue,
+            EntityMessageType messageType)
+        {
+            RedoList.Add(new UndoRedoEntityInfo<TEntity>(changedEntity, propertyName, oldValue, newValue, ActionId, messageType));
+        }
+
         /// <summary>
         /// Undo the last entity change
         /// </summary>

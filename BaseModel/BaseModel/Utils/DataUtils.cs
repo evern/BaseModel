@@ -98,72 +98,66 @@ namespace BaseModel.Data.Helpers
                             preValidatedProjections.Add(editing_row);
                     }
                 }
-                //if copied only a row
-                else if(grouped_results.All(x => x.Count == 1) && (grouped_results.Count == 1 || (selected_cells_groupby_columns.Count() == grouped_results.Count)))
-                {
-                    int column_offset = 0;
-                    foreach(var selected_column in selected_cells_groupby_columns)
-                    {
-                        int validated_column_offset = column_offset > (grouped_results.Count - 1) ? grouped_results.Count - 1 : column_offset;
-                        var paste_value = grouped_results[validated_column_offset];
-                        column_offset += 1;
-                        //since we've already verified that each column group only has a row
-                        string paste_data = paste_value.First();
-                        List<GridColumn> visible_columns = gridTableView.VisibleColumns.ToList();
-
-                        foreach (var selected_cell in selected_column.Cells)
-                        {
-                            //int column_visible_index = selected_cell.Column.VisibleIndex;
-                            int row_handle = selected_cell.RowHandle;
-                            //GridColumn current_column = visible_columns[column_visible_index];
-                            GridColumn current_column = selected_cell.Column;
-                            TProjection editing_row = (TProjection)gridControl.GetRow(row_handle);
-                            PasteResult result = pasteDataInProjectionColumn(editing_row, current_column, paste_data, undoRedoArguments);
-
-                            if(result == PasteResult.FailOnRequired)
-                            {
-                                messageBoxService.ShowMessage("Cannot set null in required cell, operation has been terminated");
-                                break;
-                            }
-                            if (result != PasteResult.Success)
-                                continue;
-
-                            if (!preValidatedProjections.Any(x => x.GetHashCode() == editing_row.GetHashCode()))
-                                preValidatedProjections.Add(editing_row);
-                        }
-                    }
-                }
                 else
                 {
                     GridCell first_selected_cell = selected_cells.First();
-                    int first_row_handle = first_selected_cell.RowHandle;
+                    GridCell last_selected_cell = selected_cells.Last();
+
+                    int first_row_handle = selected_cells.Min(x => x.RowHandle);
+                    int last_row_handle = selected_cells.Max(x => x.RowHandle);
                     int first_row_visible_index = gridControl.GetRowVisibleIndexByHandle(first_row_handle);
+                    int last_row_visible_index = gridControl.GetRowVisibleIndexByHandle(last_row_handle);
+                    int numberOfSelectedRows = (last_row_visible_index - first_row_visible_index) + 1;
+                    int numberOfCopiedRows = grouped_results.First().Count;
 
                     List<GridColumn> visible_columns = gridTableView.VisibleColumns.ToList();
                     //commented out because not accurate during banded view
                     //int first_column_visible_index = first_selected_cell.Column.VisibleIndex;
                     int first_column_visible_index = visible_columns.First(x => x.FieldName == first_selected_cell.Column.FieldName).VisibleIndex;
+                    int last_column_visible_index = visible_columns.First(x => x.FieldName == last_selected_cell.Column.FieldName).VisibleIndex;
 
-                    for (int i = 0; i < grouped_results.Count; i++)
+                    int numberOfSelectedColumns = (last_column_visible_index - first_column_visible_index) + 1;
+                    int numberOfCopiedColumns = grouped_results.Count;
+
+                    //commented out because not accurate during banded view
+                    //int first_column_visible_index = first_selected_cell.Column.VisibleIndex;
+
+                    int rowOffsetSelection = numberOfSelectedRows > numberOfCopiedRows ? numberOfSelectedRows : numberOfCopiedRows;
+                    int columnOffsetSelection = numberOfSelectedColumns > numberOfCopiedColumns ? numberOfSelectedColumns : numberOfCopiedColumns;
+
+                    int pasteValueRowOffset = 0;
+                    TProjection validate_row = null;
+                    for (int rowOffset = 0; rowOffset < rowOffsetSelection; rowOffset++)
                     {
-                        GridColumn current_column = visible_columns[first_column_visible_index + i];
-                        string column_name = current_column.FieldName;
-                        int row_visible_index_offset = 0;
-
-                        foreach (string rowValue in grouped_results[i])
+                        int pasteValueColumnOffset = 0;
+                        for (int columnOffset = 0; columnOffset < columnOffsetSelection; columnOffset++)
                         {
-                            int current_row_visible_index = first_row_visible_index + row_visible_index_offset;
+                            if (first_column_visible_index + columnOffset >= visible_columns.Count)
+                                continue;
+
+                            GridColumn current_column = visible_columns[first_column_visible_index + columnOffset];
+                            string columnValue = grouped_results[pasteValueColumnOffset][pasteValueRowOffset];
+
+                            pasteValueColumnOffset += 1;
+                            if (pasteValueColumnOffset >= grouped_results.Count)
+                                pasteValueColumnOffset = 0;
+
+                            int current_row_visible_index = first_row_visible_index + rowOffset;
                             int current_row_handle = gridControl.GetRowHandleByVisibleIndex(current_row_visible_index);
+
+                            object rowObject = gridControl.GetRow(current_row_handle);
+                            if (rowObject == null)
+                                continue;
+
                             TProjection editing_row = (TProjection)gridControl.GetRow(current_row_handle);
+                            validate_row = editing_row;
                             if (editing_row == null)
                             {
                                 messageBoxService.ShowMessage("Please remove all line break from paste data or double click into cell to paste your data with line breaks");
                                 break;
                             }
 
-                            row_visible_index_offset += 1;
-
-                            PasteResult result = pasteDataInProjectionColumn(editing_row, current_column, rowValue, undoRedoArguments);
+                            PasteResult result = pasteDataInProjectionColumn(editing_row, current_column, columnValue, undoRedoArguments);
                             if (result == PasteResult.FailOnRequired)
                             {
                                 messageBoxService.ShowMessage("Cannot set null in required cell, operation has been terminated");
@@ -172,10 +166,14 @@ namespace BaseModel.Data.Helpers
                             if (result != PasteResult.Success)
                                 continue;
 
-                            //only add once
-                            if (i == 0)
-                                preValidatedProjections.Add(editing_row);
                         }
+
+                        if(validate_row != null)
+                            preValidatedProjections.Add(validate_row);
+
+                        pasteValueRowOffset += 1;
+                        if (pasteValueRowOffset >= grouped_results[pasteValueColumnOffset].Count)
+                            pasteValueRowOffset = 0;
                     }
                 }
                 
@@ -595,14 +593,45 @@ namespace BaseModel.Data.Helpers
                             else
                                 return PasteResult.Skip;
                         }
-                        else if (columnPropertyInfo.PropertyType == typeof(int) ||
-                                 columnPropertyInfo.PropertyType == typeof(int?))
+                        else if (columnPropertyInfo.PropertyType == typeof(int) || columnPropertyInfo.PropertyType == typeof(int?))
                         {
-                            int int_value;
-                            if (int.TryParse(cleanColumnString, out int_value))
-                                return tryPasteNewValueInProjectionColumn(projection, column_name, int_value, undoRedoArguments);
+                            ComboBoxEditSettings editSettings = column.ActualEditSettings as ComboBoxEditSettings;
+                            if (editSettings != null)
+                            {
+                                var copyColumnValueMember = (string)editSettings.GetType().GetProperty("ValueMember").GetValue(editSettings);
+                                var copyColumnDisplayMember = (string)editSettings.GetType().GetProperty("DisplayMember").GetValue(editSettings);
+                                var copyColumnItemsSource = (IEnumerable<object>)editSettings.GetType().GetProperty("ItemsSource").GetValue(editSettings);
+                                int? int_value = null;
+
+                                if (copyColumnItemsSource == null || copyColumnValueMember == null || copyColumnDisplayMember == null)
+                                    return PasteResult.Skip;
+
+                                foreach (var copyColumnItem in copyColumnItemsSource)
+                                {
+                                    var itemDisplayMemberPropertyInfo =
+                                        copyColumnItem.GetType().GetProperty(copyColumnDisplayMember);
+                                    var itemValueMemberPropertyInfo =
+                                        copyColumnItem.GetType().GetProperty(copyColumnValueMember);
+                                    if (itemDisplayMemberPropertyInfo.GetValue(copyColumnItem).ToString().ToUpper() == pasteData.ToUpper())
+                                    {
+                                        int_value = (int)itemValueMemberPropertyInfo.GetValue(copyColumnItem);
+                                        break;
+                                    }
+                                }
+
+                                if (int_value != null)
+                                    return tryPasteNewValueInProjectionColumn(projection, column_name, int_value, undoRedoArguments);
+                                else
+                                    return PasteResult.Skip;
+                            }
                             else
-                                return PasteResult.Skip;
+                            {
+                                int int_value;
+                                if (int.TryParse(cleanColumnString, out int_value))
+                                    return tryPasteNewValueInProjectionColumn(projection, column_name, int_value, undoRedoArguments);
+                                else
+                                    return PasteResult.Skip;
+                            }
                         }
                         else if (columnPropertyInfo.PropertyType == typeof(double) ||
                                  columnPropertyInfo.PropertyType == typeof(double?))
@@ -653,7 +682,7 @@ namespace BaseModel.Data.Helpers
                                 }
                             }
 
-                            if(setValues.Count > 0)
+                            if (setValues.Count > 0)
                                 return tryPasteNewValueInProjectionColumn(projection, column_name, setValues, undoRedoArguments);
                             else
                                 return PasteResult.Skip;
@@ -738,6 +767,48 @@ namespace BaseModel.Data.Helpers
 
     public static class DataUtils
     {
+        /// <summary>
+        /// Account for "" in excel splitting which signifies line breaks within "" isn't new row
+        /// </summary>
+        public static List<string> ExcelSplit(string pasteString)
+        {
+            List<string> rowData = new List<string>();
+            char[] charSplits = pasteString.ToCharArray();
+
+            string rowCache = string.Empty;
+            bool isQuoteOpen = false;
+            for (int i = 0; i < charSplits.Count(); i++)
+            {
+                char? previousChar = i == 0 ? (char?)null : charSplits[i - 1];
+                char currentChar = charSplits[i];
+
+                if (currentChar == '"')
+                    isQuoteOpen = !isQuoteOpen;
+                else if (currentChar == '\n' && previousChar != null && ((char)previousChar) == '\r')
+                {
+                    if (!isQuoteOpen)
+                    {
+                        if (rowCache.Length > 1)
+                            //remove the previous /r from row cache
+                            rowCache = rowCache.Substring(0, rowCache.Length - 1);
+
+                        rowData.Add(rowCache);
+                        rowCache = string.Empty;
+                    }
+                    else
+                        rowCache += currentChar;
+                }
+                else
+                    rowCache += currentChar;
+            }
+
+            //when only a single row is pasted
+            if (rowCache != string.Empty)
+                rowData.Add(rowCache);
+
+            return rowData;
+        }
+
         public static bool? IsNewEntity<TEntity>(TEntity entity)
             where TEntity : IHaveCreatedDate
         {

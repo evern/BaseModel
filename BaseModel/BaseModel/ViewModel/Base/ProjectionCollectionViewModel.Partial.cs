@@ -1241,7 +1241,7 @@ namespace BaseModel.ViewModel.Base
                 RowData = new string[] { format_string };
             }
             else
-                RowData = excelSplit(PasteString).ToArray();
+                RowData = DataUtils.ExcelSplit(PasteString).ToArray();
 
             var gridControl = (GridControl)e.Source;
 
@@ -1273,47 +1273,6 @@ namespace BaseModel.ViewModel.Base
             PasteListener?.Invoke(PasteStatus.Stop);
         }
 
-        /// <summary>
-        /// Account for "" in excel splitting which signifies line breaks within "" isn't new row
-        /// </summary>
-        private List<string> excelSplit(string pasteString)
-        {
-            List<string> rowData = new List<string>();
-            char[] charSplits = pasteString.ToCharArray();
-
-            string rowCache = string.Empty;
-            bool isQuoteOpen = false;
-            for(int i = 0; i < charSplits.Count(); i++)
-            {
-                char? previousChar = i == 0 ? (char?)null : charSplits[i - 1];
-                char currentChar = charSplits[i];
-
-                if (currentChar == '"')
-                    isQuoteOpen = !isQuoteOpen;
-                else if (currentChar == '\n' && previousChar != null && ((char)previousChar) == '\r')
-                {
-                    if (!isQuoteOpen)
-                    {
-                        if(rowCache.Length > 1)
-                            //remove the previous /r from row cache
-                            rowCache = rowCache.Substring(0, rowCache.Length - 1);
-
-                        rowData.Add(rowCache);
-                        rowCache = string.Empty;
-                    }
-                    else
-                        rowCache += currentChar;
-                }
-                else
-                    rowCache += currentChar;
-            }
-
-            //when only a single row is pasted
-            if (rowCache != string.Empty)
-                rowData.Add(rowCache);
-
-            return rowData;
-        }
 
         /// <summary>
         /// Converts clipboard text into entity values and saves to database

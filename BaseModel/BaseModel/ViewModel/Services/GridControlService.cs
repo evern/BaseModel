@@ -1,6 +1,7 @@
 ﻿using BaseModel.Data.Helpers;
 using BaseModel.Misc;
 using DevExpress.Data;
+using DevExpress.Data.Extensions;
 using DevExpress.Data.Filtering;
 using DevExpress.Mvvm.UI;
 using DevExpress.Xpf.Editors;
@@ -41,6 +42,9 @@ namespace BaseModel.ViewModel.Services
         void MasterDetail_CollapseAll();
         void CombineMasterDetailSearch();
         void SetFilterCriteria(string filter_string);
+        int[] GetSelectedRowHandles();
+        int GetListIndexByRowHandle(int rowHandle);
+        void RemoveSelectedRows(int[] rowHandles);
         ObservableCollection<Misc.GroupInfo> GetExpansionState();
         void SetExpansionState(ObservableCollection<Misc.GroupInfo> states);
     }
@@ -55,6 +59,28 @@ namespace BaseModel.ViewModel.Services
         
         public static readonly DependencyProperty GridControlProperty =
             DependencyProperty.Register("GridControl", typeof(GridControl), typeof(GridControlService), new PropertyMetadata(null));
+
+        public int[] GetSelectedRowHandles()
+        {
+            return GridControl.GetSelectedRowHandles();
+        }
+
+        public void RemoveSelectedRows(int[] rowHandles)
+        {
+            TableView view = GridControl.View as TableView;
+            if(view != null)
+            {
+                foreach (int handle in rowHandles.OrderByDescending(x => x))
+                {
+                    view.DeleteRow(handle);
+                }
+            }
+        }
+
+        public int GetListIndexByRowHandle(int rowHandle)
+        {
+            return GridControl.GetListIndexByRowHandle(rowHandle);
+        }
 
         public void SetFilterCriteria(string filter_string)
         {
@@ -71,6 +97,7 @@ namespace BaseModel.ViewModel.Services
                 return;
 
             TableView view = GridControl.View as TableView;
+
             if(view != null)
             {
                 operands = new List<OperandProperty>();
