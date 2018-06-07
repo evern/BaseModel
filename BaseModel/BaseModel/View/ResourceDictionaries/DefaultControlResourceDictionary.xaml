@@ -317,6 +317,7 @@
             <Setter.Value>
                 <DataTemplate>
                     <ItemsControl>
+                        <dxmvvm:EventToCommand Command="{Binding CellValueChangingCommand}" EventName="CellValueChanging" PassEventArgsToCommand="True" />
                         <dxmvvm:EventToCommand Command="{Binding ExistingRowAddUndoAndSaveCommand}" EventName="CellValueChanged" PassEventArgsToCommand="True" />
                         <dxmvvm:EventToCommand Command="{Binding NewRowAddUndoAndSaveCommand}" EventName="RowUpdated" PassEventArgsToCommand="True" />
                         <dxmvvm:EventToCommand Command="{Binding ValidateCellCommand}" EventName="ValidateCell" PassEventArgsToCommand="True" />

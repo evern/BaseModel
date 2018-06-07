@@ -318,6 +318,10 @@ namespace BaseModel.ViewModel.Base
             if (!isRequiredAttributesHasValue(entity, ref errorMessage))
                 return false;
 
+            errorMessage = UnifiedValidateRow?.Invoke(entity);
+            if (errorMessage != null && errorMessage != string.Empty)
+                return false;
+
             return IsUniqueEntityConstraintValues(entity, ref errorMessage);
         }
 
@@ -599,11 +603,25 @@ namespace BaseModel.ViewModel.Base
                 Save(projection);
                 isBackgroundEdit = false;
             }
-            //allow for new row initialization here
-            else
-                UnifiedValueChangingCallback?.Invoke(e.Column.FieldName, e.OldValue, e.Value, projection, true);
+            ////allow for new row initialization here
+            //else
+            //    UnifiedValueChangingCallback?.Invoke(e.Column.FieldName, e.OldValue, e.Value, projection, true);
         }
 
+        /// <summary>
+        /// Influence column(s) when changes happens in other column
+        /// </summary>
+        public virtual void CellValueChanging(CellValueChangedEventArgs e)
+        {
+            if (e.RowHandle == GridControl.AutoFilterRowHandle)
+                return;
+
+            if (!e.Handled)
+            {
+                var projection = (TProjection)e.Row;
+                UnifiedValueChangingCallback?.Invoke(e.Column.FieldName, e.OldValue, e.Value, projection, true);
+            }
+        }
 
         /// <summary>
         /// Remembers an entity property old value for undoing
