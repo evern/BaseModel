@@ -391,7 +391,7 @@ namespace BaseModel.Data.Helpers
                 TableView gridTableView = gridTView as TableView;
                 TreeListView gridTreeListView = gridTView as TreeListView;
 
-                //LoadingScreenManager.ShowLoadingScreen(RowData.Count());
+                LoadingScreenManager.ShowLoadingScreen(RowData.Count());
                 foreach (var Row in RowData)
                 {
                     TProjection projection = new TProjection();
@@ -436,9 +436,9 @@ namespace BaseModel.Data.Helpers
                         break;
                     }
 
-                    //LoadingScreenManager.Progress();
+                    LoadingScreenManager.Progress();
                 }
-                //LoadingScreenManager.CloseLoadingScreen();
+                LoadingScreenManager.CloseLoadingScreen();
             }
 
             return pasteProjections;
@@ -478,9 +478,10 @@ namespace BaseModel.Data.Helpers
                 return PasteResult.Skip;
 
             string column_name = column.FieldName;
-            PropertyInfo columnPropertyInfo = DataUtils.GetNestedPropertyInfo(column_name, projection);
+
             try
             {
+                PropertyInfo columnPropertyInfo = DataUtils.GetNestedPropertyInfo(column_name, projection);
                 if (columnPropertyInfo != null)
                     if(pasteData == string.Empty && Nullable.GetUnderlyingType(columnPropertyInfo.PropertyType) != null)
                     {

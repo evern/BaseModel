@@ -113,6 +113,7 @@
     <Compile Include="DataModel\DesignTime\DesignTimeRepository.cs" />
     <Compile Include="DataModel\DesignTime\DesignTimeUnitOfWork.cs" />
     <Compile Include="DataModel\DesignTime\DesignTimeUnitOfWorkFactory.cs" />
+    <Compile Include="DataModel\EntityBase.cs" />
     <Compile Include="DataModel\EntityFramework\CreatedAndUpdatedDateInterceptor.cs" />
     <Compile Include="DataModel\EntityFramework\DbExceptionsConverter.cs" />
     <Compile Include="DataModel\EntityFramework\DbReadOnlyRepository.cs" />
@@ -202,6 +203,8 @@
       <DependentUpon>LoadingScreen.xaml</DependentUpon>
     </Compile>
     <Compile Include="View\DXSplashScreen\LoadingScreenManager.cs" />
+    <Compile Include="View\ExtraLayout\ExtraLayoutControl.cs" />
+    <Compile Include="View\ExtraLayout\ExtraLayoutGroup.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

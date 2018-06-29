@@ -284,8 +284,8 @@ namespace BaseModel.ViewModel.Base
             {
                 return;
             }
-            loadCancellationTokenSource = LoadCore();
-            refreshAction?.Invoke();
+            loadCancellationTokenSource = LoadCore(refreshAction);
+            //refreshAction?.Invoke();
         }
 
         private void CancelLoading()
@@ -295,7 +295,7 @@ namespace BaseModel.ViewModel.Base
             IsLoading = false;
         }
 
-        private CancellationTokenSource LoadCore()
+        private CancellationTokenSource LoadCore(Action refreshAction = null)
         {
             IsLoading = true;
             var cancellationTokenSource = new CancellationTokenSource();
@@ -321,6 +321,7 @@ namespace BaseModel.ViewModel.Base
                         OnEntitiesAssigned(selectedEntitiesCallBack);
                     }
                     IsLoading = false;
+                    refreshAction?.Invoke();
                 }, cancellationTokenSource.Token, TaskContinuationOptions.None,
                 TaskScheduler.FromCurrentSynchronizationContext());
             return cancellationTokenSource;
