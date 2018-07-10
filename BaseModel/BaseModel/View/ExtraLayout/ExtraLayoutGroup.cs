@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 using System.Windows;
 using DevExpress.Xpf.LayoutControl;
 using System.Windows.Controls;
+using System.ComponentModel;
+using DevExpress.Xpf.Core.Native;
+using System.Windows.Media.Animation;
 
 namespace BaseModel.View.ExtraLayout
 {
@@ -142,6 +145,8 @@ namespace BaseModel.View.ExtraLayout
 
             return base.OnMeasure(minConstraint);
         }
+
+        
 
     }
 }

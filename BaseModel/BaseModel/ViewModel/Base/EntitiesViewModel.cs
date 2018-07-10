@@ -133,6 +133,9 @@ namespace BaseModel.ViewModel.Base
                 if (owner.OnBeforeEntitiesChangedCallBack != null && !owner.OnBeforeEntitiesChangedCallBack(message.PrimaryKey, typeof(TEntity), message.MessageType, message.Sender, message.WillPerformBulkRefresh))
                     return;
 
+                if (owner.AlwaysSkipMessage)
+                    return;
+
                 bool skipOnMessage = message.Sender == null ? false : message.Sender.ToString() == owner.ToString() && message.HWID == owner.CurrentHWID;
                 switch (message.MessageType)
                 {
@@ -272,6 +275,8 @@ namespace BaseModel.ViewModel.Base
         {
             get { return ReadOnlyRepository != null; }
         }
+
+        public bool AlwaysSkipMessage { get; set; }
 
         public void LoadEntities(bool forceLoad, Action refreshAction = null)
         {
