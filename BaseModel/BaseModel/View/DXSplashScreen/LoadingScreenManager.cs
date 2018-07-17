@@ -35,7 +35,8 @@ namespace BaseModel.View
 
         public static void SetMessage(string message)
         {
-            DXSplashScreen.SetState(message);
+            if (DXSplashScreen.IsActive)
+                DXSplashScreen.SetState(message);
         }
 
         public static void ResetCurrentProgress()
