@@ -274,6 +274,7 @@ namespace BaseModel.ViewModel.Base
             try
             {
                 LoadingScreenManager.ShowLoadingScreen(projectionEntitiesWithTag.Count);
+                LoadingScreenManager.SetMessage("Deleting...");
                 foreach (var projectionEntityWithTag in projectionEntitiesWithTag)
                 {
                     var primaryKey = Repository.GetProjectionPrimaryKey(projectionEntityWithTag.Value);
@@ -327,6 +328,7 @@ namespace BaseModel.ViewModel.Base
                 projectionEntitiesWithTag.Add(new KeyValuePair<int, TProjection>(i, projectionEntitiesList[i]));
 
             LoadingScreenManager.ShowLoadingScreen(projectionEntitiesWithTag.Count);
+            LoadingScreenManager.SetMessage("Saving...");
             bool isContinueSave = true;
             foreach (var projectionEntityWithTag in projectionEntitiesWithTag)
             {
