@@ -256,7 +256,7 @@ namespace BaseModel.ViewModel.Loader
         {
             get
             {
-                if (compulsoryLoaders == null)
+                if (compulsoryLoaders == null && loaderCollection != null)
                     compulsoryLoaders = loaderCollection.Where(x => x.IsCompulsory);
 
                 return compulsoryLoaders;
