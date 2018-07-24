@@ -1232,7 +1232,8 @@ namespace BaseModel.ViewModel.Base
         }
 
         public MultiSelectMode SelectMode => IsPasteCellLevel ? MultiSelectMode.Cell : MultiSelectMode.Row;
-
+        //Indicate that paste data will not have carriage return in cells, to improve paste data accuracy
+        public bool UseRegularSplitting;
         /// <summary>
         /// Converts clipboard text into entity values and saves to database
         /// </summary>
@@ -1259,7 +1260,16 @@ namespace BaseModel.ViewModel.Base
                 RowData = new string[] { format_string };
             }
             else
-                RowData = DataUtils.ExcelSplit(PasteString).ToArray();
+            {
+                if(UseRegularSplitting)
+                {
+                    RowData = PasteString.Split('\n').ToArray();
+                    RowData = RowData.Where(x => x != string.Empty).ToArray();
+                }
+                else
+                    RowData = DataUtils.ExcelSplit(PasteString).ToArray();
+            }
+
 
             var gridControl = (GridControl)e.Source;
 
