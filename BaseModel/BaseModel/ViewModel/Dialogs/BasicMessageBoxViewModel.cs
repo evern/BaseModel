@@ -1,5 +1,6 @@
 ﻿using DevExpress.Mvvm.POCO;
 using System.Collections.Generic;
+using System.Windows;
 
 namespace BaseModel.ViewModel.Dialogs
 {
@@ -11,10 +12,13 @@ namespace BaseModel.ViewModel.Dialogs
         }
 
         public string Message { get; set; }
+        public bool IsChecked { get; set; }
+        public Visibility CheckboxVisibility { get; set; }
 
         protected BasicMessageBoxViewModel(string message)
         {
             Message = message;
+            CheckboxVisibility = Visibility.Hidden;
         }
     }
 }

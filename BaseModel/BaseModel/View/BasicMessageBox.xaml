@@ -1,15 +1,6 @@
-﻿<UserControl
-    x:Name="userControl"
-    x:Class="BaseModel.View.BasicMessageBox"
-    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
-    xmlns:dxlc="http://schemas.devexpress.com/winfx/2008/xaml/layoutcontrol"
-    xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
-    >
-    <StackPanel HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                Orientation="Horizontal">
+﻿<UserControl x:Class="BaseModel.View.BasicMessageBox" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core" xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors" xmlns:dxlc="http://schemas.devexpress.com/winfx/2008/xaml/layoutcontrol" x:Name="userControl">
+    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Orientation="Vertical">
         <Label Content="{Binding Message}" />
+        <dxe:CheckEdit EditValue="{Binding IsChecked}" Content="Don't ask again" Visibility="{Binding CheckboxVisibility}" />
     </StackPanel>
 </UserControl>
