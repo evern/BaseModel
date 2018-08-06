@@ -236,10 +236,14 @@ namespace BaseModel.ViewModel.Services
         public IEnumerable<object> GetVisibleRowObjects()
         {
             List<object> visible_row_object = new List<object>();
+            GridControl.ExpandAllGroups();
             for (int i = 0; i < GridControl.VisibleRowCount; i++)
             {
-                object dataRow = GridControl.GetRow(GridControl.GetRowHandleByVisibleIndex(i));
-                visible_row_object.Add(dataRow);
+                if(!GridControl.IsGroupRowHandle(GridControl.GetRowHandleByVisibleIndex(i)))
+                {
+                    object dataRow = GridControl.GetRow(GridControl.GetRowHandleByVisibleIndex(i));
+                    visible_row_object.Add(dataRow);
+                }
             }
             return visible_row_object;
         }
