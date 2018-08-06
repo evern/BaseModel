@@ -19,6 +19,7 @@ namespace BaseModel.ViewModel.Services
         void ApplyDefaultF2Behavior();
         void SetImmediateUpdateRowPosition(bool updatePositionImmediately);
         void ScrollToLast();
+        void ApplyBestFit();
     }
 
     public class TableViewService : ServiceBase, ITableViewService
@@ -111,6 +112,14 @@ namespace BaseModel.ViewModel.Services
 
             TableView.CommitEditing();
             TableView.MoveNextRow();
+        }
+
+        public void ApplyBestFit()
+        {
+            if (this.TableView == null)
+                return;
+
+            TableView.BestFitColumns();
         }
 
         public void SetImmediateUpdateRowPosition(bool updatePositionImmediately)

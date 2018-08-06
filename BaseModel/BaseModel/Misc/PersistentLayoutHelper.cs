@@ -23,18 +23,25 @@ namespace BaseModel.Misc
             }
         }
 
-        public static void TryDeserializeLayout(ILayoutSerializationService service, string viewName)
+        public static bool TryDeserializeLayout(ILayoutSerializationService service, string viewName)
         {
             string state = null;
             if (service != null && PersistentViewsLayout.TryGetValue(viewName, out state))
                 try
                 {
                     if(state != string.Empty)
+                    {
                         service.Deserialize(state);
+                        return true;
+                    }
+
+                    return false;
                 }
                 catch
                 {
                 }
+
+            return false;
         }
 
         public static void TrySerializeLayout(ILayoutSerializationService service, string viewName)

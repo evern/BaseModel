@@ -210,12 +210,14 @@ namespace BaseModel.ViewModel.Loader
                 GridControlService.CombineMasterDetailSearch();
             }
 
-            if (TableViewService != null)
+            if(!PersistentLayoutHelper.TryDeserializeLayout(LayoutSerializationService, ViewName))
             {
-                TableViewService.ApplyDefaultF2Behavior();
+                if (TableViewService != null)
+                {
+                    TableViewService.ApplyDefaultF2Behavior();
+                    TableViewService.ApplyBestFit();
+                }
             }
-
-            PersistentLayoutHelper.TryDeserializeLayout(LayoutSerializationService, ViewName);
         }
 
         protected void ApplyProjectionPropertiesToEntity(TMainProjectionEntity projectionEntity, TMainEntity entity)
