@@ -60,8 +60,7 @@ namespace BaseModel.ViewModel.Loader
             selectedEntitiesChangedDispatchTimer.Interval = new TimeSpan(0, 0, 0, 0, 1);
             initializePresentationProperties();
             resolveParameters(parameter);
-            initializeEntitiesLoadersDescription();
-            loadEntitiesCollection();
+            initializeAndLoad();
         }
 
         public void ReloadEntitiesCollection()
@@ -69,8 +68,7 @@ namespace BaseModel.ViewModel.Loader
             MainViewModel = null;
             this.RaisePropertyChanged(x => x.IsLoading);
             CleanUpEntitiesLoader();
-            initializeEntitiesLoadersDescription();
-            loadEntitiesCollection();
+            initializeAndLoad();
         }
 
         /// <summary>
@@ -129,7 +127,16 @@ namespace BaseModel.ViewModel.Loader
 
         protected abstract void resolveParameters(object parameter);
 
-        protected abstract void initializeEntitiesLoadersDescription();
+        protected void initializeAndLoad()
+        {
+            MainViewModel = null;
+            CleanUpEntitiesLoader();
+            loaderCollection = new EntitiesLoaderDescriptionCollection(this);
+            addEntitiesLoader();
+            loadEntitiesCollection();
+        }
+
+        protected abstract void addEntitiesLoader();
 
         protected abstract void onAuxiliaryEntitiesCollectionLoaded();
 
@@ -215,7 +222,10 @@ namespace BaseModel.ViewModel.Loader
                 if (TableViewService != null)
                 {
                     TableViewService.ApplyDefaultF2Behavior();
-                    TableViewService.ApplyBestFit();
+
+                    //Do not apply best fit if entities aren't loaded within timeframe
+                    if(DisplayEntities.Count > 0)
+                        TableViewService.ApplyBestFit();
                 }
             }
         }
