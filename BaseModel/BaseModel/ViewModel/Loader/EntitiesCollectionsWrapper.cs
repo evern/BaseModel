@@ -89,6 +89,9 @@ namespace BaseModel.ViewModel.Loader
         /// </summary>
         private void loadSubsequentEntitiesCollection()
         {
+            if (loaderCollection == null)
+                return;
+
             var entitiesLoader = loaderCollection.Where(x => !x.IsLoaded);
             if (entitiesLoader == null || entitiesLoader.Count() == 0)
                 return;
@@ -130,7 +133,7 @@ namespace BaseModel.ViewModel.Loader
         protected void initializeAndLoad()
         {
             MainViewModel = null;
-            CleanUpEntitiesLoader();
+            //CleanUpEntitiesLoader();
             loaderCollection = new EntitiesLoaderDescriptionCollection(this);
             addEntitiesLoader();
             loadEntitiesCollection();
@@ -224,7 +227,7 @@ namespace BaseModel.ViewModel.Loader
                     TableViewService.ApplyDefaultF2Behavior();
 
                     //Do not apply best fit if entities aren't loaded within timeframe
-                    if(DisplayEntities.Count > 0)
+                    if(DisplayEntities != null && DisplayEntities.Count > 0)
                         TableViewService.ApplyBestFit();
                 }
             }
