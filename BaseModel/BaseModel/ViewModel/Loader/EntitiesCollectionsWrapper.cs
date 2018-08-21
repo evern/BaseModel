@@ -211,6 +211,7 @@ namespace BaseModel.ViewModel.Loader
             mainThreadDispatcher.BeginInvoke(new Action(() => OnAfterAssignedCallbackAndRaisePropertyChanged()));
         }
 
+        protected bool doNotApplyBestFit = false;
         protected virtual void OnAfterAssignedCallbackAndRaisePropertyChanged()
         {
             if (GridControlService != null)
@@ -226,9 +227,10 @@ namespace BaseModel.ViewModel.Loader
                 {
                     TableViewService.ApplyDefaultF2Behavior();
 
-                    //Do not apply best fit if entities aren't loaded within timeframe
-                    if(DisplayEntities != null && DisplayEntities.Count > 0)
-                        TableViewService.ApplyBestFit();
+                    if(!doNotApplyBestFit)
+                        //Do not apply best fit if entities aren't loaded within timeframe
+                        if(DisplayEntities != null && DisplayEntities.Count > 0)
+                            TableViewService.ApplyBestFit();
                 }
             }
         }

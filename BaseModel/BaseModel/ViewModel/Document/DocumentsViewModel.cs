@@ -175,9 +175,7 @@ namespace BaseModel.ViewModel.Document
 
             DocumentInfo documentInfo = new DocumentInfo(module.Id, module.DocumentParameter, module.DocumentType, module.ModuleTitle);
             var document = DocumentManagerService.ShowExistingEntityDocument(documentInfo, this);
-            //var document = DocumentManagerService.FindDocumentByIdOrCreate(module.ModuleTitle,
-            //    x => NavigateToDocument(module));
-            //document.Show();
+
             return document;
         }
 
