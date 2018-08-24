@@ -244,17 +244,15 @@ namespace BaseModel.DataModel
             Action<TProjection, TEntity> applyProjectionPropertiesToEntity, out bool isNewEntity) where TEntity : class
         {
             isNewEntity = false;
-            var projection = IsProjection<TEntity, TProjection>(projectionEntity);
+            bool projection = IsProjection<TEntity, TProjection>(projectionEntity);
             //BaseModel Modification Start
             var projectionPrimaryKey = repository.GetProjectionPrimaryKey(projectionEntity);
-            var isGuidEmpty = projectionPrimaryKey.GetType() == typeof(Guid) &&
-                               projectionPrimaryKey.ToString() == Guid.Empty.ToString();
+            var isGuidEmpty = projectionPrimaryKey.GetType() == typeof(Guid) && projectionPrimaryKey.ToString() == Guid.Empty.ToString();
             //BaseModel Modification End
             TEntity entity = null;
             if (!isGuidEmpty)
             {
                 entity = repository.Find(projectionPrimaryKey);
-
                 //entity properties might be different from projection when projection is from another view model
                 if(entity != null && typeof(TEntity) == typeof(TProjection))
                     DataUtils.ShallowCopy(entity, projectionEntity);
@@ -263,18 +261,13 @@ namespace BaseModel.DataModel
             if (entity == null || isGuidEmpty)
             {
                 isNewEntity = true;
-                if (projection)
-                {
-                    entity = repository.Create();
-                }
-                else
-                {
-                    entity = projectionEntity as TEntity;
-                    repository.Add(entity);
-                }
+                entity = repository.Create();
+
+                if(!projection)
+                    DataUtils.ShallowCopy(entity, projectionEntity);
             }
-            if (projection)
-                applyProjectionPropertiesToEntity(projectionEntity, entity);
+
+            applyProjectionPropertiesToEntity(projectionEntity, entity);
             return entity;
         }
 

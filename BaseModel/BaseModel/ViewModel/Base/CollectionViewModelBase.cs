@@ -192,7 +192,7 @@ namespace BaseModel.ViewModel.Base
             }
             catch(Exception e)
             {
-                string s = e.ToString();
+
             }
         }
 

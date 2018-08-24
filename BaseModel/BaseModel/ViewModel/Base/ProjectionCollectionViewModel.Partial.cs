@@ -213,14 +213,17 @@ namespace BaseModel.ViewModel.Base
             IEnumerable<UndoRedoEntityInfo<TProjection>> bulkSaveProperties = entityProperties.Where(x => x.MessageType == EntityMessageType.Changed);
             IEnumerable<UndoRedoEntityInfo<TProjection>> bulkDeleteProperties = entityProperties.Where(x => x.MessageType == EntityMessageType.Added);
             IEnumerable<UndoRedoEntityInfo<TProjection>> bulkAddProperties = entityProperties.Where(x => x.MessageType == EntityMessageType.Deleted);
+
             //use ignore refresh here because it'll be refreshed in basebulksave
             BaseBulkDelete(bulkDeleteProperties.Select(x => x.ChangedEntity), true);
             foreach(UndoRedoEntityInfo<TProjection> entityProperty in bulkSaveProperties)
             {
                 DataUtils.SetNestedValue(entityProperty.PropertyName, entityProperty.ChangedEntity, entityProperty.OldValue);
             }
+
             BaseBulkSave(bulkSaveProperties.Select(x => x.ChangedEntity));
             BaseBulkSave(bulkAddProperties.Select(x => x.ChangedEntity));
+
             isBackgroundEdit = false;
         }
 
@@ -965,6 +968,9 @@ namespace BaseModel.ViewModel.Base
         /// <param name="projectionEntity">An entity to edit.</param>
         public virtual void BulkDelete()
         {
+            if (MessageBoxService.ShowMessage("Are you sure you want to delete " + selectedentities.Count + " selected entries?", "Confirmation", MessageButton.OKCancel) == MessageResult.Cancel)
+                return;
+
             EntitiesUndoRedoManager.PauseActionId();
             BaseBulkDelete(selectedentities);
             EntitiesUndoRedoManager.UnpauseActionId();
