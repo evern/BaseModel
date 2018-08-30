@@ -188,7 +188,7 @@ namespace BaseModel.ViewModel.Loader
             MainViewModel.UnifiedValueValidationCallback = this.UnifiedValueValidation;
             MainViewModel.UnifiedValidateRow = this.UnifiedRowValidation;
             MainViewModel.AfterBulkOperationRefreshCallBack = this.FullRefreshWithoutClearingUndoRedo;
-            MainViewModel.ApplyProjectionPropertiesToEntityCallBack = ApplyProjectionPropertiesToEntity;
+            MainViewModel.ApplyProjectionPropertiesToEntityCallBack = ApplyProjectionPropertiesAndCreatedDateToEntity;
             BackgroundRefresh();
 
             post_loaded_dispatcher_timer = new Timer();
@@ -235,7 +235,7 @@ namespace BaseModel.ViewModel.Loader
             }
         }
 
-        protected void ApplyProjectionPropertiesToEntity(TMainProjectionEntity projectionEntity, TMainEntity entity)
+        protected void ApplyProjectionPropertiesAndCreatedDateToEntity(TMainProjectionEntity projectionEntity, TMainEntity entity)
         {
             OnBeforeApplyProjectionPropertiesToEntity(projectionEntity, entity);
             IProjection<TMainEntity> projection = projectionEntity as IProjection<TMainEntity>;

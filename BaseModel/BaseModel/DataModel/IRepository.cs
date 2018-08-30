@@ -267,8 +267,7 @@ namespace BaseModel.DataModel
                     DataUtils.ShallowCopy(entity, projectionEntity);
             }
 
-            if(projection)
-                applyProjectionPropertiesToEntity(projectionEntity, entity);
+            applyProjectionPropertiesToEntity(projectionEntity, entity);
             return entity;
         }
 
