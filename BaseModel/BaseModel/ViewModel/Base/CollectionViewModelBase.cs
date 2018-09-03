@@ -136,7 +136,7 @@ namespace BaseModel.ViewModel.Base
 
         protected virtual void ApplyProjectionPropertiesToEntity(TProjection projectionEntity, TEntity entity)
         {
-            ApplyProjectionPropertiesToEntityCallBack?.(projectionEntity, entity);
+            ApplyProjectionPropertiesToEntityCallBack?.Invoke(projectionEntity, entity);
             //else
             //    throw new NotImplementedException(
             //        "Override this method in the collection view model class and apply projection properties to the entity so that it can be correctly saved by unit of work.");
