@@ -257,8 +257,22 @@ namespace BaseModel.ViewModel.Services
         public void AddSummary(string fieldName, SummaryItemType summaryType, string displayFormat)
         {
             GridSummaryItem gridSummaryItem = new GridSummaryItem() { FieldName = fieldName, SummaryType = summaryType, DisplayFormat = displayFormat };
-            GridControl.TotalSummary.Add(gridSummaryItem);
-            GridControl.GroupSummary.Add(gridSummaryItem);
+            if(!gridSummaryItemExists(GridControl.TotalSummary, fieldName))
+                GridControl.TotalSummary.Add(gridSummaryItem);
+
+            if (!gridSummaryItemExists(GridControl.GroupSummary, fieldName))
+                GridControl.GroupSummary.Add(gridSummaryItem);
+        }
+
+        private bool gridSummaryItemExists(GridSummaryItemCollection gridSummaryItems, string fieldName)
+        {
+            for(int i = 0;i < gridSummaryItems.Count;i++)
+            {
+                if (gridSummaryItems[i].FieldName == fieldName)
+                    return true;
+            }
+
+            return false;
         }
 
         public void ChangeSummary(string oldFieldName, string newFieldName)
