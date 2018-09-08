@@ -43,7 +43,7 @@ namespace BaseModel.ViewModel.Loader
         protected Dispatcher mainThreadDispatcher = Application.Current.Dispatcher;
         private DispatcherTimer selectedEntitiesChangedDispatchTimer;
         DispatcherTimer bulk_refresh_dispatcher_timer;
-        Timer post_loaded_dispatcher_timer;
+        protected Timer post_loaded_dispatcher_timer;
         public void CollectionViewModelWrapper()
         {
             CurrentHWID = string.Empty;
@@ -170,6 +170,7 @@ namespace BaseModel.ViewModel.Loader
             return true;
         }
 
+        protected bool delayPostLoadedTimer;
         protected virtual void AssignCallBacksAndRaisePropertyChange(IEnumerable<TMainProjectionEntity> entities)
         {
             if (!OnEntitiesLoadedCallBackManualDispose && OnEntitiesLoadedCallBack != null)
@@ -191,13 +192,16 @@ namespace BaseModel.ViewModel.Loader
             MainViewModel.ApplyProjectionPropertiesToEntityCallBack = ApplyProjectionPropertiesAndCreatedDateToEntity;
             BackgroundRefresh();
 
-            post_loaded_dispatcher_timer = new Timer();
-            post_loaded_dispatcher_timer.Interval = 1500;
-            post_loaded_dispatcher_timer.Elapsed += post_loaded_dispatcher_timer_tick;
-            post_loaded_dispatcher_timer.Start();
+            if(!delayPostLoadedTimer)
+            {
+                post_loaded_dispatcher_timer = new Timer();
+                post_loaded_dispatcher_timer.Interval = 1500;
+                post_loaded_dispatcher_timer.Elapsed += post_loaded_dispatcher_timer_tick;
+                post_loaded_dispatcher_timer.Start();
+            }
         }
 
-        private void post_loaded_dispatcher_timer_tick(object sender, EventArgs e)
+        protected void post_loaded_dispatcher_timer_tick(object sender, EventArgs e)
         {
             post_loaded_dispatcher_timer.Stop();
             if(OnEntitiesLoadedCallBackManualDispose && OnEntitiesLoadedCallBack != null)
