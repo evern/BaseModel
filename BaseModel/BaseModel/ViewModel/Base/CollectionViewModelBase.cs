@@ -385,6 +385,11 @@ namespace BaseModel.ViewModel.Base
                 AfterBulkOperationRefreshCallBack.Invoke();
         }
 
+        public void SimpleSaveAll()
+        {
+            Repository.UnitOfWork.SaveChanges();
+        }
+
         public override void Refresh()
         {
             ISupportUndoRedo<TProjection> ISupportUndoRedoViewModel = this as ISupportUndoRedo<TProjection>;
