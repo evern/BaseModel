@@ -255,16 +255,6 @@ namespace BaseModel.ViewModel.Loader
 
                 DataUtils.ShallowCopy(entity, projection.Entity);
             }
-            else
-            {
-                IHaveCreatedDate iHaveCreatedDateEntity = entity as IHaveCreatedDate;
-                if (iHaveCreatedDateEntity != null)
-                {
-                    //workaround for created because Save() only sets the projection primary key, this is used for property redo where the interceptor only tampers with UPDATED and CREATED is left as null
-                    if (iHaveCreatedDateEntity.EntityCreatedDate.Date.Year == 1)
-                        iHaveCreatedDateEntity.EntityCreatedDate = DateTime.Now;
-                }
-            }
         }
 
         protected virtual void OnBeforeApplyProjectionPropertiesToEntity(TMainProjectionEntity projectionEntity, TMainEntity entity)

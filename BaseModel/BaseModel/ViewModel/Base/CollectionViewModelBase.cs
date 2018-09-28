@@ -348,6 +348,7 @@ namespace BaseModel.ViewModel.Base
                     if (!IsContinueSaveCallBack(projectionEntityWithTag.Value, isNewEntity))
                         continue;
 
+                ApplyCreatedDateToEntity(findOrAddNewEntity);
                 entitiesWithTag.Add(new KeyValuePair<int, TEntity>(projectionEntityWithTag.Key, findOrAddNewEntity));
                 isNewEntityWithTag.Add(new KeyValuePair<int, bool>(projectionEntityWithTag.Key, isNewEntity));
                 OnBeforeEntitySaved(findOrAddNewEntity);
@@ -383,6 +384,20 @@ namespace BaseModel.ViewModel.Base
 
             if(!doNotRefresh && AfterBulkOperationRefreshCallBack != null)
                 AfterBulkOperationRefreshCallBack.Invoke();
+        }
+
+        protected void ApplyCreatedDateToEntity(TEntity entity)
+        {
+            if (entity != null)
+            {
+                IHaveCreatedDate iHaveCreatedDateProjectionEntity = entity as IHaveCreatedDate;
+                if (iHaveCreatedDateProjectionEntity != null)
+                {
+                    //workaround for created because Save() only sets the projection primary key, this is used for property redo where the interceptor only tampers with UPDATED and CREATED is left as null
+                    if (iHaveCreatedDateProjectionEntity.EntityCreatedDate.Date.Year == 1)
+                        iHaveCreatedDateProjectionEntity.EntityCreatedDate = DateTime.Now;
+                }
+            }
         }
 
         public void SimpleSaveAll()
