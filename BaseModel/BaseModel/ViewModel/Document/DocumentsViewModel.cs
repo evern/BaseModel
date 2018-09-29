@@ -60,11 +60,19 @@ namespace BaseModel.ViewModel.Document
         /// </summary>
         public RangeObservableCollection<TModule> Modules { get; set; }
 
+        TModule selectedModule { get; set; }
         /// <summary>
         /// A currently selected navigation list entry. This property is writable. When this property is assigned a new value, it triggers the navigating to the corresponding document.
         /// Since DocumentsViewModel is a POCO view model, this property will raise INotifyPropertyChanged.PropertyEvent when modified so it can be used as a binding source in views.
         /// </summary>
-        public virtual TModule SelectedModule { get; set; }
+        public virtual TModule SelectedModule
+        {
+            get => selectedModule;
+            set
+            {
+                selectedModule = value;
+            }
+        }
 
         public virtual void OnSelectedModuleChanged(TModule test)
         {

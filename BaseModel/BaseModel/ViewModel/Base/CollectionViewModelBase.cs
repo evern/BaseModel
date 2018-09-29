@@ -574,13 +574,12 @@ namespace BaseModel.ViewModel.Base
             try
             {
                 OnBeforeEntitySaved(entity);
+                ApplyCreatedDateToEntity(entity);
                 Repository.UnitOfWork.SaveChanges();
                 var primaryKey = Repository.GetPrimaryKey(entity);
                 Repository.SetProjectionPrimaryKey(projectionEntity, primaryKey);
-
                 //Need to put here because any updates associated with the entity need to be committed before sending message
                 OnAfterEntitySavedCallBack?.Invoke(projectionEntity, entity, isNewEntity);
-
                 //ICanUpdate canUpdateEntity = projectionEntity as ICanUpdate;
                 //if (canUpdateEntity != null)
                 //    canUpdateEntity.Update();
