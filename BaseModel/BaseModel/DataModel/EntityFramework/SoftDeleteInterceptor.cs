@@ -13,16 +13,18 @@ namespace BaseModel.DataModel.EntityFramework
     {
         private readonly string DeletedColumnName;
         private readonly string DeletedByColumnName;
+        private readonly List<string> ApplicableContext;
 
-        public SoftDeleteInterceptor(string deletedColumnName, string deletedByColumnName)
+        public SoftDeleteInterceptor(string deletedColumnName, string deletedByColumnName, List<string> applicableContext)
         {
             DeletedColumnName = deletedColumnName;
             DeletedByColumnName = deletedByColumnName;
+            ApplicableContext = applicableContext;
         }
 
         public void TreeCreated(DbCommandTreeInterceptionContext interceptionContext)
         {
-            if (interceptionContext.OriginalResult.DataSpace != DataSpace.SSpace)
+            if (interceptionContext.OriginalResult.DataSpace != DataSpace.SSpace || (interceptionContext.DbContexts.Count() > 0 && !ApplicableContext.Any(x => x == interceptionContext.DbContexts.First().GetType().ToString())))
                 return;
 
             var queryCommand = interceptionContext.Result as DbQueryCommandTree;

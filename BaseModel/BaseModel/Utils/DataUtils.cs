@@ -829,16 +829,62 @@ namespace BaseModel.Data.Helpers
             return null;
         }
 
-        public static object ShallowCopy(object copyObject, object objectToCopy, bool copyVirtualProperties = false)
+        public static string ShallowCopyDiffTracking(object copyObject, object objectToCopy, bool copyVirtualProperties = false)
         {
+            string propertyDiff = string.Empty;
             if (copyObject == null || objectToCopy == null)
                 return null;
 
             PropertyInfo keyProperty = objectToCopy.GetType().GetProperties().FirstOrDefault(x => x.GetCustomAttributes().Any(y => y.GetType() == typeof(KeyAttribute)));
             IEnumerable<PropertyInfo> objectToCopyProperties = objectToCopy.GetType().GetProperties().Where(p => !p.GetCustomAttributes().Any(attr => attr.GetType() == typeof(ProjectionPropertyAttribute)));
-            if(!copyVirtualProperties)
-                objectToCopyProperties = objectToCopyProperties.Where(p => !p.GetGetMethod().IsVirtual);
 
+            if (!copyVirtualProperties)
+                objectToCopyProperties = objectToCopyProperties.Where(p => p.GetGetMethod().IsFinal || !p.GetGetMethod().IsVirtual);
+
+            if (keyProperty != null)
+            {
+                PropertyInfo copyObjectKeyProperty = copyObject.GetType().GetProperties().FirstOrDefault(x => x.Name == keyProperty.Name);
+                if (copyObjectKeyProperty != null)
+                {
+                    var keyValue = keyProperty.GetValue(objectToCopy);
+                    copyObjectKeyProperty.SetValue(copyObject, keyValue);
+                }
+            }
+
+            foreach (var objectToCopyProperty in objectToCopyProperties)
+            {
+                if (!objectToCopyProperty.CanWrite || !objectToCopyProperty.CanRead)
+                    continue;
+
+                var objectToCopyValue = objectToCopyProperty.GetValue(objectToCopy);
+
+                PropertyInfo copyObjectProperty = copyObject.GetType().GetProperty(objectToCopyProperty.Name);
+                var objectValue = copyObjectProperty.GetValue(copyObject);
+
+                if (objectValue != null && objectToCopyValue != null && objectValue.ToString() != objectToCopyValue.ToString())
+                    propertyDiff += "From " + objectValue + " to " + objectToCopyValue + ";";
+                else if (objectValue == null && objectToCopyValue != null)
+                    propertyDiff += "From null to " + objectToCopyValue + ";";
+                else if (objectValue != null && objectToCopyValue == null)
+                    propertyDiff += "From " + objectValue + " to null;";
+
+                copyObjectProperty.SetValue(copyObject, objectToCopyValue);
+            }
+
+            return propertyDiff;
+        }
+
+        public static void ShallowCopy(object copyObject, object objectToCopy, bool copyVirtualProperties = false)
+        {
+            string propertyDiff = string.Empty;
+            if (copyObject == null || objectToCopy == null)
+                return;
+
+            PropertyInfo keyProperty = objectToCopy.GetType().GetProperties().FirstOrDefault(x => x.GetCustomAttributes().Any(y => y.GetType() == typeof(KeyAttribute)));
+            IEnumerable<PropertyInfo> objectToCopyProperties = objectToCopy.GetType().GetProperties().Where(p => !p.GetCustomAttributes().Any(attr => attr.GetType() == typeof(ProjectionPropertyAttribute)));
+
+            if (!copyVirtualProperties)
+                objectToCopyProperties = objectToCopyProperties.Where(p => p.GetGetMethod().IsFinal || !p.GetGetMethod().IsVirtual);
             
             if(keyProperty != null)
             {
@@ -856,12 +902,12 @@ namespace BaseModel.Data.Helpers
                     continue;
 
                 var objectToCopyValue = objectToCopyProperty.GetValue(objectToCopy);
+
                 PropertyInfo copyObjectProperty = copyObject.GetType().GetProperty(objectToCopyProperty.Name);
+                //var objectValue = copyObjectProperty.GetValue(copyObject);
 
                 copyObjectProperty.SetValue(copyObject, objectToCopyValue);
             }
-
-            return copyObject;
         }
 
         public static string FormatColumnFieldname(string columnFieldName)

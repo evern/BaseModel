@@ -11,6 +11,14 @@ namespace BaseModel.Misc
         void CleanUpCallBacks();
     }
 
+    public interface ICanSync
+    {
+        Guid GUID { get; set; }
+        DateTime CREATED { get; set; }
+        DateTime? UPDATED { get; set; }
+        DateTime? DELETED { get; set; }
+    }
+
     public interface IGuidEntityKey
     {
         Guid EntityKey { get; set; }
