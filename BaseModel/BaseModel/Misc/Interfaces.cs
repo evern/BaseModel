@@ -17,6 +17,7 @@ namespace BaseModel.Misc
         DateTime CREATED { get; set; }
         DateTime? UPDATED { get; set; }
         DateTime? DELETED { get; set; }
+        string Office { get; }
     }
 
     public interface IGuidEntityKey
