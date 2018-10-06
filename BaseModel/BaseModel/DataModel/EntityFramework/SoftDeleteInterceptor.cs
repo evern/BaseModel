@@ -24,7 +24,7 @@ namespace BaseModel.DataModel.EntityFramework
 
         public void TreeCreated(DbCommandTreeInterceptionContext interceptionContext)
         {
-            if (interceptionContext.OriginalResult.DataSpace != DataSpace.SSpace || (interceptionContext.DbContexts.Count() > 0 && !ApplicableContext.Any(x => x == interceptionContext.DbContexts.First().GetType().ToString())))
+            if (interceptionContext.OriginalResult.DataSpace != DataSpace.SSpace || (interceptionContext.DbContexts.Count() > 0 && !ApplicableContext.Any(x => interceptionContext.DbContexts.Any(y => y.GetType().ToString() == x))))
                 return;
 
             var queryCommand = interceptionContext.Result as DbQueryCommandTree;
