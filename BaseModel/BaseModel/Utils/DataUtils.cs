@@ -113,8 +113,8 @@ namespace BaseModel.Data.Helpers
                     List<GridColumn> visible_columns = gridTableView.VisibleColumns.ToList();
                     //commented out because not accurate during banded view
                     //int first_column_visible_index = first_selected_cell.Column.VisibleIndex;
-                    int first_column_visible_index = visible_columns.First(x => x.FieldName == first_selected_cell.Column.FieldName).VisibleIndex;
-                    int last_column_visible_index = visible_columns.First(x => x.FieldName == last_selected_cell.Column.FieldName).VisibleIndex;
+                    int first_column_visible_index = visible_columns.IndexOf(visible_columns.First(x => x.FieldName == first_selected_cell.Column.FieldName));
+                    int last_column_visible_index = visible_columns.IndexOf(visible_columns.First(x => x.FieldName == last_selected_cell.Column.FieldName));
 
                     int numberOfSelectedColumns = (last_column_visible_index - first_column_visible_index) + 1;
                     int numberOfCopiedColumns = grouped_results.Count;
@@ -132,10 +132,11 @@ namespace BaseModel.Data.Helpers
                         int pasteValueColumnOffset = 0;
                         for (int columnOffset = 0; columnOffset < columnOffsetSelection; columnOffset++)
                         {
-                            if (first_column_visible_index + columnOffset >= visible_columns.Count)
+                            int findVisibleIndex = first_column_visible_index + columnOffset;
+                            if (findVisibleIndex >= visible_columns.Count)
                                 continue;
 
-                            GridColumn current_column = visible_columns[first_column_visible_index + columnOffset];
+                            GridColumn current_column = visible_columns[findVisibleIndex];
                             string columnValue = grouped_results[pasteValueColumnOffset][pasteValueRowOffset];
 
                             pasteValueColumnOffset += 1;
@@ -536,7 +537,8 @@ namespace BaseModel.Data.Helpers
                             else
                                 return PasteResult.Skip;
                         }
-                        else if (editSettings != null && pasteData != Guid.Empty.ToString())
+                        //lookupedit under datatemplate are detected is texteditsettings
+                        else if ((editSettings != null || column.ActualEditSettings.GetType() == typeof(TextEditSettings)) && pasteData != Guid.Empty.ToString())
                         {
                             Guid new_guid = new Guid(pasteData);
                             return tryPasteNewValueInProjectionColumn(projection, column_name, new_guid, undoRedoArguments);
