@@ -221,8 +221,8 @@ namespace BaseModel.ViewModel.Base
                 DataUtils.SetNestedValue(entityProperty.PropertyName, entityProperty.ChangedEntity, entityProperty.OldValue);
             }
 
-            BaseBulkSave(bulkSaveProperties.Select(x => x.ChangedEntity));
-            BaseBulkSave(bulkAddProperties.Select(x => x.ChangedEntity));
+            BulkSave(bulkSaveProperties.Select(x => x.ChangedEntity));
+            BulkSave(bulkAddProperties.Select(x => x.ChangedEntity));
 
             isBackgroundEdit = false;
         }
@@ -245,8 +245,9 @@ namespace BaseModel.ViewModel.Base
             {
                 DataUtils.SetNestedValue(entityProperty.PropertyName, entityProperty.ChangedEntity, entityProperty.NewValue);
             }
-            BaseBulkSave(bulkSaveProperties.Select(x => x.ChangedEntity));
-            BaseBulkSave(bulkAddProperties.Select(x => x.ChangedEntity));
+
+            BulkSave(bulkSaveProperties.Select(x => x.ChangedEntity));
+            BulkSave(bulkAddProperties.Select(x => x.ChangedEntity));
             isBackgroundEdit = false;
         }
 
@@ -712,7 +713,9 @@ namespace BaseModel.ViewModel.Base
 
             if (pasteProjections.Count > 0)
             {
-                BulkSave(pasteProjections);
+                //For copy paste don't have to refresh the entire list, just call ICanUpdate.Update() on entity
+                BulkSave(pasteProjections, true);
+                //BulkSave(pasteProjections);
             }
         }
         #endregion
@@ -831,7 +834,7 @@ namespace BaseModel.ViewModel.Base
                 }
             }
 
-            BulkSave(bulkSaveEntities);
+            BulkSave(bulkSaveEntities, true);
             OnFillDownCompletedCallBack?.Invoke();
             EntitiesUndoRedoManager.UnpauseActionId();
             isBackgroundEdit = false;
@@ -992,7 +995,7 @@ namespace BaseModel.ViewModel.Base
         /// Since CollectionViewModelBase is a POCO view model, an the instance of this class will also expose the DeleteCommand property that can be used as a binding source in views.
         /// </summary>
         /// <param name="projectionEntity">An entity to edit.</param>
-        public void BulkSave(IEnumerable<TProjection> entities, bool doNotRefresh = false)
+        public void BulkSave(IEnumerable<TProjection> entities, bool doNotRefresh = true)
         {
             BaseBulkSave(entities, doNotRefresh);
         }
@@ -1299,7 +1302,8 @@ namespace BaseModel.ViewModel.Base
                         EntitiesUndoRedoManager.UnpauseActionId();
                     }
 
-                    BulkSave(pasteProjections);
+                    //For copy paste don't have to refresh the entire list, just call ICanUpdate.Update() on entity
+                    BulkSave(pasteProjections, true);
                 }
             }
 

@@ -315,7 +315,7 @@ namespace BaseModel.ViewModel.Base
 
         public Action AfterBulkOperationRefreshCallBack;
 
-        public virtual void BaseBulkSave(IEnumerable<TProjection> projectionEntities, bool doNotRefresh = false)
+        protected virtual void BaseBulkSave(IEnumerable<TProjection> projectionEntities, bool doNotRefresh = false)
         {
             var projectionEntitiesWithTag = new List<KeyValuePair<int, TProjection>>();
             var entitiesWithTag = new List<KeyValuePair<int, TEntity>>();
@@ -375,6 +375,13 @@ namespace BaseModel.ViewModel.Base
 
                     if(AfterBulkOperationRefreshCallBack == null)
                         SendMessage(primaryKey, projectionEntity, entityWithTag.Value, isNewEntity);
+
+                    if(doNotRefresh)
+                    {
+                        ICanUpdate updatableEntity = projectionEntity as ICanUpdate;
+                        if (updatableEntity != null)
+                            updatableEntity.Update();
+                    }
                 }
             }
             catch (DbException e)
