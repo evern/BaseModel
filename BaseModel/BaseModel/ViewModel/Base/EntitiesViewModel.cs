@@ -276,6 +276,7 @@ namespace BaseModel.ViewModel.Base
             get { return ReadOnlyRepository != null; }
         }
 
+        //only skip if list is static, no new entries will be added
         public bool AlwaysSkipMessage { get; set; }
 
         public void LoadEntities(bool forceLoad, Action refreshAction = null)

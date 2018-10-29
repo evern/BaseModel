@@ -451,6 +451,7 @@ namespace BaseModel.ViewModel.Base
                 {
                     constraintErrorMessage = constraintErrorMessage.Substring(0, constraintErrorMessage.Length - 5);
                     constraintErrorMessage = constraintErrorMessage.Replace("GUID_", string.Empty);
+                    constraintErrorMessage = "Duplicate entries exists by " + constraintErrorMessage;
                     return false;
                 }
             }
@@ -1303,7 +1304,7 @@ namespace BaseModel.ViewModel.Base
                     }
 
                     //For copy paste don't have to refresh the entire list, just call ICanUpdate.Update() on entity
-                    BulkSave(pasteProjections, true);
+                    BulkSave(pasteProjections, IsPasteCellLevel);
                 }
             }
 
