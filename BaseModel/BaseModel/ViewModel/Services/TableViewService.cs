@@ -1,5 +1,9 @@
-﻿using DevExpress.Mvvm.UI;
+﻿using DevExpress.Export;
+using DevExpress.Mvvm.UI;
+using DevExpress.Xpf.Editors.Settings;
 using DevExpress.Xpf.Grid;
+using DevExpress.Xpf.Printing;
+using DevExpress.XtraPrinting;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -13,6 +17,7 @@ namespace BaseModel.ViewModel.Services
 {
     public interface ITableViewService
     {
+        bool ExportToPDF(string exportPath);
         bool ExportToXls(string exportPath);
         void CommitEditing();
         void AddFormatCondition(FormatConditionBase item);
@@ -40,7 +45,36 @@ namespace BaseModel.ViewModel.Services
             {
                 try
                 {
-                    TableView.ExportToXlsx(exportPath);
+                    TableView.ExportToXlsx(exportPath, new XlsxExportOptionsEx { ExportType = ExportType.WYSIWYG });
+                    Process.Start(exportPath);
+                    return true;
+                }
+                catch
+                {
+
+                }
+            }
+
+            return false;
+        }
+
+        public bool ExportToPDF(string exportPath)
+        {
+            if (this.TableView != null)
+            {
+                try
+                {
+                    var link = new PrintableControlLink(TableView)
+                    {
+                        PageHeaderTemplate = Application.Current.TryFindResource("GridPrintHeaderTemplate") as DataTemplate, 
+                        Margins = new System.Drawing.Printing.Margins(50, 50, 50, 50),
+                        PaperKind = System.Drawing.Printing.PaperKind.A4Rotated
+                    };
+
+                    link.CreateDocument(true);
+                    link.ExportToPdf(exportPath);
+
+                    //TableView.ExportToPdf(exportPath);
                     Process.Start(exportPath);
                     return true;
                 }
@@ -119,7 +153,15 @@ namespace BaseModel.ViewModel.Services
             if (this.TableView == null)
                 return;
 
-            TableView.BestFitColumns();
+            GridControl gridControl = (GridControl)TableView.Parent;
+
+            foreach(var column in gridControl.Columns)
+            {
+                var textEditSetting = column.EditSettings as TextEditSettings;
+                if (textEditSetting == null || textEditSetting.TextWrapping == TextWrapping.NoWrap)
+                    TableView.BestFitColumn(column);
+            }
+            //TableView.BestFitColumns();
         }
 
         public void SetImmediateUpdateRowPosition(bool updatePositionImmediately)

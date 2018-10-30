@@ -668,9 +668,9 @@ namespace BaseModel.ViewModel.Loader
             entity.Update();
         }
 
-        protected virtual string ExportExcelFilename()
+        protected virtual string ExportFilename()
         {
-            return "grid_export.xlsx";
+            return "grid_export";
         }
 
         public virtual void ExportToExcel()
@@ -679,7 +679,20 @@ namespace BaseModel.ViewModel.Loader
             if (FolderBrowserDialogService.ShowDialog())
             {
                 ResultPath = FolderBrowserDialogService.ResultPath;
-                bool result = TableViewService.ExportToXls(ResultPath + "\\" + ExportExcelFilename());
+                bool result = TableViewService.ExportToXls(ResultPath + "\\" + ExportFilename() + ".xlsx");
+
+                if (!result)
+                    MessageBoxService.ShowMessage("Export failed because the file is in use");
+            }
+        }
+
+        public virtual void ExportToPDF()
+        {
+            string ResultPath = string.Empty;
+            if (FolderBrowserDialogService.ShowDialog())
+            {
+                ResultPath = FolderBrowserDialogService.ResultPath;
+                bool result = TableViewService.ExportToPDF(ResultPath + "\\" + ExportFilename() + ".pdf");
 
                 if (!result)
                     MessageBoxService.ShowMessage("Export failed because the file is in use");
