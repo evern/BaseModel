@@ -329,6 +329,7 @@ namespace BaseModel.ViewModel.Base
             LoadingScreenManager.ShowLoadingScreen(projectionEntitiesWithTag.Count);
             LoadingScreenManager.SetMessage("Saving...");
             bool isContinueSave = true;
+            bool haveNewEntity = false;
             foreach (var projectionEntityWithTag in projectionEntitiesWithTag)
             {
                 bool isNewEntity;
@@ -347,6 +348,9 @@ namespace BaseModel.ViewModel.Base
                 if (IsContinueSaveCallBack != null)
                     if (!IsContinueSaveCallBack(projectionEntityWithTag.Value, isNewEntity))
                         continue;
+
+                if (isNewEntity)
+                    haveNewEntity = true;
 
                 ApplyCreatedDateToEntity(findOrAddNewEntity);
                 entitiesWithTag.Add(new KeyValuePair<int, TEntity>(projectionEntityWithTag.Key, findOrAddNewEntity));
@@ -376,7 +380,7 @@ namespace BaseModel.ViewModel.Base
                     if(AfterBulkOperationRefreshCallBack == null)
                         SendMessage(primaryKey, projectionEntity, entityWithTag.Value, isNewEntity);
 
-                    if(doNotRefresh)
+                    if(!haveNewEntity && doNotRefresh)
                     {
                         ICanUpdate updatableEntity = projectionEntity as ICanUpdate;
                         if (updatableEntity != null)
@@ -389,7 +393,7 @@ namespace BaseModel.ViewModel.Base
                 MessageBoxService.ShowMessage(e.ErrorMessage, e.ErrorCaption, MessageButton.OK, MessageIcon.Error);
             }
 
-            if(!doNotRefresh && AfterBulkOperationRefreshCallBack != null)
+            if((haveNewEntity || !doNotRefresh) && AfterBulkOperationRefreshCallBack != null)
                 AfterBulkOperationRefreshCallBack.Invoke();
         }
 
