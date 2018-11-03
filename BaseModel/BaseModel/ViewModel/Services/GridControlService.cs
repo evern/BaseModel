@@ -35,6 +35,8 @@ namespace BaseModel.ViewModel.Services
         void SetGridColumnSortMode();
         void CopyWithHeader();
         void ClearSummary();
+        void ExpandAllGroups();
+        void CollapseAllGroups();
         void AddSummary(string fieldName, SummaryItemType summaryType, string displayFormat);
         void ChangeSummary(string oldFieldName, string newFieldName);
         void MasterDetail_ExpandAll();
@@ -283,6 +285,22 @@ namespace BaseModel.ViewModel.Services
                 var findSummary = this.GridControl.TotalSummary[findSummaryIndex];
                 findSummary.FieldName = newFieldName;
             }
+        }
+
+        public void ExpandAllGroups()
+        {
+            if (GridControl == null)
+                return;
+
+            GridControl.ExpandAllGroups();
+        }
+
+        public void CollapseAllGroups()
+        {
+            if (GridControl == null)
+                return;
+
+            GridControl.CollapseAllGroups();
         }
 
         public void RefreshData()

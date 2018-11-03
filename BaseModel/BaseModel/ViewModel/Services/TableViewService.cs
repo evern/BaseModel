@@ -18,7 +18,7 @@ namespace BaseModel.ViewModel.Services
     public interface ITableViewService
     {
         bool ExportToPDF(string exportPath);
-        bool ExportToXls(string exportPath);
+        bool ExportToXls(string exportPath, bool isDataAware);
         void CommitEditing();
         void AddFormatCondition(FormatConditionBase item);
         void ApplyDefaultF2Behavior();
@@ -39,13 +39,13 @@ namespace BaseModel.ViewModel.Services
         public static readonly DependencyProperty TableViewProperty =
             DependencyProperty.Register("TableView", typeof(TableView), typeof(TableViewService), new PropertyMetadata(null));
 
-        public bool ExportToXls(string exportPath)
+        public bool ExportToXls(string exportPath, bool isDataAware = true)
         {
             if (this.TableView != null)
             {
                 try
                 {
-                    TableView.ExportToXlsx(exportPath, new XlsxExportOptionsEx { ExportType = ExportType.WYSIWYG });
+                    TableView.ExportToXlsx(exportPath, new XlsxExportOptionsEx { ExportType = isDataAware ? ExportType.DataAware : ExportType.WYSIWYG });
                     Process.Start(exportPath);
                     return true;
                 }

@@ -673,13 +673,14 @@ namespace BaseModel.ViewModel.Loader
             return "grid_export";
         }
 
+        protected bool isExcelExportDataAware = true;
         public virtual void ExportToExcel()
         {
             string ResultPath = string.Empty;
             if (FolderBrowserDialogService.ShowDialog())
             {
                 ResultPath = FolderBrowserDialogService.ResultPath;
-                bool result = TableViewService.ExportToXls(ResultPath + "\\" + ExportFilename() + ".xlsx");
+                bool result = TableViewService.ExportToXls(ResultPath + "\\" + ExportFilename() + ".xlsx", isExcelExportDataAware);
 
                 if (!result)
                     MessageBoxService.ShowMessage("Export failed because the file is in use");
@@ -702,6 +703,16 @@ namespace BaseModel.ViewModel.Loader
         public virtual void CopyWithHeader()
         {
             GridControlService.CopyWithHeader();
+        }
+
+        public virtual void ExpandAllGroups()
+        {
+            GridControlService.ExpandAllGroups();
+        }
+
+        public virtual void CollapseAllGroups()
+        {
+            GridControlService.CollapseAllGroups();
         }
         #endregion
 
