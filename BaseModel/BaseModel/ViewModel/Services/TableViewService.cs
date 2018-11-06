@@ -157,9 +157,17 @@ namespace BaseModel.ViewModel.Services
 
             foreach(var column in gridControl.Columns)
             {
+                column.BestFitMode = DevExpress.Xpf.Core.BestFitMode.VisibleRows;
+                double defaultMaxWidth = column.MaxWidth;
+                double defaultMinWidth = column.MinWidth;
+                column.MaxWidth = 150;
+                column.MinWidth = 50;
                 var textEditSetting = column.EditSettings as TextEditSettings;
                 if (textEditSetting == null || textEditSetting.TextWrapping == TextWrapping.NoWrap)
                     TableView.BestFitColumn(column);
+
+                column.MaxWidth = defaultMaxWidth;
+                column.MinWidth = defaultMinWidth;
             }
             //TableView.BestFitColumns();
         }

@@ -174,7 +174,7 @@ namespace BaseModel.ViewModel.Base
 
         protected virtual void OnEntityDeleted(TPrimaryKey primaryKey, TEntity entity, bool willPerformBulkRefresh = false)
         {
-            Messenger.Default.Send(new EntityMessage<TEntity, TPrimaryKey>(primaryKey, EntityMessageType.Deleted, this, CurrentHWID, willPerformBulkRefresh));
+            Messenger.Default.Send(new EntityMessage<TEntity, TPrimaryKey>(primaryKey, this.Key, EntityMessageType.Deleted, this, CurrentHWID, willPerformBulkRefresh));
             OnAfterDeletedSendMessage?.Invoke(typeof(TEntity).ToString(), primaryKey.ToString(), EntityMessageType.Deleted.ToString(), ToString());
         }
 
@@ -185,7 +185,7 @@ namespace BaseModel.ViewModel.Base
 
             try
             {
-                Messenger.Default.Send(new EntityMessage<TEntity, TPrimaryKey>(primaryKey, isNewEntity ? EntityMessageType.Added : EntityMessageType.Changed, this, CurrentHWID, willPerformBulkRefresh));
+                Messenger.Default.Send(new EntityMessage<TEntity, TPrimaryKey>(primaryKey, this.Key, isNewEntity ? EntityMessageType.Added : EntityMessageType.Changed, this, CurrentHWID, willPerformBulkRefresh));
                 OnAfterSavedSendMessage?.Invoke(typeof(TEntity).ToString(), primaryKey.ToString(),
                 isNewEntity ? EntityMessageType.Added.ToString() : EntityMessageType.Changed.ToString(), ToString());
             }

@@ -37,12 +37,13 @@ namespace BaseModel.Misc
         /// <param name="primaryKey">A primary key of an entity that has been added, removed or modified.</param>
         /// <param name="messageType">An entity state change notification type.</param>
         /// /// <param name="sender">The message sender.</param>
-        public EntityMessage(TPrimaryKey primaryKey, EntityMessageType messageType, object sender = null, string hwid = "", bool willPerformBulkRefresh = false)
+        public EntityMessage(TPrimaryKey primaryKey, Guid key, EntityMessageType messageType, object sender = null, string hwid = "", bool willPerformBulkRefresh = false)
         {
             PrimaryKey = primaryKey;
             MessageType = messageType;
             Sender = sender;
             HWID = hwid;
+            Key = key;
             WillPerformBulkRefresh = willPerformBulkRefresh;
         }
 
@@ -65,6 +66,11 @@ namespace BaseModel.Misc
         /// The messaging machine
         /// </summary>
         public string HWID { get; private set; }
+
+        /// <summary>
+        /// The key of the sender
+        /// </summary>
+        public Guid Key { get; private set; }
 
         /// <summary>
         /// Sender will perform bulk refresh 

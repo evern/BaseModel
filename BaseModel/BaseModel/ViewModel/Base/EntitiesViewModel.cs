@@ -64,6 +64,7 @@ namespace BaseModel.ViewModel.Base
             void UnregisterMessageHandler();
         }
 
+        public Guid Key { get; set; }
         protected class EntitiesChangeTracker<TPrimaryKey> : IEntitiesChangeTracker
         {
             private readonly EntitiesViewModelBase<TEntity, TProjection, TUnitOfWork> owner;
@@ -136,7 +137,11 @@ namespace BaseModel.ViewModel.Base
                 if (owner.AlwaysSkipMessage)
                     return;
 
-                bool skipOnMessage = message.Sender == null ? false : message.Sender.ToString() == owner.ToString() && message.HWID == owner.CurrentHWID;
+                bool skipOnMessage = message.Sender == null ? false : (!owner.RefreshOnSameSenderKey && message.Key == owner.Key) && message.HWID == owner.CurrentHWID;
+                string s;
+                if (!skipOnMessage)
+                    s = string.Empty;
+
                 switch (message.MessageType)
                 {
                     case EntityMessageType.Added:
@@ -233,6 +238,7 @@ namespace BaseModel.ViewModel.Base
             this.getRepositoryFunc = getRepositoryFunc;
             Projection = projection;
             ChangeTracker = CreateEntitiesChangeTracker();
+            this.Key = Guid.NewGuid();
             if (!this.IsInDesignMode())
                 OnInitializeInRuntime();
         }
@@ -278,6 +284,9 @@ namespace BaseModel.ViewModel.Base
 
         //only skip if list is static, no new entries will be added
         public bool AlwaysSkipMessage { get; set; }
+
+        //by default same sender won't be refreshed unless overriden by this toggle
+        public bool RefreshOnSameSenderKey { get; set; }
 
         public void LoadEntities(bool forceLoad, Action refreshAction = null)
         {
