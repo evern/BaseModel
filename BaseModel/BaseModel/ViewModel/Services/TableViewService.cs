@@ -66,7 +66,8 @@ namespace BaseModel.ViewModel.Services
                 {
                     var link = new PrintableControlLink(TableView)
                     {
-                        PageHeaderTemplate = Application.Current.TryFindResource("GridPrintHeaderTemplate") as DataTemplate, 
+                        PageHeaderTemplate = Application.Current.TryFindResource("GridPrintHeaderTemplate") as DataTemplate,
+                        PageFooterTemplate = Application.Current.TryFindResource("GridPrintFooterTemplate") as DataTemplate,
                         Margins = new System.Drawing.Printing.Margins(50, 50, 50, 50),
                         PaperKind = System.Drawing.Printing.PaperKind.A4Rotated
                     };

@@ -335,6 +335,12 @@
         <Setter Property="GroupSummaryDisplayMode" Value="AlignByColumns" />
         <Setter Property="NewItemRowPosition" Value="Top" />
         <Setter Property="AllowPerPixelScrolling" Value="True" />
+        <Setter Property="AllowScrollAnimation" Value="True" />
+        <Setter Property="ScrollAnimationMode" Value="EaseInOut" />
+        <Setter Property="AllowHorizontalScrollingVirtualization" Value="False" />
+        <Setter Property="AllowCascadeUpdate" Value="True" />
+        <Setter Property="AllowGroupSummaryCascadeUpdate" Value="True" />
+        <Setter Property="RowAnimationKind" Value="None" />
         <Setter Property="ShowGroupedColumns" Value="True" />
         <Setter Property="ShowSearchPanelMode" Value="Default" />
         <Setter Property="SearchDelay" Value="0" />
