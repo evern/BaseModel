@@ -155,7 +155,8 @@ namespace BaseModel.ViewModel.Services
                 return;
 
             GridControl gridControl = (GridControl)TableView.Parent;
-
+            TableView.BestFitMaxRowCount = 50;
+            gridControl.BeginDataUpdate();
             foreach(var column in gridControl.Columns)
             {
                 column.BestFitMode = DevExpress.Xpf.Core.BestFitMode.VisibleRows;
@@ -170,6 +171,7 @@ namespace BaseModel.ViewModel.Services
                 column.MaxWidth = defaultMaxWidth;
                 column.MinWidth = defaultMinWidth;
             }
+            gridControl.EndDataUpdate();
             //TableView.BestFitColumns();
         }
 
