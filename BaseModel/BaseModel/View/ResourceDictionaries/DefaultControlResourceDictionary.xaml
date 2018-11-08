@@ -312,6 +312,28 @@
             </Setter.Value>
         </Setter>
     </Style>
+    <Style x:Key="DefaultMinimalTableViewTemplate" TargetType="{x:Type dxg:TableView}">
+        <Setter Property="GroupSummaryDisplayMode" Value="AlignByColumns" />
+        <Setter Property="AllowPerPixelScrolling" Value="True" />
+        <Setter Property="AllowScrollAnimation" Value="False" />
+        <Setter Property="AllowHorizontalScrollingVirtualization" Value="False" />
+        <Setter Property="AllowCascadeUpdate" Value="True" />
+        <Setter Property="AllowGroupSummaryCascadeUpdate" Value="True" />
+        <Setter Property="RowAnimationKind" Value="None" />
+        <Setter Property="ShowGroupedColumns" Value="True" />
+        <Setter Property="ShowSearchPanelMode" Value="Default" />
+        <Setter Property="SearchDelay" Value="0" />
+        <Setter Property="AllowScrollAnimation" Value="True" />
+        <Setter Property="ShowAutoFilterRow" Value="True" />
+        <Setter Property="ShowCriteriaInAutoFilterRow" Value="True" />
+        <Setter Property="ShowFixedTotalSummary" Value="False" />
+        <Setter Property="UseLightweightTemplates" Value="All" />
+        <Setter Property="EditorShowMode" Value="MouseDownFocused" />
+        <Setter Property="ImmediateUpdateRowPosition" Value="False" />
+        <Setter Property="BandSeparatorWidth" Value="3" />
+        <Setter Property="BandHeaderSeparatorColor" Value="OrangeRed" />
+        <Setter Property="BandCellSeparatorColor" Value="Orange" />
+    </Style>
     <Style x:Key="DefaultTableViewTemplate" TargetType="{x:Type dxg:TableView}">
         <Setter Property="dxmvvm:Interaction.BehaviorsTemplate">
             <Setter.Value>
@@ -335,8 +357,7 @@
         <Setter Property="GroupSummaryDisplayMode" Value="AlignByColumns" />
         <Setter Property="NewItemRowPosition" Value="Top" />
         <Setter Property="AllowPerPixelScrolling" Value="True" />
-        <Setter Property="AllowScrollAnimation" Value="True" />
-        <Setter Property="ScrollAnimationMode" Value="EaseInOut" />
+        <Setter Property="AllowScrollAnimation" Value="False" />
         <Setter Property="AllowHorizontalScrollingVirtualization" Value="False" />
         <Setter Property="AllowCascadeUpdate" Value="True" />
         <Setter Property="AllowGroupSummaryCascadeUpdate" Value="True" />
