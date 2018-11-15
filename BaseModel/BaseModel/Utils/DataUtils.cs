@@ -405,13 +405,14 @@ namespace BaseModel.Data.Helpers
 
                         ColumnBase copyColumn = gridTableView != null ? gridTableView.VisibleColumns[i] : gridTreeListView.VisibleColumns[i];
                         PasteResult result = pasteDataInProjectionColumn(projection, copyColumn, ColumnStrings[i]);
-                        columnData.Add(new KeyValuePair<ColumnBase, string>(copyColumn, ColumnStrings[i]));
-                        
+
                         if (result == PasteResult.Skip)
                             continue;
+
+                        columnData.Add(new KeyValuePair<ColumnBase, string>(copyColumn, ColumnStrings[i]));
                     }
 
-                    if(manualPasteAction != null)
+                    if (manualPasteAction != null)
                     {
                         if (!manualPasteAction.Invoke(columnData, projection))
                             continue;
