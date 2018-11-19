@@ -397,7 +397,7 @@ namespace BaseModel.ViewModel.Base
                 AfterBulkOperationRefreshCallBack.Invoke();
         }
 
-        protected void ApplyCreatedDateToEntity(TEntity entity)
+        protected void ApplyCreatedDateToEntity(object entity)
         {
             if (entity != null)
             {
@@ -585,7 +585,9 @@ namespace BaseModel.ViewModel.Base
             try
             {
                 OnBeforeEntitySaved(entity);
+
                 ApplyCreatedDateToEntity(entity);
+                ApplyCreatedDateToEntity(projectionEntity);
                 Repository.UnitOfWork.SaveChanges();
                 var primaryKey = Repository.GetPrimaryKey(entity);
                 Repository.SetProjectionPrimaryKey(projectionEntity, primaryKey);

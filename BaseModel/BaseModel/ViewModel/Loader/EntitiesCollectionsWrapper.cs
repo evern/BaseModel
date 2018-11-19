@@ -354,7 +354,7 @@ namespace BaseModel.ViewModel.Loader
                 else if (messageType == EntityMessageType.Added && compulsoryLoaders.All(x => x.GetEntitiesCount() > 0))
                 {
                     //potential to set a global where compulsory entity restored mechanism
-                    MessageBoxService.ShowMessage(changedType.ToString() + " restored");
+                    //MessageBoxService.ShowMessage(changedType.ToString() + " restored");
                     mainThreadDispatcher.BeginInvoke(new Action(() => ReloadEntitiesCollection()));
                     return;
                 }

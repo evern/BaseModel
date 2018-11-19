@@ -393,6 +393,7 @@ namespace BaseModel.Data.Helpers
                 TreeListView gridTreeListView = gridTView as TreeListView;
 
                 LoadingScreenManager.ShowLoadingScreen(RowData.Count());
+                PasteResult result = PasteResult.Success;
                 foreach (var Row in RowData)
                 {
                     TProjection projection = new TProjection();
@@ -404,10 +405,10 @@ namespace BaseModel.Data.Helpers
                             continue;
 
                         ColumnBase copyColumn = gridTableView != null ? gridTableView.VisibleColumns[i] : gridTreeListView.VisibleColumns[i];
-                        PasteResult result = pasteDataInProjectionColumn(projection, copyColumn, ColumnStrings[i]);
+                        result = pasteDataInProjectionColumn(projection, copyColumn, ColumnStrings[i]);
 
                         if (result == PasteResult.Skip)
-                            continue;
+                            break;
 
                         columnData.Add(new KeyValuePair<ColumnBase, string>(copyColumn, ColumnStrings[i]));
                     }
@@ -419,23 +420,26 @@ namespace BaseModel.Data.Helpers
                     }
 
                     var errorMessage = "Duplicate exists on constraint field named: ";
-                    if (isValidProjectionFunc(projection, ref errorMessage))
-                        if (onBeforePasteWithValidationFunc != null)
-                        {
-                            if (onBeforePasteWithValidationFunc(projection))
-                                pasteProjections.Add(projection);
-                        }
-                        else
-                            pasteProjections.Add(projection);
-                    else
+                    if(result != PasteResult.Skip)
                     {
-                        if(messageBoxService != null)
+                        if (isValidProjectionFunc(projection, ref errorMessage))
+                            if (onBeforePasteWithValidationFunc != null)
+                            {
+                                if (onBeforePasteWithValidationFunc(projection))
+                                    pasteProjections.Add(projection);
+                            }
+                            else
+                                pasteProjections.Add(projection);
+                        else
                         {
-                            errorMessage += " , paste operation will be terminated";
-                            messageBoxService.ShowMessage(errorMessage, CommonResources.Exception_UpdateErrorCaption, MessageButton.OK);
-                        }
+                            if (messageBoxService != null)
+                            {
+                                errorMessage += " , paste operation will be terminated";
+                                messageBoxService.ShowMessage(errorMessage, CommonResources.Exception_UpdateErrorCaption, MessageButton.OK);
+                            }
 
-                        break;
+                            break;
+                        }
                     }
 
                     LoadingScreenManager.Progress();
@@ -738,7 +742,7 @@ namespace BaseModel.Data.Helpers
             else
             {
                 if (messageBoxService != null)
-                    messageBoxService.ShowMessage(error_message);
+                    messageBoxService.ShowMessage(error_message + " current row will not be pasted");
 
                 return PasteResult.Skip;
             }
