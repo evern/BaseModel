@@ -407,7 +407,8 @@ namespace BaseModel.Data.Helpers
                         ColumnBase copyColumn = gridTableView != null ? gridTableView.VisibleColumns[i] : gridTreeListView.VisibleColumns[i];
                         result = pasteDataInProjectionColumn(projection, copyColumn, ColumnStrings[i]);
 
-                        if (result == PasteResult.Skip)
+                        //When column has gone through unifiedCellValidation and have error
+                        if (result == PasteResult.Failed)
                             break;
 
                         columnData.Add(new KeyValuePair<ColumnBase, string>(copyColumn, ColumnStrings[i]));
@@ -420,7 +421,7 @@ namespace BaseModel.Data.Helpers
                     }
 
                     var errorMessage = "Duplicate exists on constraint field named: ";
-                    if(result != PasteResult.Skip)
+                    if(result != PasteResult.Failed)
                     {
                         if (isValidProjectionFunc(projection, ref errorMessage))
                             if (onBeforePasteWithValidationFunc != null)
@@ -744,7 +745,7 @@ namespace BaseModel.Data.Helpers
                 if (messageBoxService != null)
                     messageBoxService.ShowMessage(error_message + " current row will not be pasted");
 
-                return PasteResult.Skip;
+                return PasteResult.Failed;
             }
         }
     }
