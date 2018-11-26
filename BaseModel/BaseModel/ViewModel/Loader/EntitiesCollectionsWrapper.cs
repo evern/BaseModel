@@ -215,7 +215,7 @@ namespace BaseModel.ViewModel.Loader
             mainThreadDispatcher.BeginInvoke(new Action(() => OnAfterAssignedCallbackAndRaisePropertyChanged()));
         }
 
-        protected bool doNotApplyBestFit = false;
+        protected bool doNotApplyBestFit = true;
         protected virtual void OnAfterAssignedCallbackAndRaisePropertyChanged()
         {
             if (GridControlService != null)
