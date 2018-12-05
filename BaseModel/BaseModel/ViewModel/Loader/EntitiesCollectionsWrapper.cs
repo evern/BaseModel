@@ -44,6 +44,7 @@ namespace BaseModel.ViewModel.Loader
         private DispatcherTimer selectedEntitiesChangedDispatchTimer;
         DispatcherTimer bulk_refresh_dispatcher_timer;
         protected Timer post_loaded_dispatcher_timer;
+        DispatcherTimer focusNewlyAddedProjectionTimer = new DispatcherTimer();
         public void CollectionViewModelWrapper()
         {
             CurrentHWID = string.Empty;
@@ -58,6 +59,9 @@ namespace BaseModel.ViewModel.Loader
         {
             selectedEntitiesChangedDispatchTimer = new DispatcherTimer();
             selectedEntitiesChangedDispatchTimer.Interval = new TimeSpan(0, 0, 0, 0, 1);
+            focusNewlyAddedProjectionTimer = new DispatcherTimer();
+            focusNewlyAddedProjectionTimer.Interval = new TimeSpan(0, 0, 0, 0, 50);
+            focusNewlyAddedProjectionTimer.Tick += FocusNewlyAddedProjectionTimer_Tick;
             initializePresentationProperties();
             resolveParameters(parameter);
             initializeAndLoad();
@@ -183,7 +187,8 @@ namespace BaseModel.ViewModel.Loader
                 CleanUpEntitiesLoader();
                 return;
             }
-            
+
+            MainViewModel.OnAfterNewRowAdded = this.OnMainViewModelAfterNewRowAdded;
             MainViewModel.SelectedEntities = this.DisplaySelectedEntities;
             MainViewModel.UnifiedValueChangingCallback = this.UnifiedCellValueChanging;
             MainViewModel.UnifiedValueValidationCallback = this.UnifiedValueValidation;
@@ -378,23 +383,42 @@ namespace BaseModel.ViewModel.Loader
         #endregion
 
         #region Presentation
-        protected virtual TMainProjectionEntity returnDisplaySelectedEntity()
-        {
-            return displaySelectedEntity;
-        }
-
         TMainProjectionEntity displaySelectedEntity;
         public TMainProjectionEntity DisplaySelectedEntity
         {
             get
             {
-                return returnDisplaySelectedEntity();
+                return displaySelectedEntity;
             }
             set
             {
                 displaySelectedEntity = value;
                 OnDisplaySelectedEntityChanged(value);
             }
+        }
+
+        TMainProjectionEntity newlyAddedProjection;
+        private void OnMainViewModelAfterNewRowAdded(TMainProjectionEntity projection)
+        {
+            if (projection == null)
+                return;
+
+            newlyAddedProjection = projection;
+            //Uncomment this to allow grid to focus on new row
+            focusNewlyAddedProjectionTimer.Start();
+        }
+
+        private void FocusNewlyAddedProjectionTimer_Tick(object sender, EventArgs e)
+        {
+            focusNewlyAddedProjectionTimer.Stop();
+            if (DisplayEntities == null)
+                return;
+
+            displaySelectedEntities.Clear();
+            displaySelectedEntities.Add(newlyAddedProjection);
+            displaySelectedEntity = newlyAddedProjection;
+            this.RaisePropertyChanged(x => x.DisplaySelectedEntity);
+            this.RaisePropertyChanged(x => x.displaySelectedEntities);
         }
 
 

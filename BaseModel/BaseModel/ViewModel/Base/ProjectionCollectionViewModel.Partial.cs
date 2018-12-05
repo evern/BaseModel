@@ -576,6 +576,7 @@ namespace BaseModel.ViewModel.Base
                 EntitiesUndoRedoManager.PauseActionId();
 
                 var projection = (TProjection)e.Row;
+
                 ICanUpdate updateProjection = projection as ICanUpdate;
                 if (updateProjection != null)
                     updateProjection.NewEntityFromView = true;
@@ -584,12 +585,16 @@ namespace BaseModel.ViewModel.Base
                     if (!OnBeforeViewNewRowSavedIsContinueCallBack(e, projection))
                         return;
 
+                OnAfterNewRowAdded?.Invoke(projection);
                 Save(projection);
+
                 //add undo must be after so that Guid is populated
                 EntitiesUndoRedoManager.AddUndo(projection, null, null, null, EntityMessageType.Added);
                 EntitiesUndoRedoManager.UnpauseActionId();
             }
         }
+
+        public Action<TProjection> OnAfterNewRowAdded { get; set; }
 
         /// <summary>
         /// Remembers an entity property old value for undoing
