@@ -80,6 +80,11 @@ namespace BaseModel.ViewModel.Base
         public Action<string, object, object, TProjection, bool> UnifiedValueChangingCallback;
 
         /// <summary>
+        /// External call back used by copy paste, fill, new and existing row cell value changed to determine which other cells to affect, or to commit to database different from MainViewModel's datacontext
+        /// </summary>
+        public Action<string, object, object, TProjection, bool> UnifiedValueChangedCallback;
+
+        /// <summary>
         /// External call back used by copy paste, fill, new and existing row cell value changing to determine whether value is valid
         /// </summary>
         public Func<TProjection, string, object, string> UnifiedValueValidationCallback;
@@ -424,6 +429,9 @@ namespace BaseModel.ViewModel.Base
                 if (keyPropertyInfo != null)
                 {
                     var otherKey = keyPropertyInfo.GetValue(otherEntity);
+                    if (otherKey == null)
+                        continue;
+
                     if (otherKey.Equals(exclusionKeyValue))
                         continue;
                 }
@@ -634,6 +642,21 @@ namespace BaseModel.ViewModel.Base
         }
 
         /// <summary>
+        /// Influence column(s) when changes happens in other column or to commit to database different from MainViewModel's datacontext
+        /// </summary>
+        public virtual void CellValueChanged(CellValueChangedEventArgs e)
+        {
+            if (e.RowHandle == GridControl.AutoFilterRowHandle)
+                return;
+
+            if (!e.Handled)
+            {
+                var projection = (TProjection)e.Row;
+                UnifiedValueChangedCallback?.Invoke(e.Column.FieldName, e.OldValue, e.Value, projection, true);
+            }
+        }
+
+        /// <summary>
         /// Remembers an entity property old value for undoing
         /// Since CollectionViewModelBase is a POCO view model, an the instance of this class will also expose the AddUndoCommand property that can be used as a binding source in views.
         /// </summary>
@@ -710,7 +733,7 @@ namespace BaseModel.ViewModel.Base
         public virtual void DeleteCellContent(GridControl gridControl)
         {
             string[] RowData = new string[] { string.Empty };
-            CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, MessageBoxService, UnifiedValueValidationCallback, ManualPasteAction, UnifiedValueChangingCallback);
+            CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, MessageBoxService, UnifiedValueValidationCallback, ManualRowPasteAction, UnifiedValueChangingCallback, UnifiedValueChangedCallback);
             List<TProjection> pasteProjections;
             if(gridControl.View.GetType() == typeof(TableView))
                 pasteProjections = copyPasteHelper.PastingFromClipboardCellLevel<TableView>(gridControl, RowData, EntitiesUndoRedoManager);
@@ -921,6 +944,7 @@ namespace BaseModel.ViewModel.Base
 
             var OldValue = DataUtils.GetNestedValue(info.Column.FieldName, editEntity);
             UnifiedValueChangingCallback?.Invoke(info.Column.FieldName, OldValue, valueToFill, editEntity, false);
+            UnifiedValueChangedCallback?.Invoke(info.Column.FieldName, OldValue, valueToFill, editEntity, false);
             EntitiesUndoRedoManager.AddUndo(editEntity, info.Column.FieldName, OldValue, valueToFill, EntityMessageType.Changed);
             DataUtils.SetNestedValue(info.Column.FieldName, editEntity, valueToFill);
         }
@@ -1063,7 +1087,7 @@ namespace BaseModel.ViewModel.Base
 
         //Denotes that edit operation comes from the background so onBeforeEntitySaved will not perform default actions
         public bool isBackgroundEdit = false;
-        public Func<List<KeyValuePair<ColumnBase, string>>, TProjection, bool> ManualPasteAction;
+        public Func<List<KeyValuePair<ColumnBase, string>>, TProjection, bool> ManualRowPasteAction;
         public Action<IEnumerable<string>> RawPasteOverride;
         public void BulkColumnEdit(object button)
         {
@@ -1259,7 +1283,7 @@ namespace BaseModel.ViewModel.Base
                 return;
             
             PasteListener?.Invoke(PasteStatus.Start);
-            CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, MessageBoxService, UnifiedValueValidationCallback, ManualPasteAction, UnifiedValueChangingCallback);
+            CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, MessageBoxService, UnifiedValueValidationCallback, ManualRowPasteAction, UnifiedValueChangingCallback, UnifiedValueChangedCallback);
 
             bool dontSplit = false;
             if ((Keyboard.Modifiers | ModifierKeys.Shift) == Keyboard.Modifiers)
@@ -1316,7 +1340,6 @@ namespace BaseModel.ViewModel.Base
             e.Handled = true;
             PasteListener?.Invoke(PasteStatus.Stop);
         }
-
 
         /// <summary>
         /// Converts clipboard text into entity values and saves to database

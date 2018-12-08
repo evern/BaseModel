@@ -188,9 +188,10 @@ namespace BaseModel.ViewModel.Loader
                 return;
             }
 
-            MainViewModel.OnAfterNewRowAdded = this.OnMainViewModelAfterNewRowAdded;
+            MainViewModel.OnAfterNewRowAdded = this.OnAfterNewRowAdded;
             MainViewModel.SelectedEntities = this.DisplaySelectedEntities;
             MainViewModel.UnifiedValueChangingCallback = this.UnifiedCellValueChanging;
+            MainViewModel.UnifiedValueChangedCallback = this.UnifiedCellValueChanged;
             MainViewModel.UnifiedValueValidationCallback = this.UnifiedValueValidation;
             MainViewModel.UnifiedValidateRow = this.UnifiedRowValidation;
             MainViewModel.AfterBulkOperationRefreshCallBack = this.FullRefreshWithoutClearingUndoRedo;
@@ -398,7 +399,7 @@ namespace BaseModel.ViewModel.Loader
         }
 
         TMainProjectionEntity newlyAddedProjection;
-        private void OnMainViewModelAfterNewRowAdded(TMainProjectionEntity projection)
+        protected void OnAfterNewRowAdded(TMainProjectionEntity projection)
         {
             if (projection == null)
                 return;
@@ -821,7 +822,7 @@ namespace BaseModel.ViewModel.Loader
 
         protected bool disable_immediate_post;
         /// <summary>
-        /// Influence column(s) when changes happens in other column
+        /// Fired before cell validation, influence column(s) when changes happens in other column
         /// </summary>
         public virtual void CellValueChanging(CellValueChangedEventArgs e)
         {
@@ -834,9 +835,25 @@ namespace BaseModel.ViewModel.Loader
                 UnifiedCellValueChanging(e.Column.FieldName, e.OldValue, e.Value, (TMainProjectionEntity)e.Row, e.RowHandle == DataControlBase.NewItemRowHandle);
                 //will be unpaused in existingrow or newrow save
             }
+        }
+
+        /// <summary>
+        /// Fired after cell validation, influence column(s) when changes happens in other column
+        /// </summary>
+        public virtual void CellValueChanged(CellValueChangedEventArgs e)
+        {
+            if (e.RowHandle == GridControl.AutoFilterRowHandle)
+                return;
+
+            if (!e.Handled)
+            {
+                MainViewModel.EntitiesUndoRedoManager.PauseActionId();
+                UnifiedCellValueChanging(e.Column.FieldName, e.OldValue, e.Value, (TMainProjectionEntity)e.Row, e.RowHandle == DataControlBase.NewItemRowHandle);
+                //will be unpaused in existingrow or newrow save
+            }
 
             if (!disable_immediate_post)
-                CellValueChangingImmediatePost(e);
+                CellValueChangedImmediatePost(e);
         }
 
         /// <summary>
@@ -852,6 +869,20 @@ namespace BaseModel.ViewModel.Loader
 
         }
 
+
+        /// <summary>
+        /// Routine used by copy paste, fill, new and existing row cell value changed to determine which other cells to affect or commit to database different from MainViewModel context
+        /// </summary>
+        /// <param name="field_name">Field name changed</param>
+        /// <param name="old_value">Old value currently in projection</param>
+        /// <param name="new_value">New value that projection is going to use</param>
+        /// <param name="projection">Changed projection</param>
+        /// <param name="isNew">Is new row</param>
+        public virtual void UnifiedCellValueChanged(string field_name, object old_value, object new_value, TMainProjectionEntity projection, bool isNew)
+        {
+
+        }
+
         /// <summary>
         /// Routine used by copy paste, fill, new and existing row cell value changing to determine whether value is valid
         /// </summary>
@@ -863,7 +894,7 @@ namespace BaseModel.ViewModel.Loader
 
         public abstract string UnifiedRowValidation(TMainProjectionEntity projection);
 
-        private void CellValueChangingImmediatePost(CellValueChangedEventArgs e)
+        protected virtual void CellValueChangedImmediatePost(CellValueChangedEventArgs e)
         {
             TableView tableView = e.Source as TableView;
             //only post editor if editing row is not new row or else new row will be committed immediately

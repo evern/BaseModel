@@ -27,8 +27,9 @@ namespace BaseModel.Data.Helpers
         readonly IMessageBoxService messageBoxService;
         readonly Func<TProjection, string, object, string> unifiedValueValidationCallback;
         readonly Func<List<KeyValuePair<ColumnBase, string>>, TProjection, bool> manualPasteAction;
-
-        public CopyPasteHelper(IsValidProjectionFunc isValidProjectionFunc = null, Func<TProjection, bool> onBeforePasteWithValidationFunc = null, IMessageBoxService messageBoxService = null, Func<TProjection, string, object, string> unifiedValueValidationCallback = null, Func<List<KeyValuePair<ColumnBase, string>>, TProjection, bool> manualPasteAction = null, Action<string, object, object, TProjection, bool> cellValueChanging = null)
+        public Action<string, object, object, TProjection, bool> cellValueChanging;
+        public Action<string, object, object, TProjection, bool> cellValueChanged;
+        public CopyPasteHelper(IsValidProjectionFunc isValidProjectionFunc = null, Func<TProjection, bool> onBeforePasteWithValidationFunc = null, IMessageBoxService messageBoxService = null, Func<TProjection, string, object, string> unifiedValueValidationCallback = null, Func<List<KeyValuePair<ColumnBase, string>>, TProjection, bool> manualPasteAction = null, Action<string, object, object, TProjection, bool> cellValueChanging = null, Action<string, object, object, TProjection, bool> cellValueChanged = null)
         {
             this.isValidProjectionFunc = isValidProjectionFunc;
             this.onBeforePasteWithValidationFunc = onBeforePasteWithValidationFunc;
@@ -36,6 +37,7 @@ namespace BaseModel.Data.Helpers
             this.unifiedValueValidationCallback = unifiedValueValidationCallback;
             this.manualPasteAction = manualPasteAction;
             this.cellValueChanging = cellValueChanging;
+            this.cellValueChanged = cellValueChanged;
         }
 
         public class UndoRedoArg
@@ -54,7 +56,6 @@ namespace BaseModel.Data.Helpers
             FailOnRequired
         }
 
-        public Action<string, object, object, TProjection, bool> cellValueChanging;
         public List<TProjection> PastingFromClipboardCellLevel<TView>(GridControl gridControl, string[] RowData, EntitiesUndoRedoManager<TProjection> undo_redo_manager)
             where TView : DataViewBase
         {
@@ -191,6 +192,8 @@ namespace BaseModel.Data.Helpers
                                 foreach (UndoRedoArg projection_undo_redo in projection_undo_redos)
                                 {
                                     cellValueChanging?.Invoke(projection_undo_redo.FieldName, projection_undo_redo.OldValue, projection_undo_redo.NewValue, projection_undo_redo.Projection, false);
+                                    cellValueChanged?.Invoke(projection_undo_redo.FieldName, projection_undo_redo.OldValue, projection_undo_redo.NewValue, projection_undo_redo.Projection, false);
+
                                     undo_redo_manager.AddUndo(projection_undo_redo.Projection, projection_undo_redo.FieldName, projection_undo_redo.OldValue, projection_undo_redo.NewValue, EntityMessageType.Changed);
                                 }
 
@@ -203,6 +206,8 @@ namespace BaseModel.Data.Helpers
                             foreach (UndoRedoArg projection_undo_redo in projection_undo_redos)
                             {
                                 cellValueChanging?.Invoke(projection_undo_redo.FieldName, projection_undo_redo.OldValue, projection_undo_redo.NewValue, projection_undo_redo.Projection, false);
+                                cellValueChanged?.Invoke(projection_undo_redo.FieldName, projection_undo_redo.OldValue, projection_undo_redo.NewValue, projection_undo_redo.Projection, false);
+
                                 undo_redo_manager.AddUndo(projection_undo_redo.Projection, projection_undo_redo.FieldName, projection_undo_redo.OldValue, projection_undo_redo.NewValue, EntityMessageType.Changed);
                             }
 
