@@ -43,6 +43,8 @@ namespace BaseModel.ViewModel.Services
         void MasterDetail_CollapseAllButThis();
         void MasterDetail_CollapseAll();
         void CombineMasterDetailSearch();
+        void ExpandAllMasterRows();
+        void CollapseAllMasterRows();
         void SetFilterCriteria(string filter_string);
         int[] GetSelectedRowHandles();
         int GetListIndexByRowHandle(int rowHandle);
@@ -150,6 +152,26 @@ namespace BaseModel.ViewModel.Services
             TableView view = GridControl.View as TableView;
             detailView.ShowSearchPanelMode = ShowSearchPanelMode.Never;
             BindingOperations.SetBinding(detailView, DataViewBase.SearchStringProperty, new Binding("SearchString") { Source = view });
+        }
+
+        //Unstable
+        public void ExpandAllMasterRows()
+        {
+            for (int i = 0; i < GridControl.VisibleRowCount; i++)
+            {
+                var handle = GridControl.GetRowHandleByVisibleIndex(i);
+                GridControl.ExpandMasterRow(handle);
+            }
+        }
+
+        //Unstable
+        public void CollapseAllMasterRows()
+        {
+            for (int i = 0; i < GridControl.VisibleRowCount; i++)
+            {
+                var handle = GridControl.GetRowHandleByVisibleIndex(i);
+                GridControl.CollapseMasterRow(handle);
+            }
         }
 
         List<OperandProperty> operands;
