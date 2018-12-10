@@ -331,7 +331,13 @@ namespace BaseModel.ViewModel.Base
             if (errorMessage != null && errorMessage != string.Empty)
                 return false;
 
-            return IsUniqueEntityConstraintValues(entity, ref errorMessage);
+            if (IsUniqueEntityConstraintValues(entity, ref errorMessage))
+            {
+                errorMessage = string.Empty;
+                return true;
+            }
+            else
+                return false;
         }
 
         /// <summary>
