@@ -7,6 +7,7 @@ using DevExpress.XtraPrinting;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -19,6 +20,7 @@ namespace BaseModel.ViewModel.Services
     {
         bool ExportToPDF(string exportPath);
         bool ExportToXls(string exportPath, bool isDataAware);
+        bool ExportToXls(MemoryStream stream);
         void CommitEditing();
         void AddFormatCondition(FormatConditionBase item);
         void ApplyDefaultF2Behavior();
@@ -47,6 +49,24 @@ namespace BaseModel.ViewModel.Services
                 {
                     TableView.ExportToXlsx(exportPath, new XlsxExportOptionsEx { ExportType = isDataAware ? ExportType.DataAware : ExportType.WYSIWYG });
                     Process.Start(exportPath);
+                    return true;
+                }
+                catch
+                {
+
+                }
+            }
+
+            return false;
+        }
+
+        public bool ExportToXls(MemoryStream stream)
+        {
+            if (this.TableView != null)
+            {
+                try
+                {
+                    TableView.ExportToXlsx(stream);
                     return true;
                 }
                 catch
@@ -162,7 +182,7 @@ namespace BaseModel.ViewModel.Services
                 column.BestFitMode = DevExpress.Xpf.Core.BestFitMode.VisibleRows;
                 double defaultMaxWidth = column.MaxWidth;
                 double defaultMinWidth = column.MinWidth;
-                column.MaxWidth = 150;
+                column.MaxWidth = 250;
                 column.MinWidth = 50;
                 var textEditSetting = column.EditSettings as TextEditSettings;
                 if (textEditSetting == null || textEditSetting.TextWrapping == TextWrapping.NoWrap)

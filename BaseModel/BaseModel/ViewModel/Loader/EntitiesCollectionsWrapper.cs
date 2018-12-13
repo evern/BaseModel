@@ -709,7 +709,7 @@ namespace BaseModel.ViewModel.Loader
                 bool result = TableViewService.ExportToXls(ResultPath + "\\" + ExportFilename() + ".xlsx", isExcelExportDataAware);
 
                 if (!result)
-                    MessageBoxService.ShowMessage("Export failed because the file is in use");
+                    MessageBoxService.ShowMessage("Export failed because the file is in use", "Warning", MessageButton.OK, MessageIcon.Warning);
             }
         }
 
@@ -745,13 +745,16 @@ namespace BaseModel.ViewModel.Loader
         #region Services
         [ServiceProperty(Key = "DefaultGridControlService")]
         public virtual IGridControlService GridControlService { get { return null; } }
-
         //protected virtual IGridControlService GridControlService { get { return this.GetService<IGridControlService>("DefaultGridControlService"); } }
+
         [ServiceProperty(Key = "DefaultTableViewService")]
         protected virtual ITableViewService TableViewService { get { return null; } }
+        //protected virtual ITableViewService TableViewService { get { return this.GetService<ITableViewService>("DefaultTableViewService"); } }
+
         protected virtual ITreeViewService TreeViewService { get { return this.GetService<ITreeViewService>(); } }
         protected virtual ITreeListControlService TreeListControlService { get { return this.GetService<ITreeListControlService>(); } }
         protected virtual IFolderBrowserDialogService FolderBrowserDialogService { get { return this.GetService<IFolderBrowserDialogService>(); } }
+        protected virtual IOpenFileDialogService FileBrowserDialogService { get { return this.GetService<IOpenFileDialogService>(); } }
 
         protected IMessageBoxService MessageBoxService
         {

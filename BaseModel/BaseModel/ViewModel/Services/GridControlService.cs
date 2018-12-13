@@ -50,6 +50,7 @@ namespace BaseModel.ViewModel.Services
         int GetListIndexByRowHandle(int rowHandle);
         void RemoveSelectedRows(int[] rowHandles);
         ObservableCollection<Misc.GroupInfo> GetExpansionState();
+        GridColumnCollection GridColumns();
         void SetExpansionState(ObservableCollection<Misc.GroupInfo> states);
     }
 
@@ -323,6 +324,14 @@ namespace BaseModel.ViewModel.Services
                 return;
 
             GridControl.CollapseAllGroups();
+        }
+
+        public GridColumnCollection GridColumns()
+        {
+            if (GridControl == null)
+                return null;
+
+            return GridControl.Columns;
         }
 
         public void RefreshData()
