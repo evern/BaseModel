@@ -1,6 +1,7 @@
 ﻿using BaseModel.DataModel;
 using BaseModel.Misc;
 using DevExpress.Mvvm;
+using DevExpress.Mvvm.DataAnnotations;
 using DevExpress.Mvvm.POCO;
 using System;
 using System.Collections.Generic;
@@ -60,7 +61,7 @@ namespace BaseModel.ViewModel.Document
         /// </summary>
         public RangeObservableCollection<TModule> Modules { get; set; }
 
-        TModule selectedModule { get; set; }
+        protected TModule selectedModule { get; set; }
         /// <summary>
         /// A currently selected navigation list entry. This property is writable. When this property is assigned a new value, it triggers the navigating to the corresponding document.
         /// Since DocumentsViewModel is a POCO view model, this property will raise INotifyPropertyChanged.PropertyEvent when modified so it can be used as a binding source in views.
@@ -71,10 +72,11 @@ namespace BaseModel.ViewModel.Document
             set
             {
                 selectedModule = value;
+                OnSelectedModuleChanged(selectedModule);
             }
         }
 
-        public virtual void OnSelectedModuleChanged(TModule test)
+        public virtual void OnSelectedModuleChanged(TModule changedModule)
         {
         }
 

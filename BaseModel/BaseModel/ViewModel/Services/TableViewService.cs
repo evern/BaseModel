@@ -187,7 +187,6 @@ namespace BaseModel.ViewModel.Services
                 var textEditSetting = column.EditSettings as TextEditSettings;
                 if (textEditSetting == null || textEditSetting.TextWrapping == TextWrapping.NoWrap)
                     TableView.BestFitColumn(column);
-
                 column.MaxWidth = defaultMaxWidth;
                 column.MinWidth = defaultMinWidth;
             }
