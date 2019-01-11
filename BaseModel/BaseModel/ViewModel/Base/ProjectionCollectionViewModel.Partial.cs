@@ -319,7 +319,7 @@ namespace BaseModel.ViewModel.Base
         /// <param name="entity">The entity to be validated</param>
         /// <param name="errorMessage">Error message to notify the user of conflicting constraints</param>
         /// <returns>Returns true if no other entity contains similar constraint member values</returns>
-        public bool IsValidEntity(TProjection entity, ref string errorMessage)
+        public bool IsValidEntity(TProjection entity, IEnumerable<TProjection> preCommittedProjections, ref string errorMessage)
         {
             //if (OnBeforeEntitySavedIsContinueCallBack != null && !OnBeforeEntitySavedIsContinueCallBack(entity))
             //    return false;
@@ -331,7 +331,7 @@ namespace BaseModel.ViewModel.Base
             if (errorMessage != null && errorMessage != string.Empty)
                 return false;
 
-            if (IsUniqueEntityConstraintValues(entity, ref errorMessage))
+            if (IsUniqueEntityConstraintValues(entity, preCommittedProjections, ref errorMessage))
             {
                 errorMessage = string.Empty;
                 return true;
@@ -353,7 +353,7 @@ namespace BaseModel.ViewModel.Base
         public bool IsValidEntityCellValue(TProjection entity, string fieldName, object newValue,
             ref string errorMessage)
         {
-            return IsUniqueEntityConstraintValues(entity, ref errorMessage,
+            return IsUniqueEntityConstraintValues(entity, null, ref errorMessage,
                 new KeyValuePair<string, object>(fieldName, newValue));
             //return IsUniqueEntityConstraintValues(entity, ref errorMessage);
         }
@@ -365,7 +365,7 @@ namespace BaseModel.ViewModel.Base
         /// <param name="errorMessage">Error message to be populated with entity member constraint field names</param>
         /// <param name="keyValuePairNewFieldValue">In some instance the new value isn't yet updated on the entity, so this provides other ways pass in the new value</param>
         /// <returns>Concatenated constraint value string</returns>
-        private bool IsUniqueEntityConstraintValues(TProjection entity, ref string errorMessage,
+        private bool IsUniqueEntityConstraintValues(TProjection entity, IEnumerable<TProjection> preCommittedProjections, ref string errorMessage,
             KeyValuePair<string, object>? keyValuePairNewFieldValue = null)
         {
             var currentEntityConcatenatedConstraints = string.Empty;
@@ -406,7 +406,7 @@ namespace BaseModel.ViewModel.Base
                 }
             }
 
-            return IsConstraintExistsInOtherEntities(entity, currentEntityConcatenatedConstraints,
+            return IsConstraintExistsInOtherEntities(entity, preCommittedProjections, currentEntityConcatenatedConstraints,
                 constraintMemberPropertyStrings, ref errorMessage);
         }
 
@@ -419,7 +419,7 @@ namespace BaseModel.ViewModel.Base
         /// <param name="constraintMemberPropertyInfos">Constraint property infos</param>
         /// <param name="constraintErrorMessage">Error message to notify the user of conflicting constraints</param>
         /// <returns>Returns true if no other entity contains similar constraint member values</returns>
-        private bool IsConstraintExistsInOtherEntities(TProjection entity, string entityConstraint,
+        private bool IsConstraintExistsInOtherEntities(TProjection entity, IEnumerable<TProjection> preCommittedProjections, string entityConstraint,
             IEnumerable<string> constraintMemberPropertyStrings, ref string constraintErrorMessage)
         {
             if (entityConstraint == string.Empty)
@@ -430,43 +430,52 @@ namespace BaseModel.ViewModel.Base
             if (keyPropertyInfo != null)
                 exclusionKeyValue = keyPropertyInfo.GetValue(entity);
 
-            foreach (var otherEntity in Entities)
+            List<Tuple<IEnumerable<TProjection>, bool>> allEntities = new List<Tuple<IEnumerable<TProjection>, bool>>();
+            allEntities.Add(new Tuple<IEnumerable<TProjection>, bool>(Entities, true));
+            if (preCommittedProjections != null)
+                allEntities.Add(new Tuple<IEnumerable<TProjection>, bool>(preCommittedProjections, false));
+
+            foreach(var entityTuples in allEntities)
             {
-                if (keyPropertyInfo != null)
+                bool shouldValidateKey = entityTuples.Item2;
+                foreach (var otherEntity in entityTuples.Item1)
                 {
-                    var otherKey = keyPropertyInfo.GetValue(otherEntity);
-                    if (otherKey == null)
-                        continue;
-
-                    if (otherKey.Equals(exclusionKeyValue))
-                        continue;
-                }
-
-                var otherEntityConcatenatedConstraints = string.Empty;
-                foreach (var constraintMemberPropertyString in constraintMemberPropertyStrings)
-                {
-                    var constraintMemberPropertyValue = DataUtils.GetNestedValue(constraintMemberPropertyString,
-                        otherEntity);
-                    if (constraintMemberPropertyValue != null)
+                    if (shouldValidateKey && keyPropertyInfo != null)
                     {
-                        string constraintMemberPropertyStringFormat;
-                        if (constraintMemberPropertyValue.GetType() == typeof(decimal))
-                            constraintMemberPropertyStringFormat =
-                                ((decimal)constraintMemberPropertyValue).ToString("0.00");
-                        else
-                            constraintMemberPropertyStringFormat = constraintMemberPropertyValue.ToString();
+                        var otherKey = keyPropertyInfo.GetValue(otherEntity);
+                        if (otherKey == null)
+                            continue;
 
-                        otherEntityConcatenatedConstraints += constraintMemberPropertyStringFormat;
+                        if (otherKey.Equals(exclusionKeyValue))
+                            continue;
                     }
-                }
 
-                if (otherEntityConcatenatedConstraints != string.Empty &&
-                    otherEntityConcatenatedConstraints == entityConstraint)
-                {
-                    constraintErrorMessage = constraintErrorMessage.Substring(0, constraintErrorMessage.Length - 5);
-                    constraintErrorMessage = constraintErrorMessage.Replace("GUID_", string.Empty);
-                    constraintErrorMessage = "Duplicate entries exists by " + constraintErrorMessage;
-                    return false;
+                    var otherEntityConcatenatedConstraints = string.Empty;
+                    foreach (var constraintMemberPropertyString in constraintMemberPropertyStrings)
+                    {
+                        var constraintMemberPropertyValue = DataUtils.GetNestedValue(constraintMemberPropertyString,
+                            otherEntity);
+                        if (constraintMemberPropertyValue != null)
+                        {
+                            string constraintMemberPropertyStringFormat;
+                            if (constraintMemberPropertyValue.GetType() == typeof(decimal))
+                                constraintMemberPropertyStringFormat =
+                                    ((decimal)constraintMemberPropertyValue).ToString("0.00");
+                            else
+                                constraintMemberPropertyStringFormat = constraintMemberPropertyValue.ToString();
+
+                            otherEntityConcatenatedConstraints += constraintMemberPropertyStringFormat;
+                        }
+                    }
+
+                    if (otherEntityConcatenatedConstraints != string.Empty &&
+                        otherEntityConcatenatedConstraints == entityConstraint)
+                    {
+                        constraintErrorMessage = constraintErrorMessage.Substring(0, constraintErrorMessage.Length - 5);
+                        constraintErrorMessage = constraintErrorMessage.Replace("GUID_", string.Empty);
+                        constraintErrorMessage = "Duplicate entries exists by " + constraintErrorMessage;
+                        return false;
+                    }
                 }
             }
 
@@ -714,7 +723,7 @@ namespace BaseModel.ViewModel.Base
         public virtual void ValidateRow(GridRowValidationEventArgs e)
         {
             var errorMessage = string.Empty;
-            if (!IsValidEntity((TProjection)e.Row, ref errorMessage))
+            if (!IsValidEntity((TProjection)e.Row, null, ref errorMessage))
             {
                 e.IsValid = false;
                 e.ErrorType = DevExpress.XtraEditors.DXErrorProvider.ErrorType.Critical;

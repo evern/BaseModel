@@ -21,7 +21,7 @@ namespace BaseModel.Data.Helpers
     public class CopyPasteHelper<TProjection>
         where TProjection : class, new()
     {
-        public delegate bool IsValidProjectionFunc(TProjection projection, ref string errorMessage);
+        public delegate bool IsValidProjectionFunc(TProjection projection, IEnumerable<TProjection> preCommittedProjections, ref string errorMessage);
         readonly IsValidProjectionFunc isValidProjectionFunc;
         readonly Func<TProjection, bool> onBeforePasteWithValidationFunc;
         readonly IMessageBoxService messageBoxService;
@@ -62,7 +62,7 @@ namespace BaseModel.Data.Helpers
             var gridView = gridControl.View;
 
             HashSet<TProjection> preValidatedProjections = new HashSet<TProjection>();
-            List<TProjection> pasteProjections = new List<TProjection>();
+            List<TProjection> validatedProjections = new List<TProjection>();
             List<UndoRedoArg> undoRedoArguments = new List<UndoRedoArg>();
             if (gridView.ActiveEditor == null && (gridView.GetType() == typeof(TView)))
             {
@@ -85,7 +85,7 @@ namespace BaseModel.Data.Helpers
 
                 var selected_cells = gridTableView.GetSelectedCells();
                 if (selected_cells.Count == 0)
-                    return pasteProjections;
+                    return validatedProjections;
 
                 var selected_cells_groupby_columns = selected_cells.GroupBy(x => x.Column.FieldName).Select(group => new { FieldName = group.Key, Cells = group.ToList() });
                 if (grouped_results.Count == 0)
@@ -183,7 +183,7 @@ namespace BaseModel.Data.Helpers
                 foreach (TProjection preValidatedProjection in preValidatedProjections)
                 {
                     var errorMessage = "Duplicate exists on constraint field named: ";
-                    if (isValidProjectionFunc(preValidatedProjection, ref errorMessage))
+                    if (isValidProjectionFunc(preValidatedProjection, validatedProjections, ref errorMessage))
                         if (onBeforePasteWithValidationFunc != null)
                         {
                             if (onBeforePasteWithValidationFunc(preValidatedProjection))
@@ -197,7 +197,7 @@ namespace BaseModel.Data.Helpers
                                     undo_redo_manager.AddUndo(projection_undo_redo.Projection, projection_undo_redo.FieldName, projection_undo_redo.OldValue, projection_undo_redo.NewValue, EntityMessageType.Changed);
                                 }
 
-                                pasteProjections.Add(preValidatedProjection);
+                                validatedProjections.Add(preValidatedProjection);
                             }
                         }
                         else
@@ -211,7 +211,7 @@ namespace BaseModel.Data.Helpers
                                 undo_redo_manager.AddUndo(projection_undo_redo.Projection, projection_undo_redo.FieldName, projection_undo_redo.OldValue, projection_undo_redo.NewValue, EntityMessageType.Changed);
                             }
 
-                            pasteProjections.Add(preValidatedProjection);
+                            validatedProjections.Add(preValidatedProjection);
                         }
                     else
                     {
@@ -227,7 +227,7 @@ namespace BaseModel.Data.Helpers
             }
 
             undo_redo_manager.UnpauseActionId();
-            return pasteProjections;
+            return validatedProjections;
         }
 
         public List<TProjection> PastingFromClipboardTreeListCellLevel<TView>(GridControl gridControl, string[] RowData, EntitiesUndoRedoManager<TProjection> undo_redo_manager)
@@ -236,7 +236,7 @@ namespace BaseModel.Data.Helpers
             var gridView = gridControl.View;
 
             HashSet<TProjection> preValidatedProjections = new HashSet<TProjection>();
-            List<TProjection> pasteProjections = new List<TProjection>();
+            List<TProjection> validatedProjections = new List<TProjection>();
             List<UndoRedoArg> undoRedoArguments = new List<UndoRedoArg>();
             if (gridView.ActiveEditor == null && (gridView.GetType() == typeof(TView)))
             {
@@ -258,7 +258,7 @@ namespace BaseModel.Data.Helpers
 
                 var selected_cells = gridTreeListView.GetSelectedCells();
                 if (selected_cells.Count == 0)
-                    return pasteProjections;
+                    return validatedProjections;
 
                 var selected_cells_groupby_columns = selected_cells.GroupBy(x => x.Column.FieldName).Select(group => new { FieldName = group.Key, Cells = group.ToList() });
                 if (grouped_results.Count == 0)
@@ -347,7 +347,7 @@ namespace BaseModel.Data.Helpers
                 foreach (TProjection preValidatedProjection in preValidatedProjections)
                 {
                     var errorMessage = "Duplicate exists on constraint field named: ";
-                    if (isValidProjectionFunc(preValidatedProjection, ref errorMessage))
+                    if (isValidProjectionFunc(preValidatedProjection, validatedProjections, ref errorMessage))
                         if (onBeforePasteWithValidationFunc != null)
                         {
                             if (onBeforePasteWithValidationFunc(preValidatedProjection))
@@ -356,7 +356,7 @@ namespace BaseModel.Data.Helpers
                                 foreach (UndoRedoArg projection_undo_redo in projection_undo_redos)
                                     undo_redo_manager.AddUndo(projection_undo_redo.Projection, projection_undo_redo.FieldName, projection_undo_redo.OldValue, projection_undo_redo.NewValue, EntityMessageType.Changed);
 
-                                pasteProjections.Add(preValidatedProjection);
+                                validatedProjections.Add(preValidatedProjection);
                             }
                         }
                         else
@@ -365,7 +365,7 @@ namespace BaseModel.Data.Helpers
                             foreach (UndoRedoArg projection_undo_redo in projection_undo_redos)
                                 undo_redo_manager.AddUndo(projection_undo_redo.Projection, projection_undo_redo.FieldName, projection_undo_redo.OldValue, projection_undo_redo.NewValue, EntityMessageType.Changed);
 
-                            pasteProjections.Add(preValidatedProjection);
+                            validatedProjections.Add(preValidatedProjection);
                         }
                     else
                     {
@@ -382,7 +382,7 @@ namespace BaseModel.Data.Helpers
             }
 
             undo_redo_manager.UnpauseActionId();
-            return pasteProjections;
+            return validatedProjections;
         }
 
         public List<TProjection> PastingFromClipboard<TView>(GridControl gridControl, string[] RowData)
@@ -391,6 +391,7 @@ namespace BaseModel.Data.Helpers
             var gridView = gridControl.View;
 
             List<TProjection> pasteProjections = new List<TProjection>();
+            List<TProjection> validatedProjections = new List<TProjection>();
             if (gridView.ActiveEditor == null && (gridView.GetType() == typeof(TView)) && !ShouldSkipPasting(gridControl))
             {
                 var gridTView = gridView as TView;
@@ -425,35 +426,39 @@ namespace BaseModel.Data.Helpers
                             continue;
                     }
 
-                    var errorMessage = "Duplicate exists on constraint field named: ";
-                    if(result != PasteResult.Failed)
+                    if (result != PasteResult.Failed)
                     {
-                        if (isValidProjectionFunc(projection, ref errorMessage))
-                            if (onBeforePasteWithValidationFunc != null)
-                            {
-                                if (onBeforePasteWithValidationFunc(projection))
-                                    pasteProjections.Add(projection);
-                            }
-                            else
-                                pasteProjections.Add(projection);
-                        else
-                        {
-                            if (messageBoxService != null)
-                            {
-                                errorMessage += " , paste operation will be terminated";
-                                messageBoxService.ShowMessage(errorMessage, CommonResources.Exception_UpdateErrorCaption, MessageButton.OK);
-                            }
-
-                            break;
-                        }
+                        pasteProjections.Add(projection);
                     }
 
                     LoadingScreenManager.Progress();
                 }
+
+                foreach(TProjection projection in pasteProjections)
+                {
+                    var errorMessage = "Duplicate exists on constraint field named: ";
+                    if (isValidProjectionFunc(projection, validatedProjections, ref errorMessage))
+                        if (onBeforePasteWithValidationFunc != null)
+                        {
+                            if (onBeforePasteWithValidationFunc(projection))
+                                validatedProjections.Add(projection);
+                        }
+                        else
+                            validatedProjections.Add(projection);
+                    else
+                    {
+                        if (messageBoxService != null)
+                        {
+                            errorMessage += " , paste operation will skip duplicate rows";
+                            messageBoxService.ShowMessage(errorMessage, CommonResources.Exception_UpdateErrorCaption, MessageButton.OK);
+                        }
+                    }
+                }
+
                 LoadingScreenManager.CloseLoadingScreen();
             }
 
-            return pasteProjections;
+            return validatedProjections;
         }
 
         private bool ShouldSkipPasting(GridControl gridControl)
