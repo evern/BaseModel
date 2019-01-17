@@ -1286,6 +1286,9 @@ namespace BaseModel.ViewModel.Base
         }
 
         public MultiSelectMode SelectMode => IsPasteCellLevel ? MultiSelectMode.Cell : MultiSelectMode.Row;
+
+        IEnumerable<TProjection> ICollectionViewModel<TProjection>.Entities => base.Entities;
+
         //Indicate that paste data will not have carriage return in cells, to improve paste data accuracy
         public bool UseRegularSplitting;
         /// <summary>

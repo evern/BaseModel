@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
 namespace BaseModel.Misc
@@ -6,8 +7,11 @@ namespace BaseModel.Misc
     public interface ICollectionViewModel<TProjection>
         where TProjection : class
     {
+        IEnumerable<TProjection> Entities { get; }
         void Save(TProjection entity);
         void Delete(TProjection entity);
+        void BaseBulkDelete(IEnumerable<TProjection> projectionEntities, bool ignoreRefresh = false);
+        void BulkSave(IEnumerable<TProjection> entities, bool doNotRefresh = true);
         void CleanUpCallBacks();
     }
 

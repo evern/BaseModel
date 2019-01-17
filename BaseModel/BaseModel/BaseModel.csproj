@@ -163,6 +163,7 @@
     <Compile Include="ViewModel\Base\ProjectionCollectionViewModel.Partial.cs" />
     <Compile Include="ViewModel\Base\ReadOnlyCollectionViewModel.cs" />
     <Compile Include="ViewModel\Base\RelayCommand.cs" />
+    <Compile Include="ViewModel\Composition\AuthorisationToggleViewModel.cs" />
     <Compile Include="ViewModel\Dialogs\BasicMessageBoxViewModel.cs" />
     <Compile Include="ViewModel\Dialogs\BulkEditEnumsViewModel.cs" />
     <Compile Include="ViewModel\Dialogs\BulkEditNumbersViewModel.cs" />
@@ -275,6 +276,7 @@
       <LastGenOutput>CommonResources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

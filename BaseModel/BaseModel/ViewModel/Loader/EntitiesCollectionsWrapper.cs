@@ -26,7 +26,7 @@ using DevExpress.Data.Filtering;
 namespace BaseModel.ViewModel.Loader
 {
     public abstract partial class CollectionViewModelsWrapper<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey,
-        TMainEntityUnitOfWork> : ICollectionViewModelsWrapper<TMainProjectionEntity>, IDocumentContent, ISupportParameter
+        TMainEntityUnitOfWork> : ViewModelBase, ICollectionViewModelsWrapper<TMainProjectionEntity>, IDocumentContent, ISupportParameter
         where TMainEntity : class, IGuidEntityKey, new()
         where TMainProjectionEntity : class, IGuidEntityKey, ICanUpdate, new()
         where TMainEntityUnitOfWork : IUnitOfWork
