@@ -2,6 +2,7 @@
 using BaseModel.DataModel;
 using BaseModel.Misc;
 using BaseModel.ViewModel.Services;
+using DevExpress.Mvvm;
 using DevExpress.Mvvm.DataAnnotations;
 using DevExpress.Mvvm.POCO;
 using DevExpress.Xpf.Grid;
@@ -18,7 +19,7 @@ namespace BaseModel.ViewModel.Loader
             TMainEntityUnitOfWork> : CollectionViewModelsWrapper<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey,
             TMainEntityUnitOfWork>
             where TMainEntity : class, IGuidEntityKey, new()
-            where TMainProjectionEntity : class, IGuidEntityKey, IHaveSortOrder, IHaveExpandState, IGuidParentEntityKey, ICanUpdate, new()
+            where TMainProjectionEntity : class, IGuidEntityKey, IHaveSortOrder, INewEntityName, IHaveExpandState, IGuidParentEntityKey, ICanUpdate, new()
             where TMainEntityUnitOfWork : IUnitOfWork
     {
         private Guid? Parent_GuidOldValue; //stores old parent guid for undo redo
@@ -27,25 +28,40 @@ namespace BaseModel.ViewModel.Loader
         /// <summary>
         /// Get the actual parent entity key field name for undo redo
         /// </summary>
-        protected abstract string GetParentEntityKeyFieldName();
+        protected virtual string GetParentEntityKeyFieldName()
+        {
+            return BindableBase.GetPropertyName(() => new TMainProjectionEntity().ParentEntityKey);
+        }
 
         /// <summary>
         /// Get the actual sort order field name for undo redo
         /// </summary>
-        protected abstract string GetSortOrderFieldName();
+        protected virtual string GetSortOrderFieldName()
+        {
+            return BindableBase.GetPropertyName(() => new TMainProjectionEntity().SortOrder);
+        }
 
         /// <summary>
         /// Required properties of projection must be populated
         /// </summary>
-        protected abstract void PopulateNewProjection(TMainProjectionEntity projection);
+        protected virtual void PopulateNewProjection(TMainProjectionEntity projection)
+        {
+            projection.NewEntityName = "(new)";
+        }
 
         #region Call Backs
         protected override void AssignCallBacksAndRaisePropertyChange(IEnumerable<TMainProjectionEntity> entities)
         {
+            MainViewModel.OnBeforeEntitySavedIsContinueCallBack = onBeforeEntitySavedIsContinue;
             MainViewModel.OnAfterProjectionsDeletedCallBack = projectionsAfterDeleted;
             MainViewModel.OnBeforeEntitiesDeleteCallBack = projectionsBeforeDeletion;
             MainViewModel.SetParentViewModel(this);
             base.AssignCallBacksAndRaisePropertyChange(entities);
+        }
+
+        protected virtual bool onBeforeEntitySavedIsContinue(TMainProjectionEntity entity)
+        {
+            return true;
         }
 
         //Remove children before parent deletion

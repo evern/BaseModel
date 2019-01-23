@@ -58,6 +58,11 @@ namespace BaseModel.Misc
         Guid? ParentEntityKey { get; set; }
     }
 
+    public interface INewEntityName
+    {
+        string NewEntityName { get; set; }
+    }
+
     public interface IOriginalGuidEntityKey
     {
         Guid OriginalEntityKey { get; }

@@ -711,7 +711,7 @@ namespace BaseModel.ViewModel.Base
             if(UnifiedValueValidationCallback != null)
             {
                 string error_message = UnifiedValueValidationCallback((TProjection)e.Row, e.Column.FieldName, e.Value);
-                if (error_message != string.Empty)
+                if (error_message != null && error_message != string.Empty)
                 {
                     e.IsValid = false;
                     e.ErrorType = DevExpress.XtraEditors.DXErrorProvider.ErrorType.Critical;
@@ -733,7 +733,7 @@ namespace BaseModel.ViewModel.Base
             if(UnifiedValidateRow != null)
             {
                 string error = UnifiedValidateRow.Invoke((TProjection)e.Row);
-                if(error != string.Empty)
+                if(error != null && error != string.Empty)
                 {
                     e.IsValid = false;
                     e.ErrorType = DevExpress.XtraEditors.DXErrorProvider.ErrorType.Critical;

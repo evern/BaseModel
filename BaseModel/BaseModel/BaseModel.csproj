@@ -164,6 +164,7 @@
     <Compile Include="ViewModel\Base\ReadOnlyCollectionViewModel.cs" />
     <Compile Include="ViewModel\Base\RelayCommand.cs" />
     <Compile Include="ViewModel\Composition\AuthorisationToggleViewModel.cs" />
+    <Compile Include="ViewModel\Composition\TreeViewModel.cs" />
     <Compile Include="ViewModel\Dialogs\BasicMessageBoxViewModel.cs" />
     <Compile Include="ViewModel\Dialogs\BulkEditEnumsViewModel.cs" />
     <Compile Include="ViewModel\Dialogs\BulkEditNumbersViewModel.cs" />

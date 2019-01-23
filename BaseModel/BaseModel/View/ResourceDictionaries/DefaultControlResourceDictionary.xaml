@@ -177,9 +177,36 @@
         </Setter>
         <Setter Property="LayoutTransform" Value="{Binding Zoom, Mode=OneWay}" />
     </Style>
+    <Style x:Key="CompositionGridControlTemplate" TargetType="{x:Type dxg:GridControl}">
+        <Setter Property="ShowLoadingPanel" Value="{Binding IsLoading}" />
+        <Setter Property="ItemsSource" Value="{Binding DisplayEntities}" />
+        <Setter Property="ClipboardCopyMode" Value="ExcludeHeader" />
+        <Setter Property="SelectionMode" Value="{Binding MainViewModel.SelectMode}" />
+        <Setter Property="CurrentItem" Value="{Binding DisplaySelectedEntity, Mode=TwoWay}" />
+        <Setter Property="SelectedItems" Value="{Binding DisplaySelectedEntities, Mode=TwoWay}" />
+        <Setter Property="ShowBorder" Value="False" />
+        <Setter Property="AutoExpandAllGroups" Value="False" />
+        <Setter Property="ShowAllTableValuesInCheckedFilterPopup" Value="False" />
+        <Setter Property="dxsc:SpellingSettings.CheckAsYouType" Value="True" />
+        <Setter Property="dxsc:SpellingSettings.ShowSpellCheckMenu" Value="True" />
+        <Setter Property="dxsc:SpellingSettings.SpellChecker" Value="{Binding DataContext.SpellCheckerModule.SpellChecker, ElementName=userControl}" />
+        <Setter Property="dxmvvm:Interaction.BehaviorsTemplate">
+            <Setter.Value>
+                <DataTemplate>
+                    <ItemsControl>
+                        <dxmvvm:KeyToCommand Command="{Binding MainViewModel.ShowPopUpCommand}" CommandParameter="{Binding ElementName=GridControl}" KeyGesture="Space" />
+                        <dxmvvm:KeyToCommand Command="{Binding MainViewModel.DeleteCellContentCommand}" CommandParameter="{Binding ElementName=GridControl}" KeyGesture="Delete" />
+                        <dxmvvm:EventToCommand Command="{Binding MainViewModel.Grid_MouseWheelCommand}" EventName="PreviewMouseWheel" PassEventArgsToCommand="True" />
+                        <dxmvvm:EventToCommand Command="{Binding CustomColumnGroupCommand}" EventName="CustomColumnGroup" PassEventArgsToCommand="True" />
+                    </ItemsControl>
+                </DataTemplate>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="LayoutTransform" Value="{Binding Zoom, Mode=OneWay}" />
+    </Style>
     <Style x:Key="AssociateGridControlTemplate" TargetType="{x:Type dxg:GridControl}">
         <Setter Property="ShowLoadingPanel" Value="{Binding IsLoading}" />
-        <Setter Property="ItemsSource" Value="{Binding Entities}" />
+        <Setter Property="ItemsSource" Value="{Binding DisplayEntities}" />
         <Setter Property="ClipboardCopyMode" Value="ExcludeHeader" />
         <Setter Property="SelectionMode" Value="{Binding SelectMode}" />
         <Setter Property="CurrentItem" Value="{Binding SelectedEntity, Mode=TwoWay}" />
@@ -535,6 +562,34 @@
                         <dxmvvm:EventToCommand Command="{Binding ValidateRowCommand}" EventName="ValidateRow" PassEventArgsToCommand="True" />
                         <dxmvvm:KeyToCommand Command="{Binding UndoCommand}" KeyGesture="CTRL+Z" />
                         <dxmvvm:KeyToCommand Command="{Binding RedoCommand}" KeyGesture="CTRL+Y" />
+                    </ItemsControl>
+                </DataTemplate>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="ParentFieldName" Value="ParentEntityKey" />
+        <Setter Property="KeyFieldName" Value="EntityKey" />
+        <Setter Property="ExpandStateFieldName" Value="IsExpanded" />
+        <Setter Property="ShowTotalSummary" Value="True" />
+        <Setter Property="AllowPerPixelScrolling" Value="True" />
+        <Setter Property="ShowSearchPanelMode" Value="Default" />
+        <Setter Property="SearchDelay" Value="0" />
+        <Setter Property="AllowScrollAnimation" Value="True" />
+        <Setter Property="ShowAutoFilterRow" Value="True" />
+        <Setter Property="ShowCriteriaInAutoFilterRow" Value="True" />
+        <Setter Property="ShowFixedTotalSummary" Value="False" />
+        <Setter Property="AllowSorting" Value="True" />
+    </Style>
+    <Style x:Key="CompositionTreeListViewTemplate" TargetType="{x:Type dxg:TreeListView}">
+        <Setter Property="dxmvvm:Interaction.BehaviorsTemplate">
+            <Setter.Value>
+                <DataTemplate>
+                    <ItemsControl>
+                        <dxmvvm:EventToCommand Command="{Binding MainViewModel.TreelistExistingRowAddUndoAndSaveCommand}" EventName="CellValueChanged" PassEventArgsToCommand="True" />
+                        <dxmvvm:EventToCommand Command="{Binding MainViewModel.PastingFromClipboardTreeListCommand}" EventName="PastingFromClipboard" PassEventArgsToCommand="True" />
+                        <dxmvvm:EventToCommand Command="{Binding MainViewModel.ValidateCellCommand}" EventName="ValidateCell" PassEventArgsToCommand="True" />
+                        <dxmvvm:EventToCommand Command="{Binding MainViewModel.ValidateRowCommand}" EventName="ValidateRow" PassEventArgsToCommand="True" />
+                        <dxmvvm:KeyToCommand Command="{Binding MainViewModel.UndoCommand}" KeyGesture="CTRL+Z" />
+                        <dxmvvm:KeyToCommand Command="{Binding MainViewModel.RedoCommand}" KeyGesture="CTRL+Y" />
                     </ItemsControl>
                 </DataTemplate>
             </Setter.Value>

@@ -126,7 +126,7 @@ namespace BaseModel.ViewModel.Loader
             where TProjection : class
         {
             if (loaderCollection == null)
-                return null;
+                return new List<TProjection>();
 
             Func<IEnumerable<TProjection>> getCollectionFunc = loaderCollection.GetCollectionFunc<TProjection>();
             return getCollectionFunc();
@@ -215,6 +215,8 @@ namespace BaseModel.ViewModel.Loader
                 OnEntitiesLoadedCallBack?.Invoke(MainViewModel.Entities, OnEntitiesLoadedCallBackRelateParam == null ? null : OnEntitiesLoadedCallBackRelateParam());
                 OnEntitiesLoadedCallBack = null;
                 OnEntitiesLoadedCallBackRelateParam = null;
+                
+                CleanUpEntitiesLoader();
                 return;
             }
 
