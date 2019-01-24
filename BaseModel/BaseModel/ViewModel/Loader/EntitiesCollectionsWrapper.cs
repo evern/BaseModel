@@ -45,8 +45,21 @@ namespace BaseModel.ViewModel.Loader
         DispatcherTimer bulk_refresh_dispatcher_timer;
         protected Timer post_loaded_dispatcher_timer;
         DispatcherTimer focusNewlyAddedProjectionTimer = new DispatcherTimer();
-        public void CollectionViewModelWrapper()
+        public CollectionViewModelsWrapper()
         {
+            selectedEntitiesChangedDispatchTimer = new DispatcherTimer();
+            selectedEntitiesChangedDispatchTimer.Interval = new TimeSpan(0, 0, 0, 0, 1);
+            focusNewlyAddedProjectionTimer = new DispatcherTimer();
+            focusNewlyAddedProjectionTimer.Interval = new TimeSpan(0, 0, 0, 0, 50);
+            focusNewlyAddedProjectionTimer.Tick += FocusNewlyAddedProjectionTimer_Tick;
+
+            refreshBackgroundWorker = new BackgroundWorker();
+            refreshBackgroundWorker.DoWork += refreshBackgroundWorker_DoWork;
+            refreshBackgroundWorker.WorkerSupportsCancellation = true;
+
+            DisplaySelectedEntities = new ObservableCollection<TMainProjectionEntity>();
+            DisplaySelectedEntities.CollectionChanged += DisplaySelectedEntities_CollectionChanged;
+
             CurrentHWID = string.Empty;
         }
 
@@ -55,14 +68,8 @@ namespace BaseModel.ViewModel.Loader
             CurrentHWID = hwid;
         }
 
-        public virtual void OnParameterChanged(object parameter)
+        public virtual void OnParameterChange(object parameter)
         {
-            selectedEntitiesChangedDispatchTimer = new DispatcherTimer();
-            selectedEntitiesChangedDispatchTimer.Interval = new TimeSpan(0, 0, 0, 0, 1);
-            focusNewlyAddedProjectionTimer = new DispatcherTimer();
-            focusNewlyAddedProjectionTimer.Interval = new TimeSpan(0, 0, 0, 0, 50);
-            focusNewlyAddedProjectionTimer.Tick += FocusNewlyAddedProjectionTimer_Tick;
-            initializePresentationProperties();
             resolveParameters(parameter);
             initializeAndLoad();
         }
@@ -292,7 +299,7 @@ namespace BaseModel.ViewModel.Loader
         object ISupportParameter.Parameter
         {
             get { return null; }
-            set { OnParameterChanged(value); }
+            set { OnParameterChange(value); }
         }
         #endregion
 
@@ -443,16 +450,6 @@ namespace BaseModel.ViewModel.Loader
         }
 
         private BackgroundWorker refreshBackgroundWorker;
-
-        private void initializePresentationProperties()
-        {
-            refreshBackgroundWorker = new BackgroundWorker();
-            refreshBackgroundWorker.DoWork += refreshBackgroundWorker_DoWork;
-            refreshBackgroundWorker.WorkerSupportsCancellation = true;
-
-            DisplaySelectedEntities = new ObservableCollection<TMainProjectionEntity>();
-            DisplaySelectedEntities.CollectionChanged += DisplaySelectedEntities_CollectionChanged;
-        }
 
         private void DisplaySelectedEntities_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {

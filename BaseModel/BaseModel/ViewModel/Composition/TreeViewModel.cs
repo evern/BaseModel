@@ -44,6 +44,7 @@ namespace BaseModel.ViewModel.Composition
         /// This constructor is declared protected to avoid undesired instantiation of the TreeViewModel type without the POCO proxy factory.
         /// </summary>
         protected TreeViewModel(IUnitOfWorkFactory<TMainEntityUnitOfWork> unitOfWorkFactory, Func<TMainEntityUnitOfWork, IRepository<TMainEntity, TMainEntityPrimaryKey>> getRepositoryFunc, Func<IRepositoryQuery<TMainEntity>, IQueryable<TMainProjectionEntity>> projectionFunc)
+            : base()
         {
             _getRepositoryFunc = getRepositoryFunc;
             _unitOfWorkFactory = unitOfWorkFactory;

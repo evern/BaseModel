@@ -1,4 +1,7 @@
 ﻿using BaseModel.Misc;
+using BaseModel.ViewModel.Document;
+using DevExpress.Mvvm;
+using DevExpress.Mvvm.DataAnnotations;
 using DevExpress.Mvvm.POCO;
 using DevExpress.Xpf.Grid;
 using System;
@@ -37,6 +40,7 @@ namespace BaseModel.ViewModel.Composition
         /// This constructor is declared protected to avoid undesired instantiation of the PermissionToggleViewModel type without the POCO proxy factory.
         /// </summary>
         protected AuthorisationToggleViewModel(Func<TAttachment> getAttachmentFunc, Func<IEnumerable<TPermission>> getPermissionCollectionFunc, Func<ICollectionViewModel<TAttachmentPermission>> getAttachmentPermissionViewModel)
+            : base()
         {
             this._getAttachmentFunc = getAttachmentFunc;
             this._getPermissionCollectionFunc = getPermissionCollectionFunc;
@@ -51,6 +55,12 @@ namespace BaseModel.ViewModel.Composition
         {
             authorisations = null;
             this.RaisePropertyChanged(x => x.Authorisations);
+        }
+
+        public void FullRefresh()
+        {
+            AttachmentPermissionsViewModel.FullRefresh();
+            RefreshPermissions();
         }
 
         /// <summary>
@@ -72,6 +82,11 @@ namespace BaseModel.ViewModel.Composition
         /// Property for attachment get function
         /// </summary>
         TAttachment Attachment => _getAttachmentFunc();
+
+        /// <summary>
+        /// Property for attachment permissions
+        /// </summary>
+        IEnumerable<TAttachmentPermission> AttachmentPermissions => _getAttachmentPermissionViewModelFunc().Entities;
 
         /// <summary>
         /// Property for attachment permission's view model get function
@@ -98,7 +113,7 @@ namespace BaseModel.ViewModel.Composition
                     authorisations = new List<Authorisation<TPermission>>();
                     foreach (TPermission permission in Permissions)
                     {
-                        if (_getAttachmentPermissionViewModelFunc().Entities.Any(x => x.PermissionKey == permission.EntityKey && x.AttachmentKey == Attachment.EntityKey))
+                        if (AttachmentPermissions.Any(x => x.PermissionKey == permission.EntityKey && x.AttachmentKey == Attachment.EntityKey))
                             authorisations.Add(new Authorisation<TPermission>(permission, true));
                         else
                             authorisations.Add(new Authorisation<TPermission>(permission, false));

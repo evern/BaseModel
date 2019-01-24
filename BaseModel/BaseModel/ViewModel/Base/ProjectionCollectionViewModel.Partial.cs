@@ -274,6 +274,11 @@ namespace BaseModel.ViewModel.Base
             }
         }
 
+        public void FullRefresh()
+        {
+            this.Refresh();
+        }
+
         /// <summary>
         /// Specify whether any elements remains in the undo list
         /// Since CollectionViewModelBase is a POCO view model, an the instance of this class will also expose the CanUndoCommand property that can be used as a binding source in views.

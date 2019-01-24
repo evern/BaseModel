@@ -13,6 +13,7 @@ namespace BaseModel.Misc
         void BaseBulkDelete(IEnumerable<TProjection> projectionEntities, bool ignoreRefresh = false);
         void BulkSave(IEnumerable<TProjection> entities, bool doNotRefresh = true);
         void CleanUpCallBacks();
+        void FullRefresh();
     }
 
     public interface ICanSync
