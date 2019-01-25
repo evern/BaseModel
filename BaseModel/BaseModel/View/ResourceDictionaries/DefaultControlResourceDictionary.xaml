@@ -202,7 +202,7 @@
                 </DataTemplate>
             </Setter.Value>
         </Setter>
-        <Setter Property="LayoutTransform" Value="{Binding Zoom, Mode=OneWay}" />
+        <Setter Property="LayoutTransform" Value="{Binding MainViewModel.Zoom, Mode=OneWay}" />
     </Style>
     <Style x:Key="AssociateGridControlTemplate" TargetType="{x:Type dxg:GridControl}">
         <Setter Property="ShowLoadingPanel" Value="{Binding IsLoading}" />

@@ -50,7 +50,7 @@ namespace BaseModel.ViewModel.Composition
             _unitOfWorkFactory = unitOfWorkFactory;
             _projectionFunc = projectionFunc;
             //start loading, entities view model starts loading on parameter changes
-            OnParameterChanged(null);
+            OnParameterChange(null);
         }
 
         protected override void resolveParameters(object parameter)
