@@ -687,7 +687,7 @@ namespace BaseModel.Data.Helpers
                             var copyColumnDisplayMember = (string)editSettings.GetType().GetProperty("DisplayMember").GetValue(editSettings);
                             var copyColumnItemsSource = (IEnumerable<object>)editSettings.GetType().GetProperty("ItemsSource").GetValue(editSettings);
                             var copyColumnTag = (IEnumerable<object>)editSettings.GetType().GetProperty("Tag").GetValue(editSettings);
-                            if(copyColumnTag.ToString().ToUpper() == "COPYPASTESKIP")
+                            if(copyColumnTag != null && copyColumnTag.ToString().ToUpper() == "COPYPASTESKIP")
                                 return PasteResult.Skip;
 
                             string[] pasteStringArray = pasteData.Split(';');
