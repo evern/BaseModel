@@ -223,7 +223,7 @@ namespace BaseModel.ViewModel.Loader
                 OnEntitiesLoadedCallBack = null;
                 OnEntitiesLoadedCallBackRelateParam = null;
                 
-                CleanUpEntitiesLoader();
+                //CleanUpEntitiesLoader();
                 return;
             }
 
