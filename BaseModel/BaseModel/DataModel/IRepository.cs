@@ -317,11 +317,10 @@ namespace BaseModel.DataModel
             Func<IRepositoryQuery<TEntity>, IQueryable<TProjection>> projection, TPrimaryKey primaryKey)
             where TEntity : class
         {
-            var primaryKeyEqualsExpression = GetProjectionPrimaryKeyEqualsExpression<TEntity, TProjection, TPrimaryKey>(repository, primaryKey);
+            var primaryKeyEqualsExpression = GetPrimaryKeyEqualsExpression(repository, primaryKey);
 
             var result =
-                repository.GetFilteredEntities(null, projection)
-                    .Where(primaryKeyEqualsExpression)
+                repository.GetFilteredEntities(primaryKeyEqualsExpression, projection)
                     .Take(1)
                     .ToArray()
                     .FirstOrDefault(); //WCF incorrect FirstOrDefault implementation workaround
