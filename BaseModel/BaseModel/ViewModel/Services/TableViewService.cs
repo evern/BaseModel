@@ -86,17 +86,21 @@ namespace BaseModel.ViewModel.Services
                 {
                     var link = new PrintableControlLink(TableView)
                     {
-                        PageHeaderTemplate = Application.Current.TryFindResource("GridPrintHeaderTemplate") as DataTemplate,
-                        PageFooterTemplate = Application.Current.TryFindResource("GridPrintFooterTemplate") as DataTemplate,
-                        Margins = new System.Drawing.Printing.Margins(50, 50, 50, 50),
-                        PaperKind = System.Drawing.Printing.PaperKind.A4Rotated
+                        Margins = new System.Drawing.Printing.Margins(150, 150, 150, 150),
+                        PaperKind = System.Drawing.Printing.PaperKind.A3Rotated
                     };
 
                     link.CreateDocument(true);
                     link.ExportToPdf(exportPath);
 
-                    //TableView.ExportToPdf(exportPath);
                     Process.Start(exportPath);
+                    //TableView.PrintAutoWidth = true;
+                    //PrintableControlLink link = new PrintableControlLink(TableView);
+                    //link.Landscape = true;
+                    //link.PaperKind = System.Drawing.Printing.PaperKind.A3;
+
+                    //TableView.ExportToPdf(exportPath);
+                    //Process.Start(exportPath);
                     return true;
                 }
                 catch
@@ -179,6 +183,9 @@ namespace BaseModel.ViewModel.Services
             gridControl.BeginDataUpdate();
             foreach(var column in gridControl.Columns)
             {
+                if (!column.Visible)
+                    continue;
+
                 column.BestFitMode = DevExpress.Xpf.Core.BestFitMode.VisibleRows;
                 double defaultMaxWidth = column.MaxWidth;
                 double defaultMinWidth = column.MinWidth;
@@ -186,7 +193,16 @@ namespace BaseModel.ViewModel.Services
                 column.MinWidth = 50;
                 var textEditSetting = column.EditSettings as TextEditSettings;
                 if (textEditSetting == null || textEditSetting.TextWrapping == TextWrapping.NoWrap)
-                    TableView.BestFitColumn(column);
+                {
+                    try
+                    {
+                        TableView.BestFitColumn(column);
+                    }
+                    catch
+                    {
+
+                    }
+                }
                 column.MaxWidth = defaultMaxWidth;
                 column.MinWidth = defaultMinWidth;
             }

@@ -26,7 +26,8 @@ namespace BaseModel.ViewModel.Services
 
         public void Animate()
         {
-            ChartControl.Animate();
+            if(ChartControl != null)
+                ChartControl.Animate();
         }
     }
 }
