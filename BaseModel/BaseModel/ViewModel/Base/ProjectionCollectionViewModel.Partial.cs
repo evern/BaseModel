@@ -753,7 +753,7 @@ namespace BaseModel.ViewModel.Base
         public virtual void DeleteCellContent(GridControl gridControl)
         {
             string[] RowData = new string[] { string.Empty };
-            CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, MessageBoxService, UnifiedValueValidationCallback, ManualRowPasteAction, UnifiedValueChangingCallback, UnifiedValueChangedCallback);
+            CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, MessageBoxService, UnifiedValueValidationCallback, FuncManualCellPastingIsContinue, FuncManualRowPastingIsContinue, UnifiedValueChangingCallback, UnifiedValueChangedCallback);
             List<TProjection> pasteProjections;
             if(gridControl.View.GetType() == typeof(TableView))
                 pasteProjections = copyPasteHelper.PastingFromClipboardCellLevel<TableView>(gridControl, RowData, EntitiesUndoRedoManager);
@@ -1107,7 +1107,8 @@ namespace BaseModel.ViewModel.Base
 
         //Denotes that edit operation comes from the background so onBeforeEntitySaved will not perform default actions
         public bool isBackgroundEdit = false;
-        public Func<List<KeyValuePair<ColumnBase, string>>, TProjection, bool> ManualRowPasteAction;
+        public Func<List<KeyValuePair<ColumnBase, string>>, TProjection, bool> FuncManualRowPastingIsContinue;
+        public Func<TProjection, ColumnBase, string, List<UndoRedoArg<TProjection>>, bool> FuncManualCellPastingIsContinue;
         public Action<IEnumerable<string>> RawPasteOverride;
         public void BulkColumnEdit(object button)
         {
@@ -1306,7 +1307,7 @@ namespace BaseModel.ViewModel.Base
                 return;
             
             PasteListener?.Invoke(PasteStatus.Start);
-            CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, MessageBoxService, UnifiedValueValidationCallback, ManualRowPasteAction, UnifiedValueChangingCallback, UnifiedValueChangedCallback);
+            CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, MessageBoxService, UnifiedValueValidationCallback, FuncManualCellPastingIsContinue, FuncManualRowPastingIsContinue, UnifiedValueChangingCallback, UnifiedValueChangedCallback);
 
             bool dontSplit = false;
             if ((Keyboard.Modifiers | ModifierKeys.Shift) == Keyboard.Modifiers)
