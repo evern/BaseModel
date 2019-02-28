@@ -9,8 +9,8 @@ using DevExpress.Mvvm;
 namespace BaseModel.ViewModel.Loader
 {
     public abstract partial class CollectionViewModelsWrapper<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey, TMainEntityUnitOfWork> : ViewModelBase, ICollectionViewModelsWrapper<TMainProjectionEntity>, IDocumentContent, ISupportParameter, IDisposable
-        where TMainEntity : class, IGuidEntityKey, new()
-        where TMainProjectionEntity : class, IGuidEntityKey, ICanUpdate, new()
+        where TMainEntity : class, new()
+        where TMainProjectionEntity : class, ICanUpdate, new()
         where TMainEntityUnitOfWork : IUnitOfWork
     {
         public void Dispose()

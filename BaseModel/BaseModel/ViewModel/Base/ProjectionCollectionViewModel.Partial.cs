@@ -1125,8 +1125,7 @@ namespace BaseModel.ViewModel.Base
                 bool commence_bulk_edit = false;
                 TProjection firstSelectedEntity = SelectedEntities.First();
                 var columnPropertyInfo = DataUtils.GetNestedPropertyInfo(info.Column.FieldName, firstSelectedEntity);
-                if (columnPropertyInfo.PropertyType == typeof(Guid) || columnPropertyInfo.PropertyType == typeof(Guid?) ||
-                    columnPropertyInfo.PropertyType.BaseType == typeof(Enum))
+                if (columnPropertyInfo.PropertyType == typeof(Guid) || columnPropertyInfo.PropertyType == typeof(Guid?) || columnPropertyInfo.PropertyType.BaseType == typeof(Enum))
                 {
                     Type editSettingsType = info.Column.ActualEditSettings.GetType();
                     object editSettings = null;
@@ -1192,9 +1191,7 @@ namespace BaseModel.ViewModel.Base
                     var selectedEntityValue =
                         (string)DataUtils.GetNestedValue(info.Column.FieldName, SelectedEntities.First());
                     var bulkEditStringsViewModel = BulkEditStringsViewModel.Create(selectedEntityValue);
-                    if (
-                        BulkColumnEditDialogService.ShowDialog(MessageButton.OKCancel, "Type in text for bulk edit",
-                            "BulkEditStrings", bulkEditStringsViewModel) == MessageResult.OK)
+                    if (BulkColumnEditDialogService.ShowDialog(MessageButton.OKCancel, "Type in text for bulk edit", "BulkEditStrings", bulkEditStringsViewModel) == MessageResult.OK)
                     {
                         commence_bulk_edit = true;
                         newValue = bulkEditStringsViewModel.EditValue;

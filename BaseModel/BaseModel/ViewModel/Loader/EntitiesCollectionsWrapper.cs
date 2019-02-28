@@ -27,8 +27,8 @@ namespace BaseModel.ViewModel.Loader
 {
     public abstract partial class CollectionViewModelsWrapper<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey,
         TMainEntityUnitOfWork> : ViewModelBase, ICollectionViewModelsWrapper<TMainProjectionEntity>, IDocumentContent, ISupportParameter
-        where TMainEntity : class, IGuidEntityKey, new()
-        where TMainProjectionEntity : class, IGuidEntityKey, ICanUpdate, new()
+        where TMainEntity : class, new()
+        where TMainProjectionEntity : class, ICanUpdate, new()
         where TMainEntityUnitOfWork : IUnitOfWork
         
     {
@@ -917,7 +917,7 @@ namespace BaseModel.ViewModel.Loader
     }
 
     public interface ICollectionViewModelsWrapper<TMainProjectionEntity> : ICollectionViewModelsWrapper
-        where TMainProjectionEntity : class, IGuidEntityKey, new()
+        where TMainProjectionEntity : class, new()
     {
         //allow loaded entities to relate back to it's context
         Func<object> OnEntitiesLoadedCallBackRelateParam { get; set; }
