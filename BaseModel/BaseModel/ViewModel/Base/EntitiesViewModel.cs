@@ -138,10 +138,6 @@ namespace BaseModel.ViewModel.Base
                     return;
 
                 bool skipOnMessage = message.Sender == null ? false : (!owner.RefreshOnSameSenderKey && message.Key == owner.Key) && message.HWID == owner.CurrentHWID;
-                string s;
-                if (!skipOnMessage)
-                    s = string.Empty;
-
                 switch (message.MessageType)
                 {
                     case EntityMessageType.Added:
@@ -171,7 +167,6 @@ namespace BaseModel.ViewModel.Base
             {
                 var existingProjectionEntity = FindLocalProjectionByKey(primaryKey);
                 ICanUpdate can_update_entity = existingProjectionEntity as ICanUpdate;
-
                 if (skipOnMessage)
                 {
                     if (can_update_entity != null)

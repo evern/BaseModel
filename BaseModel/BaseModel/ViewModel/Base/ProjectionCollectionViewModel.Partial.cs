@@ -1302,64 +1302,73 @@ namespace BaseModel.ViewModel.Base
         {
             if (DisablePasting)
                 return;
-            
-            PasteListener?.Invoke(PasteStatus.Start);
-            CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, MessageBoxService, UnifiedValueValidationCallback, FuncManualCellPastingIsContinue, FuncManualRowPastingIsContinue, UnifiedValueChangingCallback, UnifiedValueChangedCallback);
 
-            bool dontSplit = false;
-            if ((Keyboard.Modifiers | ModifierKeys.Shift) == Keyboard.Modifiers)
-                dontSplit = true;
-
-            List<TProjection> pasteProjections;
-
-            var PasteString = System.Windows.Clipboard.GetText();
-            string[] RowData;
-            if (dontSplit)
-            {
-                string format_string = PasteString.Replace(@"""", "");
-                RowData = new string[] { format_string };
-            }
-            else
-            {
-                if(UseRegularSplitting)
-                {
-                    RowData = PasteString.Split('\n').ToArray();
-                    RowData = RowData.Where(x => x != string.Empty).ToArray();
-                }
-                else
-                    RowData = DataUtils.ExcelSplit(PasteString).ToArray();
-            }
-
-
+            bool shouldSkip = false;
             var gridControl = (GridControl)e.Source;
-
-            if(RawPasteOverride != null)
-                RawPasteOverride.Invoke(RowData);
-            else
+            TableView tableView = gridControl.View as TableView;
+            if(tableView != null && tableView.FocusedRowHandle == GridControl.AutoFilterRowHandle)
             {
-                if (IsPasteCellLevel)
-                    pasteProjections = copyPasteHelper.PastingFromClipboardCellLevel<TableView>(gridControl, RowData, EntitiesUndoRedoManager);
-                else if (!DisablePasteRowLevel)
-                    pasteProjections = copyPasteHelper.PastingFromClipboard<TableView>(gridControl, RowData);
-                else
-                    pasteProjections = new List<TProjection>();
-
-                if (pasteProjections.Count > 0)
-                {
-                    if (!IsPasteCellLevel)
-                    {
-                        EntitiesUndoRedoManager.PauseActionId();
-                        pasteProjections.ForEach(x => EntitiesUndoRedoManager.AddUndo(x, null, null, null, EntityMessageType.Added));
-                        EntitiesUndoRedoManager.UnpauseActionId();
-                    }
-
-                    //For copy paste don't have to refresh the entire list, just call ICanUpdate.Update() on entity
-                    BulkSave(pasteProjections, IsPasteCellLevel);
-                }
+                shouldSkip = true;
             }
 
-            e.Handled = true;
-            PasteListener?.Invoke(PasteStatus.Stop);
+            List<int> selectedRowHandles = gridControl.GetSelectedRowHandles().ToList();
+            if(!shouldSkip)
+            {
+                PasteListener?.Invoke(PasteStatus.Start);
+                CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, MessageBoxService, UnifiedValueValidationCallback, FuncManualCellPastingIsContinue, FuncManualRowPastingIsContinue, UnifiedValueChangingCallback, UnifiedValueChangedCallback);
+
+                bool dontSplit = false;
+                if ((Keyboard.Modifiers | ModifierKeys.Shift) == Keyboard.Modifiers)
+                    dontSplit = true;
+
+                List<TProjection> pasteProjections;
+
+                var PasteString = System.Windows.Clipboard.GetText();
+                string[] RowData;
+                if (dontSplit)
+                {
+                    string format_string = PasteString.Replace(@"""", "");
+                    RowData = new string[] { format_string };
+                }
+                else
+                {
+                    if (UseRegularSplitting)
+                    {
+                        RowData = PasteString.Split('\n').ToArray();
+                        RowData = RowData.Where(x => x != string.Empty).ToArray();
+                    }
+                    else
+                        RowData = DataUtils.ExcelSplit(PasteString).ToArray();
+                }
+
+                if (RawPasteOverride != null)
+                    RawPasteOverride.Invoke(RowData);
+                else
+                {
+                    if (IsPasteCellLevel)
+                        pasteProjections = copyPasteHelper.PastingFromClipboardCellLevel<TableView>(gridControl, RowData, EntitiesUndoRedoManager);
+                    else if (!DisablePasteRowLevel)
+                        pasteProjections = copyPasteHelper.PastingFromClipboard<TableView>(gridControl, RowData);
+                    else
+                        pasteProjections = new List<TProjection>();
+
+                    if (pasteProjections.Count > 0)
+                    {
+                        if (!IsPasteCellLevel)
+                        {
+                            EntitiesUndoRedoManager.PauseActionId();
+                            pasteProjections.ForEach(x => EntitiesUndoRedoManager.AddUndo(x, null, null, null, EntityMessageType.Added));
+                            EntitiesUndoRedoManager.UnpauseActionId();
+                        }
+
+                        //For copy paste don't have to refresh the entire list, just call ICanUpdate.Update() on entity
+                        BulkSave(pasteProjections, IsPasteCellLevel);
+                    }
+                }
+
+                e.Handled = true;
+                PasteListener?.Invoke(PasteStatus.Stop);
+            }
         }
 
         /// <summary>
