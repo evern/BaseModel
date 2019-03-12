@@ -61,6 +61,15 @@ namespace BaseModel.Misc {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to 10.
+        /// </summary>
+        internal static string BulkSave_BulkRefreshMinCount {
+            get {
+                return ResourceManager.GetString("BulkSave_BulkRefreshMinCount", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Confirmation.
         /// </summary>
         internal static string Confirmation_Caption {

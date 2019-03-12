@@ -27,6 +27,7 @@ namespace BaseModel.ViewModel.Loader
                 this.owner = owner;
             }
 
+            public bool AlwaysSkipMessage { get; set; }
             public void AddLoaderDescription<TEntity, TProjection, TPrimaryKey, TUnitOfWork>(
             IUnitOfWorkFactory<TUnitOfWork> unitOfWorkFactory,
             Func<TUnitOfWork, IRepository<TEntity, TPrimaryKey>> getRepositoryFunc,
@@ -61,7 +62,7 @@ namespace BaseModel.ViewModel.Loader
                     onBeforeEntitiesChanged,
                     onAfterEntitiesChanged,
                     projectionFunc,
-                    compulsoryEntityAssignmentFunc));
+                    compulsoryEntityAssignmentFunc, this.AlwaysSkipMessage));
             }
 
             public IEntitiesLoaderDescription GetLoader(Type dependencyType)

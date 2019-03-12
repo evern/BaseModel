@@ -314,7 +314,6 @@ namespace BaseModel.ViewModel.Base
         }
 
         public Action AfterBulkOperationRefreshCallBack;
-
         protected virtual void BaseBulkSave(IEnumerable<TProjection> projectionEntities, bool doNotRefresh = false)
         {
             var projectionEntitiesWithTag = new List<KeyValuePair<int, TProjection>>();
@@ -330,6 +329,12 @@ namespace BaseModel.ViewModel.Base
             LoadingScreenManager.SetMessage("Saving...");
             bool isContinueSave = true;
             bool haveNewEntity = false;
+            bool doBulkRefresh = false;
+
+            //when the total count of refreshes exceeds a certain threshold, it's faster to perform bulk refresh
+            if (projectionEntities.Count() > Int32.Parse(CommonResources.BulkSave_BulkRefreshMinCount))
+                doBulkRefresh = true;
+
             foreach (var projectionEntityWithTag in projectionEntitiesWithTag)
             {
                 bool isNewEntity;
@@ -377,7 +382,7 @@ namespace BaseModel.ViewModel.Base
                     //Need to put here because any updates associated with the entity need to be committed before sending message
                     OnAfterEntitySavedCallBack?.Invoke(projectionEntity, entityWithTag.Value, isNewEntity);
 
-                    if(AfterBulkOperationRefreshCallBack == null)
+                    if(!doBulkRefresh || AfterBulkOperationRefreshCallBack == null)
                         SendMessage(primaryKey, projectionEntity, entityWithTag.Value, isNewEntity);
 
                     if(!haveNewEntity && doNotRefresh)
@@ -393,7 +398,7 @@ namespace BaseModel.ViewModel.Base
                 MessageBoxService.ShowMessage(e.ErrorMessage, e.ErrorCaption, MessageButton.OK, MessageIcon.Error);
             }
 
-            if((haveNewEntity || !doNotRefresh) && AfterBulkOperationRefreshCallBack != null)
+            if((doBulkRefresh || (haveNewEntity || !doNotRefresh)) && AfterBulkOperationRefreshCallBack != null)
                 AfterBulkOperationRefreshCallBack.Invoke();
         }
 

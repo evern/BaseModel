@@ -18,6 +18,7 @@ namespace BaseModel.ViewModel.Loader
         private readonly ICollectionViewModelsWrapper owner;
         public int LoadOrder { get; set; }
         public bool IsLoaded { get; set; }
+        public bool AlwaysSkipMessage { get; set; }
         readonly Action<TProjection> compulsoryEntityAssignmentFunc;
         readonly IUnitOfWorkFactory<TUnitOfWork> unitOfWorkFactory;
         readonly Func<TUnitOfWork, IRepository<TEntity, TPrimaryKey>> getRepositoryFunc;
@@ -45,7 +46,7 @@ namespace BaseModel.ViewModel.Loader
             Func<object, Type, EntityMessageType, object, bool, bool> collectionViewModelBeforeChangedCallBack = null,
             Action<object, Type, EntityMessageType, object, bool> collectionViewModelChangedCallBack = null,
             Func<Func<IRepositoryQuery<TEntity>, IQueryable<TProjection>>> constructProjectionCallBackFunc = null,
-            Action<TProjection> compulsoryEntityAssignmentFunc = null)
+            Action<TProjection> compulsoryEntityAssignmentFunc = null, bool alwaysSkipMessage = false)
         {
             this.owner = owner;
             this.LoadOrder = loadOrder;
@@ -56,6 +57,7 @@ namespace BaseModel.ViewModel.Loader
             this.collectionViewModelChangedCallBack = collectionViewModelChangedCallBack;
             this.collectionViewModelBeforeChangedCallBack = collectionViewModelBeforeChangedCallBack;
             this.compulsoryEntityAssignmentFunc = compulsoryEntityAssignmentFunc;
+            this.AlwaysSkipMessage = alwaysSkipMessage;
         }
 
         public void CreateCollectionViewModel()
@@ -72,6 +74,7 @@ namespace BaseModel.ViewModel.Loader
             collectionViewModel.OnBeforeEntitiesChangedCallBack = collectionViewModelBeforeChangedCallBack;
             collectionViewModel.OnAfterDeletedSendMessage = owner.OnAfterDeletedSendMessage;
             collectionViewModel.OnAfterSavedSendMessage = owner.OnAfterSavedSendMessage;
+            collectionViewModel.AlwaysSkipMessage = this.AlwaysSkipMessage;
             collectionViewModel.CurrentHWID = owner.CurrentHWID;
             collectionViewModel.Entities.ToList();
         }

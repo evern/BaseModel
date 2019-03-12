@@ -37,6 +37,7 @@ namespace BaseModel.ViewModel.Loader
 
         public CollectionViewModel<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey, TMainEntityUnitOfWork> MainViewModel { get; set; }
         public bool SuppressNotification { get; set; }
+        public bool AlwaysSkipMessage { get; set; }
         public string CurrentHWID { get; set; }
         //allows view state to interact with OnMainViewModelRefreshed
         protected object onMessageSender;
@@ -146,6 +147,7 @@ namespace BaseModel.ViewModel.Loader
             MainViewModel = null;
             //CleanUpEntitiesLoader();
             loaderCollection = new EntitiesLoaderDescriptionCollection(this);
+            loaderCollection.AlwaysSkipMessage = this.AlwaysSkipMessage;
             addEntitiesLoader();
             loadEntitiesCollection();
         }
@@ -162,7 +164,7 @@ namespace BaseModel.ViewModel.Loader
                 new EntitiesLoaderDescription
                     <TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey, TMainEntityUnitOfWork>(this, 0,
                         unitOfWorkFactory, getRepositoryFunc, OnMainViewModelLoaded, OnBeforeEntitiesChanged, OnAfterAuxiliaryEntitiesChanged, 
-                        specifyMainViewModelProjection);
+                        specifyMainViewModelProjection, null, this.AlwaysSkipMessage);
         }
 
         protected abstract Func<IRepositoryQuery<TMainEntity>, IQueryable<TMainProjectionEntity>> specifyMainViewModelProjection();
@@ -189,6 +191,7 @@ namespace BaseModel.ViewModel.Loader
                 OnEntitiesLoadedCallBack?.Invoke(entities, OnEntitiesLoadedCallBackRelateParam == null ? null : OnEntitiesLoadedCallBackRelateParam());
                 OnEntitiesLoadedCallBack = null;
                 OnEntitiesLoadedCallBackRelateParam = null;
+
                 //Self destruct after entities has been returned
 
                 CleanUpEntitiesLoader();
@@ -851,7 +854,7 @@ namespace BaseModel.ViewModel.Loader
             if (!e.Handled)
             {
                 MainViewModel.EntitiesUndoRedoManager.PauseActionId();
-                UnifiedCellValueChanging(e.Column.FieldName, e.OldValue, e.Value, (TMainProjectionEntity)e.Row, e.RowHandle == DataControlBase.NewItemRowHandle);
+                UnifiedCellValueChanged(e.Column.FieldName, e.OldValue, e.Value, (TMainProjectionEntity)e.Row, e.RowHandle == DataControlBase.NewItemRowHandle);
                 //will be unpaused in existingrow or newrow save
             }
 
@@ -947,5 +950,7 @@ namespace BaseModel.ViewModel.Loader
         bool InViewModelOnlyMode { get; set; }
 
         string CurrentHWID { get; set; }
+
+        bool AlwaysSkipMessage { get; set; }
     }
 }
