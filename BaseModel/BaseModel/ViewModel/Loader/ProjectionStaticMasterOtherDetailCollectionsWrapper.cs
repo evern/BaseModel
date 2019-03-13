@@ -56,7 +56,7 @@ namespace BaseModel.ViewModel.Loader
                 {
                     IOriginalGuidEntityKey masterEntityOriginalKey = masterEntity as IOriginalGuidEntityKey;
                     if (masterEntityOriginalKey == null)
-                        mainEntity.ParentEntityKey = masterEntity.EntityKey;
+                        mainEntity.ParentEntityKey = masterEntity.GUID;
                     else
                         mainEntity.ParentEntityKey = masterEntityOriginalKey.OriginalEntityKey;
                 }
@@ -79,7 +79,7 @@ namespace BaseModel.ViewModel.Loader
                 {
                     IOriginalGuidEntityKey masterEntityOriginalKey = masterEntity as IOriginalGuidEntityKey;
                     if (masterEntityOriginalKey == null)
-                        childEntity.ParentEntityKey = masterEntity.EntityKey;
+                        childEntity.ParentEntityKey = masterEntity.GUID;
                     else
                         childEntity.ParentEntityKey = masterEntityOriginalKey.OriginalEntityKey;
                 }
@@ -136,7 +136,7 @@ namespace BaseModel.ViewModel.Loader
 
                     foreach(var displayEntity in displayEntities)
                     {
-                        IEnumerable<TMainEntity> currentMainProjectionEntities = mainEntities.Where(y => y.ParentEntityKey == displayEntity.EntityKey);
+                        IEnumerable<TMainEntity> currentMainProjectionEntities = mainEntities.Where(y => y.ParentEntityKey == displayEntity.GUID);
                         foreach(var currentMainProjectionEntity in currentMainProjectionEntities)
                         {
                             displayEntity.DetailEntities.Add(currentMainProjectionEntity);
@@ -146,7 +146,7 @@ namespace BaseModel.ViewModel.Loader
                     IEnumerable<TMainEntity> mainProjectionEntities = displayEntities.SelectMany(x => x.DetailEntities);
                     foreach (var parentEntity in mainProjectionEntities)
                     {
-                        IEnumerable<TChildEntity> currentChildEntities = childEntities.Where(y => y.ParentEntityKey == parentEntity.EntityKey);
+                        IEnumerable<TChildEntity> currentChildEntities = childEntities.Where(y => y.ParentEntityKey == parentEntity.GUID);
                         foreach (var currentChildEntity in currentChildEntities)
                         {
                             parentEntity.DetailEntities.Add(currentChildEntity);
@@ -194,14 +194,14 @@ namespace BaseModel.ViewModel.Loader
 
         public void MasterRowExpanded(RowEventArgs e)
         {
-            Guid expandedGuid = ((TStaticEntity)e.Row).EntityKey;
+            Guid expandedGuid = ((TStaticEntity)e.Row).GUID;
             if (!restoreMainExpandedGuids.Any(x => x == expandedGuid))
-                restoreMainExpandedGuids.Add(((TStaticEntity)e.Row).EntityKey);
+                restoreMainExpandedGuids.Add(((TStaticEntity)e.Row).GUID);
         }
 
         public void MasterRowCollapsed(RowEventArgs e)
         {
-            restoreMainExpandedGuids.RemoveAll(x => x == ((TStaticEntity)e.Row).EntityKey);
+            restoreMainExpandedGuids.RemoveAll(x => x == ((TStaticEntity)e.Row).GUID);
         }
         #endregion
     }

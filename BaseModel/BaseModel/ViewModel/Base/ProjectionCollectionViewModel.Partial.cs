@@ -1157,7 +1157,7 @@ namespace BaseModel.ViewModel.Base
                                     IGuidEntityKey entityWithGuid = bulkEditEnumsViewModel.SelectedItem as IGuidEntityKey;
                                     if (entityWithGuid != null)
                                     {
-                                        newValue = entityWithGuid.EntityKey;
+                                        newValue = entityWithGuid.GUID;
                                     }
                                 }
                             }

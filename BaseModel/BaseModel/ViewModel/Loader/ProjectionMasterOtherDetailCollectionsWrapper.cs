@@ -50,7 +50,7 @@ namespace BaseModel.ViewModel.Loader
                 {
                     IOriginalGuidEntityKey masterEntityOriginalKey = masterEntity as IOriginalGuidEntityKey;
                     if (masterEntityOriginalKey == null)
-                        childEntity.ParentEntityKey = masterEntity.EntityKey;
+                        childEntity.ParentEntityKey = masterEntity.GUID;
                     else
                         childEntity.ParentEntityKey = masterEntityOriginalKey.OriginalEntityKey;
                 }
@@ -93,7 +93,7 @@ namespace BaseModel.ViewModel.Loader
                         DataUtils.ShallowCopy(parentEntityPOCO, parentEntity);
                         DataUtils.ShallowCopy(parentEntityPOCO.Entity, parentEntity.Entity);
 
-                        parentEntityPOCO.IsExpanded = RestoreExpandedGuids.Any(x => x == parentEntity.EntityKey);
+                        parentEntityPOCO.IsExpanded = RestoreExpandedGuids.Any(x => x == parentEntity.GUID);
                         displayEntities.Add(parentEntityPOCO);
                     }
 
@@ -104,7 +104,7 @@ namespace BaseModel.ViewModel.Loader
 
                         IEnumerable<TChildEntity> currentChildEntities;
                         if (displayEntityWithOriginalKey == null)
-                            currentChildEntities = childEntities.Where(y => y.ParentEntityKey == displayEntity.EntityKey);
+                            currentChildEntities = childEntities.Where(y => y.ParentEntityKey == displayEntity.GUID);
                         else
                             currentChildEntities = childEntities.Where(y => y.ParentEntityKey == displayEntityWithOriginalKey.OriginalEntityKey);
 
@@ -150,14 +150,14 @@ namespace BaseModel.ViewModel.Loader
 
         public void MasterRowExpanded(RowEventArgs e)
         {
-            Guid expandedGuid = ((TMainProjectionEntity)e.Row).EntityKey;
+            Guid expandedGuid = ((TMainProjectionEntity)e.Row).GUID;
             if (!RestoreExpandedGuids.Any(x => x == expandedGuid))
-                RestoreExpandedGuids.Add(((TMainProjectionEntity)e.Row).EntityKey);
+                RestoreExpandedGuids.Add(((TMainProjectionEntity)e.Row).GUID);
         }
 
         public void MasterRowCollapsed(RowEventArgs e)
         {
-            RestoreExpandedGuids.RemoveAll(x => x == ((TMainProjectionEntity)e.Row).EntityKey);
+            RestoreExpandedGuids.RemoveAll(x => x == ((TMainProjectionEntity)e.Row).GUID);
         }
         #endregion
     }

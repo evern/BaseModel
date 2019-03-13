@@ -137,7 +137,7 @@ namespace BaseModel.ViewModel.Loader
                 {
                     var newProjection = new TMainProjectionEntity();
                     DataUtils.ShallowCopy(newProjection, selectedEntity);
-                    newProjection.EntityKey = Guid.Empty;
+                    newProjection.GUID = Guid.Empty;
 
                     newProjection.EntityNumber = newProjection.EntityNumber = StringFormatUtils.GetNewRegisterNumber(MainViewModel.Entities, unsavedEntities, largestNumberString, MainViewModel.SelectedEntities);
                     MainViewModel.EntitiesUndoRedoManager.AddUndo(newProjection, null, null, null, EntityMessageType.Added);
@@ -215,7 +215,7 @@ namespace BaseModel.ViewModel.Loader
                 {
                     var newProjection = new TMainProjectionEntity();
                     DataUtils.ShallowCopy(newProjection, selectedEntity);
-                    newProjection.EntityKey = Guid.Empty;
+                    newProjection.GUID = Guid.Empty;
                     newProjection.EntityNumber = StringFormatUtils.GetNewRegisterNumber(MainViewModel.Entities, unsavedEntities, selectedEntity.EntityNumber, MainViewModel.SelectedEntities, selectedEntity.EntityGroup);
                     MainViewModel.EntitiesUndoRedoManager.AddUndo(newProjection, null, null, null, EntityMessageType.Added);
                     unsavedEntities.Add(newProjection);

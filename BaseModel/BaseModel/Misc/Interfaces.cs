@@ -27,7 +27,7 @@ namespace BaseModel.Misc
 
     public interface IGuidEntityKey
     {
-        Guid EntityKey { get; set; }
+        Guid GUID { get; set; }
     }
 
     public interface IHaveCreatedDate

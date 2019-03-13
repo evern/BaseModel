@@ -74,7 +74,7 @@ namespace BaseModel.ViewModel.Loader
                 var childrenEntitiesInTotal = RecurseFindChildren(entity, MainViewModel.Entities);
                 var childrenEntitiesNotInDeletionCollection = new List<TMainProjectionEntity>();
                 foreach (var childrenEntityInTotal in childrenEntitiesInTotal)
-                    if (!entities.Any(x => x.EntityKey == childrenEntityInTotal.EntityKey))
+                    if (!entities.Any(x => x.GUID == childrenEntityInTotal.GUID))
                         childrenEntitiesNotInDeletionCollection.Add(childrenEntityInTotal);
 
                 childrenEntities = childrenEntities.Concat(childrenEntitiesNotInDeletionCollection).ToList();
@@ -169,7 +169,7 @@ namespace BaseModel.ViewModel.Loader
                 }
 
                 //when current projection is a parent of any other entity
-                if (MainViewModel.Entities.Any(x => x.ParentEntityKey == childProjection.EntityKey))
+                if (MainViewModel.Entities.Any(x => x.ParentEntityKey == childProjection.GUID))
                     onReorderingPopulateParentSpecificProperties(childProjection);
                 else
                     onReorderingPopulateChildSpecificProperties(childProjection);
@@ -195,7 +195,7 @@ namespace BaseModel.ViewModel.Loader
             IEnumerable<TMainProjectionEntity> entities)
         {
             foreach (var entity in entities)
-                if (entity.ParentEntityKey == parentEntity.EntityKey)
+                if (entity.ParentEntityKey == parentEntity.GUID)
                 {
                     yield return entity;
 
@@ -250,7 +250,7 @@ namespace BaseModel.ViewModel.Loader
                     else
                     {
                         var targetParentChilds =
-                            MainViewModel.Entities.Where(x => x.ParentEntityKey == targetProjection.EntityKey);
+                            MainViewModel.Entities.Where(x => x.ParentEntityKey == targetProjection.GUID);
 
                         var maxTargetChildrenOrder = 0;
                         if (targetParentChilds.Count() > 0)

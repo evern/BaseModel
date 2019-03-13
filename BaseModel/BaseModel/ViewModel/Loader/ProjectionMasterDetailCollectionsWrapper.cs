@@ -48,7 +48,7 @@ namespace BaseModel.ViewModel.Loader
                 {
                     IOriginalGuidEntityKey masterEntityOriginalKey = masterEntity as IOriginalGuidEntityKey;
                     if (masterEntityOriginalKey == null)
-                        projectionEntity.Entity.ParentEntityKey = masterEntity.EntityKey;
+                        projectionEntity.Entity.ParentEntityKey = masterEntity.GUID;
                     else
                         projectionEntity.Entity.ParentEntityKey = masterEntityOriginalKey.OriginalEntityKey;
                 }
@@ -71,15 +71,15 @@ namespace BaseModel.ViewModel.Loader
                 var childrenEntitiesNotInDeletionCollection =
                     new List<TMainProjectionEntity>();
                 foreach (var childrenEntityInTotal in childrenEntitiesInTotal)
-                    if (!projections.Any(x => x.EntityKey == childrenEntityInTotal.EntityKey))
+                    if (!projections.Any(x => x.GUID == childrenEntityInTotal.GUID))
                         childrenEntitiesNotInDeletionCollection.Add(childrenEntityInTotal);
 
                 TMainProjectionEntity parentEntity = null;
                 if (projection.Entity.ParentEntityKey != Guid.Empty)
                 {
-                    parentEntity = MainViewModel.Entities.FirstOrDefault(x => x.EntityKey == projection.Entity.ParentEntityKey);
+                    parentEntity = MainViewModel.Entities.FirstOrDefault(x => x.GUID == projection.Entity.ParentEntityKey);
                     if (parentEntity != null)
-                        if (!projections.Any(x => x.EntityKey == parentEntity.EntityKey))
+                        if (!projections.Any(x => x.GUID == parentEntity.GUID))
                             parentEntitiesNotInList.Add(parentEntity);
                 }
 
@@ -119,7 +119,7 @@ namespace BaseModel.ViewModel.Loader
                         DataUtils.ShallowCopy(parentEntityPOCO, parentEntity);
                         DataUtils.ShallowCopy(parentEntityPOCO.Entity, parentEntity.Entity);
 
-                        parentEntityPOCO.IsExpanded = RestoreExpandedGuids.Any(x => x == parentEntity.EntityKey);
+                        parentEntityPOCO.IsExpanded = RestoreExpandedGuids.Any(x => x == parentEntity.GUID);
                         displayEntities.Add(parentEntityPOCO);
                     }
 
@@ -130,7 +130,7 @@ namespace BaseModel.ViewModel.Loader
 
                         IEnumerable<TMainProjectionEntity> currentChildEntities;
                         if (displayEntityWithOriginalKey == null)
-                            currentChildEntities = childEntities.Where(y => y.Entity.ParentEntityKey == displayEntity.EntityKey);
+                            currentChildEntities = childEntities.Where(y => y.Entity.ParentEntityKey == displayEntity.GUID);
                         else
                             currentChildEntities = childEntities.Where(y => y.Entity.ParentEntityKey == displayEntityWithOriginalKey.OriginalEntityKey);
 
@@ -211,14 +211,14 @@ namespace BaseModel.ViewModel.Loader
 
         public void MasterRowExpanded(RowEventArgs e)
         {
-            Guid expandedGuid = ((TMainProjectionEntity)e.Row).EntityKey;
+            Guid expandedGuid = ((TMainProjectionEntity)e.Row).GUID;
             if (!RestoreExpandedGuids.Any(x => x == expandedGuid))
-                RestoreExpandedGuids.Add(((TMainProjectionEntity)e.Row).EntityKey);
+                RestoreExpandedGuids.Add(((TMainProjectionEntity)e.Row).GUID);
         }
 
         public void MasterRowCollapsed(RowEventArgs e)
         {
-            RestoreExpandedGuids.RemoveAll(x => x == ((TMainProjectionEntity)e.Row).EntityKey);
+            RestoreExpandedGuids.RemoveAll(x => x == ((TMainProjectionEntity)e.Row).GUID);
         }
         #endregion
     }

@@ -23,10 +23,10 @@ namespace BaseModel.Misc
         }
 
         [Key]
-        public Guid EntityKey
+        public Guid GUID
         {
-            get { return Entity.EntityKey; }
-            set { Entity.EntityKey = value; }
+            get { return Entity.GUID; }
+            set { Entity.GUID = value; }
         }
 
         public bool NewEntityFromView { get; set; }

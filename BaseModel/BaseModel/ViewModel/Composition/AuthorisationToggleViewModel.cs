@@ -113,7 +113,7 @@ namespace BaseModel.ViewModel.Composition
                     authorisations = new List<Authorisation<TPermission>>();
                     foreach (TPermission permission in Permissions)
                     {
-                        if (AttachmentPermissions.Any(x => x.PermissionKey == permission.EntityKey && x.AttachmentKey == Attachment.EntityKey))
+                        if (AttachmentPermissions.Any(x => x.PermissionKey == permission.GUID && x.AttachmentKey == Attachment.GUID))
                             authorisations.Add(new Authorisation<TPermission>(permission, true));
                         else
                             authorisations.Add(new Authorisation<TPermission>(permission, false));
@@ -158,7 +158,7 @@ namespace BaseModel.ViewModel.Composition
         /// <returns>Attachment permission in database</returns>
         private TAttachmentPermission getAuthorisation(TAttachment attachment, Authorisation<TPermission> permission)
         {
-            return AttachmentPermissionsViewModel.Entities.FirstOrDefault(x => x.PermissionKey == permission.Entity.EntityKey && x.AttachmentKey == attachment.EntityKey);
+            return AttachmentPermissionsViewModel.Entities.FirstOrDefault(x => x.PermissionKey == permission.Entity.GUID && x.AttachmentKey == attachment.GUID);
         }
 
         /// <summary>
@@ -169,8 +169,8 @@ namespace BaseModel.ViewModel.Composition
             if(getAuthorisation(attachment, permission) == null)
             {
                 TAttachmentPermission newAttachmentPermission = new TAttachmentPermission();
-                newAttachmentPermission.AttachmentKey = attachment.EntityKey;
-                newAttachmentPermission.PermissionKey = permission.Entity.EntityKey;
+                newAttachmentPermission.AttachmentKey = attachment.GUID;
+                newAttachmentPermission.PermissionKey = permission.Entity.GUID;
                 return newAttachmentPermission;
             }
 

@@ -144,7 +144,7 @@ namespace BaseModel.ViewModel.Base
                         OnEntityAdded(message.PrimaryKey);
                         break;
                     case EntityMessageType.Changed:
-                        OnEntityChanged(message.PrimaryKey, skipOnMessage);
+                        OnEntityChanged(message.PrimaryKey, false);
                         //OnEntityChanged(message.PrimaryKey, false);
                         break;
                     case EntityMessageType.Deleted:
