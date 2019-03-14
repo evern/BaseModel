@@ -160,6 +160,7 @@
     <Compile Include="Utils\StringFormatUtils.cs" />
     <Compile Include="ViewModel\Base\CollectionViewModel.cs" />
     <Compile Include="ViewModel\Base\CollectionViewModelBase.cs" />
+    <Compile Include="ViewModel\Base\DeleteInterceptMode.cs" />
     <Compile Include="ViewModel\Base\EntitiesViewModel.cs" />
     <Compile Include="ViewModel\Base\ProjectionCollectionViewModel.Partial.cs" />
     <Compile Include="ViewModel\Base\ReadOnlyCollectionViewModel.cs" />

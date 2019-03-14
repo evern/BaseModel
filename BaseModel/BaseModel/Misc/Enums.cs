@@ -23,4 +23,14 @@ namespace BaseModel.Misc
         Decrease,
         Increase
     }
+
+    public enum DeleteInterceptMode
+    {
+        [Display(Name = "Continue deletion")]
+        Continue,
+        [Display(Name = "Discontinue only this instance")]
+        Discontinue,
+        [Display(Name = "Discontinue subsequent deletion is bulk delete")]
+        DiscontinueAll
+    }
 }

@@ -179,7 +179,7 @@ namespace BaseModel.ViewModel.Services
                 return;
 
             GridControl gridControl = (GridControl)TableView.Parent;
-            TableView.BestFitMaxRowCount = 50;
+            TableView.BestFitMaxRowCount = 10;
             gridControl.BeginDataUpdate();
             foreach(var column in gridControl.Columns)
             {

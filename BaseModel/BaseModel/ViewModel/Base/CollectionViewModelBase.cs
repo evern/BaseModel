@@ -46,8 +46,10 @@ namespace BaseModel.ViewModel.Base
         /// </summary>
         public Func<TProjection, bool, bool> IsContinueSaveCallBack;
 
-
-        public Func<TProjection, bool> OnBeforeEntityDeletedIsContinueCallBack;
+        /// <summary>
+        /// Validate if entity should be deleted
+        /// </summary>
+        public Func<TProjection, DeleteInterceptMode> OnBeforeEntityDeletedIsContinueCallBack;
 
         /// <summary>
         /// Save projection associated entity, e.g. save user address to another table when user is saved
@@ -261,8 +263,14 @@ namespace BaseModel.ViewModel.Base
                 AddUndoBeforeEntityDeleted(projectionEntitiesList[i]);
 
                 if (OnBeforeEntityDeletedIsContinueCallBack != null)
-                    if (!OnBeforeEntityDeletedIsContinueCallBack(projectionEntitiesList[i]))
+                {
+                    DeleteInterceptMode interceptMode = OnBeforeEntityDeletedIsContinueCallBack(projectionEntitiesList[i]);
+                    if (interceptMode == DeleteInterceptMode.Discontinue)
                         continue;
+                    else if (interceptMode == DeleteInterceptMode.DiscontinueAll)
+                        return;
+                }
+
 
                 OnBeforeEntityDeleteCallBack?.Invoke(projectionEntitiesList[i]);
 
@@ -493,8 +501,11 @@ namespace BaseModel.ViewModel.Base
                 AddUndoBeforeEntityDeleted(projectionEntity);
 
                 if (OnBeforeEntityDeletedIsContinueCallBack != null)
-                    if (!OnBeforeEntityDeletedIsContinueCallBack(projectionEntity))
+                {
+                    DeleteInterceptMode interceptMode = OnBeforeEntityDeletedIsContinueCallBack(projectionEntity);
+                    if (interceptMode != DeleteInterceptMode.Continue)
                         return;
+                }
 
                 OnBeforeEntityDeleteCallBack?.Invoke(projectionEntity);
                 if (!IsPersistentView)
