@@ -595,7 +595,7 @@ namespace BaseModel.ViewModel.Loader
                 if (GridControlService != null)
                 {
                     groupExpansionState = GridControlService.GetExpansionState();
-                    filterCriteria = GridControlService.GetFilterCriteria();
+                    filterCriteria = GridControlService.FilterCriteria;
                 }
 
                 viewModel.RaisePropertiesChanged();
@@ -603,7 +603,7 @@ namespace BaseModel.ViewModel.Loader
                 {
                     GridControlService.RefreshSummary();
                     GridControlService.SetExpansionState(groupExpansionState);
-                    GridControlService.SetFilterCriteria(filterCriteria);
+                    GridControlService.FilterCriteria = filterCriteria;
                 }
 
                 onAfterRefresh();

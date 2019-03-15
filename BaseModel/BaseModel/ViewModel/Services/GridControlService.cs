@@ -24,8 +24,7 @@ namespace BaseModel.ViewModel.Services
     public interface IGridControlService
     {
         void SetRowExpandedByColumnValue(string field_name, IHaveExpandState row);
-        void SetFilterCriteria(CriteriaOperator criteriaOperator);
-        CriteriaOperator GetFilterCriteria();
+        CriteriaOperator FilterCriteria { get; set; }
         void ClearFilterCriteria();
         void RefreshSummary();
         void RefreshData();
@@ -194,20 +193,19 @@ namespace BaseModel.ViewModel.Services
             return detail == null ? null : detail.View as TableView;
         }
 
-        public void SetFilterCriteria(CriteriaOperator criteriaOperator)
+        public CriteriaOperator FilterCriteria
         {
-            if (GridControl == null)
-                return;
+            get
+            {
+                return GridControl == null ? null : GridControl.FilterCriteria;
+            }
+            set
+            {
+                if (GridControl == null)
+                    return;
 
-            GridControl.FilterCriteria = criteriaOperator;
-        }
-
-        public CriteriaOperator GetFilterCriteria()
-        {
-            if (GridControl == null)
-                return null;
-
-            return GridControl.FilterCriteria;
+                GridControl.FilterCriteria = value;
+            }
         }
 
         public void ClearFilterCriteria()
