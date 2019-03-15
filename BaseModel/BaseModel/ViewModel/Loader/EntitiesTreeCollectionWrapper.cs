@@ -54,7 +54,7 @@ namespace BaseModel.ViewModel.Loader
         {
             MainViewModel.OnBeforeEntitySavedIsContinueCallBack = onBeforeEntitySavedIsContinue;
             MainViewModel.OnAfterProjectionsDeletedCallBack = projectionsAfterDeleted;
-            MainViewModel.OnBeforeEntitiesDeleteCallBack = projectionsBeforeDeletion;
+            MainViewModel.OnBeforeEntitiesDeleteIsContinueCallBack = projectionsBeforeDeletion;
             MainViewModel.SetParentViewModel(this);
             base.AssignCallBacksAndRaisePropertyChange(entities);
         }
@@ -65,7 +65,7 @@ namespace BaseModel.ViewModel.Loader
         }
 
         //Remove children before parent deletion
-        private void projectionsBeforeDeletion(IEnumerable<TMainProjectionEntity> entities)
+        private bool projectionsBeforeDeletion(IEnumerable<TMainProjectionEntity> entities)
         {
             //Undo manager is paused in bulk deletion and will be unpaused in bulk deletion too
             var childrenEntities = new List<TMainProjectionEntity>();
@@ -91,6 +91,8 @@ namespace BaseModel.ViewModel.Loader
                     EntityMessageType.Deleted);
                 MainViewModel.Delete(childrenEntity);
             }
+
+            return true;
         }
 
         private void projectionsAfterDeleted(IEnumerable<TMainProjectionEntity> entities)

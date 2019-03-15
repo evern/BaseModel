@@ -62,13 +62,7 @@ namespace BaseModel.ViewModel.Base
         /// <summary>
         /// Process the collection before entities deletion, e.g. deletion of children entities
         /// </summary>
-        public Action<IEnumerable<TProjection>> OnBeforeEntitiesDeleteCallBack;
-
-        /// <summary>
-        /// Delete projection associated entity, e.g. user address in another table should be deleted when user is deleted
-        /// Undo/Redo manager should be tied to main entity CollectionViewModel and this will be used to handle associated entity deletion
-        /// </summary>
-        public Action<TProjection> OnBeforeEntityDeleteCallBack;
+        public Func<IEnumerable<TProjection>, bool> OnBeforeEntitiesDeleteIsContinueCallBack;
 
         /// <summary>
         /// Process the collection after entities are deleted, e.g. renumbering/renaming remaining entities
@@ -193,7 +187,7 @@ namespace BaseModel.ViewModel.Base
             }
             catch(Exception e)
             {
-
+                string s = e.ToString();
             }
         }
 
@@ -256,7 +250,8 @@ namespace BaseModel.ViewModel.Base
 
             var findOrAddNewEntities = new List<TEntity>();
             var projectionEntitiesList = projectionEntities.ToList();
-            OnBeforeEntitiesDeleteCallBack?.Invoke(projectionEntities);
+            if (OnBeforeEntitiesDeleteIsContinueCallBack != null && !OnBeforeEntitiesDeleteIsContinueCallBack(projectionEntities))
+                return;
 
             for (var i = 0; i < projectionEntitiesList.Count; i++)
             {
@@ -270,9 +265,6 @@ namespace BaseModel.ViewModel.Base
                     else if (interceptMode == DeleteInterceptMode.DiscontinueAll)
                         return;
                 }
-
-
-                OnBeforeEntityDeleteCallBack?.Invoke(projectionEntitiesList[i]);
 
                 Entities.Remove(projectionEntitiesList[i]);
                 projectionEntitiesWithTag.Add(new KeyValuePair<int, TProjection>(i, projectionEntitiesList[i]));
@@ -506,8 +498,6 @@ namespace BaseModel.ViewModel.Base
                     if (interceptMode != DeleteInterceptMode.Continue)
                         return;
                 }
-
-                OnBeforeEntityDeleteCallBack?.Invoke(projectionEntity);
                 if (!IsPersistentView)
                     //BaseModel Customization End
                     Entities.Remove(projectionEntity);

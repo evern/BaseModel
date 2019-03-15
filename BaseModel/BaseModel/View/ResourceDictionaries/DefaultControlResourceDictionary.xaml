@@ -29,6 +29,15 @@
                                 </Style>
                             </dx:DialogService.DialogStyle>
                         </dx:DialogService>
+                        <dx:DialogService x:Name="ErrorMessagesDialogService">
+                            <dx:DialogService.DialogStyle>
+                                <Style TargetType="dx:DXDialogWindow">
+                                    <Setter Property="SizeToContent" Value="WidthAndHeight" />
+                                    <Setter Property="MinWidth" Value="600" />
+                                    <Setter Property="MinHeight" Value="600" />
+                                </Style>
+                            </dx:DialogService.DialogStyle>
+                        </dx:DialogService>
                         <dxmvvm:LayoutSerializationService />
                         <dxmvvm:FolderBrowserDialogService Description="Choose Folder" RestorePreviouslySelectedDirectory="True" RootFolder="Desktop" ShowNewFolderButton="True" />
                         <dx:DXSplashScreenService>
@@ -66,6 +75,15 @@
                                     <Setter Property="SizeToContent" Value="WidthAndHeight" />
                                     <Setter Property="MinWidth" Value="500" />
                                     <Setter Property="MinHeight" Value="370" />
+                                </Style>
+                            </dx:DialogService.DialogStyle>
+                        </dx:DialogService>
+                        <dx:DialogService x:Name="ErrorMessagesDialogService">
+                            <dx:DialogService.DialogStyle>
+                                <Style TargetType="dx:DXDialogWindow">
+                                    <Setter Property="SizeToContent" Value="WidthAndHeight" />
+                                    <Setter Property="MinWidth" Value="600" />
+                                    <Setter Property="MinHeight" Value="600" />
                                 </Style>
                             </dx:DialogService.DialogStyle>
                         </dx:DialogService>

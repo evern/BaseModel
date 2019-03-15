@@ -22,6 +22,7 @@ using System.Timers;
 using System.Collections;
 using DevExpress.Mvvm.DataAnnotations;
 using DevExpress.Data.Filtering;
+using System.Threading.Tasks;
 
 namespace BaseModel.ViewModel.Loader
 {
@@ -317,7 +318,7 @@ namespace BaseModel.ViewModel.Loader
 
         public virtual void OnAfterAuxiliaryEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender, bool isBulkRefresh)
         {
-            UpdateGridSummary();
+            UpdateGridSummaryAsync();
 
             OnPersistentAfterAuxiliaryEntitiesChanges(key, changedType, messageType, sender, isBulkRefresh);
 
@@ -328,8 +329,8 @@ namespace BaseModel.ViewModel.Loader
             {
                 if (isBulkRefresh)
                 {
-                    bulk_refresh_dispatcher_timer.Tick -= bulk_refresh_dispatcher_timer_tick;
-                    bulk_refresh_dispatcher_timer.Tick += bulk_refresh_dispatcher_timer_tick;
+                    bulk_refresh_dispatcher_timer.Tick -= bulkRefreshTimer_Tick;
+                    bulk_refresh_dispatcher_timer.Tick += bulkRefreshTimer_Tick;
                     bulk_refresh_dispatcher_timer.Start();
                 }
                 else
@@ -344,11 +345,11 @@ namespace BaseModel.ViewModel.Loader
 
         }
 
-        private async void UpdateGridSummary()
+        private void UpdateGridSummaryAsync()
         {
             //Always refresh summary after any changes happens
             if (GridControlService != null)
-                GridControlService.RefreshSummary();
+                Task.Run(() => mainThreadDispatcher.BeginInvoke(new Action(() => GridControlService.RefreshSummary())));
         }
 
         public virtual void OnAfterCompulsoryEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender, bool isBulkRefresh)
@@ -380,7 +381,7 @@ namespace BaseModel.ViewModel.Loader
             }
         }
 
-        private void bulk_refresh_dispatcher_timer_tick(object sender, EventArgs e)
+        private void bulkRefreshTimer_Tick(object sender, EventArgs e)
         {
             this.RaisePropertiesChanged();
         }
@@ -753,6 +754,18 @@ namespace BaseModel.ViewModel.Loader
         [ServiceProperty(Key = "DefaultTableViewService")]
         protected virtual ITableViewService TableViewService { get { return null; } }
         //protected virtual ITableViewService TableViewService { get { return this.GetService<ITableViewService>("DefaultTableViewService"); } }
+
+        //because this is specified in DefaultControlResourceDictionary.CollectionView.BaseRootContainer, it is save to assume we have it in xaml
+        protected IDialogService BulkColumnEditDialogService
+        {
+            get { return this.GetRequiredService<IDialogService>("BulkColumnEditService"); }
+        }
+
+        //because this is specified in DefaultControlResourceDictionary.CollectionView.BaseRootContainer, it is save to assume we have it in xaml
+        protected IDialogService ErrorMessagesDialogService
+        {
+            get { return this.GetRequiredService<IDialogService>("ErrorMessagesDialogService"); }
+        }
 
         protected virtual ITreeViewService TreeViewService { get { return this.GetService<ITreeViewService>(); } }
         protected virtual ITreeListControlService TreeListControlService { get { return this.GetService<ITreeListControlService>(); } }

@@ -26,7 +26,7 @@ namespace BaseModel.ViewModel.Loader
 
         protected override void AssignCallBacksAndRaisePropertyChange(IEnumerable<TMainProjectionEntity> entities)
         {
-            MainViewModel.OnBeforeEntitiesDeleteCallBack = EntitiesBeforeDeletion;
+            MainViewModel.OnBeforeEntitiesDeleteIsContinueCallBack = EntitiesBeforeDeletion;
             MainViewModel.OnBeforeViewNewRowSavedIsContinueCallBack = NewRowAddUndoAndSave;
 
             MainViewModel.SetParentViewModel(this);
@@ -58,7 +58,7 @@ namespace BaseModel.ViewModel.Loader
             return true;
         }
 
-        private void EntitiesBeforeDeletion(IEnumerable<IProjectionMasterDetail<TMainEntity, TMainProjectionEntity>> projections)
+        private bool EntitiesBeforeDeletion(IEnumerable<IProjectionMasterDetail<TMainEntity, TMainProjectionEntity>> projections)
         {
             //Undo manager is paused in bulk deletion and will be unpaused in bulk deletion too
             var childrenEntities = new List<TMainProjectionEntity>();
@@ -93,6 +93,8 @@ namespace BaseModel.ViewModel.Loader
                     EntityMessageType.Deleted);
                 MainViewModel.Delete(childrenEntity);
             }
+
+            return true;
         }
         #endregion
 

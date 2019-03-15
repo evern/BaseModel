@@ -224,6 +224,9 @@ namespace BaseModel.ViewModel.Base
             foreach(UndoRedoEntityInfo<TProjection> entityProperty in bulkSaveProperties)
             {
                 DataUtils.SetNestedValue(entityProperty.PropertyName, entityProperty.ChangedEntity, entityProperty.OldValue);
+
+                ICanUpdate canUpdateEntity = entityProperty as ICanUpdate;
+                canUpdateEntity?.Update();
             }
 
             BulkSave(bulkSaveProperties.Select(x => x.ChangedEntity));
@@ -249,6 +252,9 @@ namespace BaseModel.ViewModel.Base
             foreach (UndoRedoEntityInfo<TProjection> entityProperty in bulkSaveProperties)
             {
                 DataUtils.SetNestedValue(entityProperty.PropertyName, entityProperty.ChangedEntity, entityProperty.NewValue);
+
+                ICanUpdate canUpdateEntity = entityProperty as ICanUpdate;
+                canUpdateEntity?.Update();
             }
 
             BulkSave(bulkSaveProperties.Select(x => x.ChangedEntity));
@@ -1052,10 +1058,14 @@ namespace BaseModel.ViewModel.Base
         #endregion
 
         #region Bulk Edit
-
-        private IDialogService BulkColumnEditDialogService
+        protected IDialogService BulkColumnEditDialogService
         {
             get { return this.GetRequiredService<IDialogService>("BulkColumnEditService"); }
+        }
+
+        protected IDialogService ErrorMessagesDialogService
+        {
+            get { return this.GetRequiredService<IDialogService>("ErrorMessagesDialogService"); }
         }
 
         public bool CanBulkColumnEdit(object button)
