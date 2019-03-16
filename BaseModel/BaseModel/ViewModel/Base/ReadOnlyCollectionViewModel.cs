@@ -181,7 +181,7 @@ namespace BaseModel.ViewModel.Base
             get { return this.GetService<ILayoutSerializationService>(); }
         }
 
-        protected virtual string ViewName
+        public virtual string ViewName
         {
             get { return typeof(TEntity).Name + "ReadonlyCollectionView"; }
         }

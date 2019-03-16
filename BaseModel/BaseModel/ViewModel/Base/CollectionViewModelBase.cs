@@ -237,7 +237,7 @@ namespace BaseModel.ViewModel.Base
             get { return this.GetRequiredService<IMessageBoxService>(); }
         }
 
-        protected override string ViewName
+        public override string ViewName
         {
             get { return typeof(TEntity).Name + "CollectionView"; }
         }

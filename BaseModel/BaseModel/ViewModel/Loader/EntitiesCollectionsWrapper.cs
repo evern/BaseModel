@@ -620,7 +620,7 @@ namespace BaseModel.ViewModel.Loader
             get { return null; }
         }
 
-        protected abstract string ViewName { get; }
+        public abstract string ViewName { get; }
 
         public virtual void OnLoaded()
         {

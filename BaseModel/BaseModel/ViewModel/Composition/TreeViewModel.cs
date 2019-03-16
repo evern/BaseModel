@@ -16,7 +16,7 @@ namespace BaseModel.ViewModel.Composition
         where TMainProjectionEntity : class, IGuidEntityKey, IHaveSortOrder, IHaveExpandState, IGuidParentEntityKey, INewEntityName, ICanUpdate, new()
         where TMainEntityUnitOfWork : IUnitOfWork
     {
-        protected override string ViewName => string.Empty;
+        public override string ViewName => string.Empty;
 
         private Func<TMainEntityUnitOfWork, IRepository<TMainEntity, TMainEntityPrimaryKey>> _getRepositoryFunc;
         private IUnitOfWorkFactory<TMainEntityUnitOfWork> _unitOfWorkFactory;
