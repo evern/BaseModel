@@ -121,7 +121,7 @@
     <value>10</value>
   </data>
   <data name="BulkOperationLoadingScreenMinCount" xml:space="preserve">
-    <value>100</value>
+    <value>50</value>
   </data>
   <data name="Confirmation_Caption" xml:space="preserve">
     <value>Confirmation</value>

@@ -70,7 +70,7 @@ namespace BaseModel.Misc {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 100.
+        ///   Looks up a localized string similar to 50.
         /// </summary>
         internal static string BulkOperationLoadingScreenMinCount {
             get {
