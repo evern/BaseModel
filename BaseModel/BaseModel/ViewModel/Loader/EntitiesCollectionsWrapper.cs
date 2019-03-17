@@ -44,8 +44,10 @@ namespace BaseModel.ViewModel.Loader
         protected object onMessageSender;
         protected Dispatcher mainThreadDispatcher = Application.Current.Dispatcher;
         private DispatcherTimer selectedEntitiesChangedDispatchTimer;
-        DispatcherTimer bulk_refresh_dispatcher_timer;
-        protected Timer post_loaded_dispatcher_timer;
+        //so that bulk refresh don't get called multiple times within a short duration
+        DispatcherTimer refreshDispatcherTimer;
+        DispatcherTimer raisePropertyChangeDispatcherTimer;
+        protected Timer postLoadedDispatcherTimer;
         DispatcherTimer focusNewlyAddedProjectionTimer = new DispatcherTimer();
         public CollectionViewModelsWrapper()
         {
@@ -177,8 +179,10 @@ namespace BaseModel.ViewModel.Loader
             MainViewModel = (CollectionViewModel<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey, TMainEntityUnitOfWork>)mainEntityLoaderDescription.GetViewModel();
             MainViewModel.OnAfterSavedSendMessage = this.OnAfterSavedSendMessage;
             MainViewModel.OnAfterDeletedSendMessage = this.OnAfterDeletedSendMessage;
-            bulk_refresh_dispatcher_timer = new DispatcherTimer();
-            bulk_refresh_dispatcher_timer.Interval = new TimeSpan(0, 0, 0, 3);
+            refreshDispatcherTimer = new DispatcherTimer();
+            refreshDispatcherTimer.Interval = new TimeSpan(0, 0, 0, 3);
+            raisePropertyChangeDispatcherTimer = new DispatcherTimer();
+            raisePropertyChangeDispatcherTimer.Interval = new TimeSpan(0, 0, 0, 3);
 
             AssignCallBacksAndRaisePropertyChange(entities);
             return true;
@@ -211,16 +215,16 @@ namespace BaseModel.ViewModel.Loader
 
             if(!delayPostLoadedTimer)
             {
-                post_loaded_dispatcher_timer = new Timer();
-                post_loaded_dispatcher_timer.Interval = 1500;
-                post_loaded_dispatcher_timer.Elapsed += post_loaded_dispatcher_timer_tick;
-                post_loaded_dispatcher_timer.Start();
+                postLoadedDispatcherTimer = new Timer();
+                postLoadedDispatcherTimer.Interval = 1500;
+                postLoadedDispatcherTimer.Elapsed += post_loaded_dispatcher_timer_tick;
+                postLoadedDispatcherTimer.Start();
             }
         }
 
         protected void post_loaded_dispatcher_timer_tick(object sender, EventArgs e)
         {
-            post_loaded_dispatcher_timer.Stop();
+            postLoadedDispatcherTimer.Stop();
             if(OnEntitiesLoadedCallBackManualDispose && OnEntitiesLoadedCallBack != null)
             {
                 OnEntitiesLoadedCallBack?.Invoke(MainViewModel.Entities, OnEntitiesLoadedCallBackRelateParam == null ? null : OnEntitiesLoadedCallBackRelateParam());
@@ -329,15 +333,22 @@ namespace BaseModel.ViewModel.Loader
             {
                 if (isBulkRefresh)
                 {
-                    bulk_refresh_dispatcher_timer.Tick -= bulkRefreshTimer_Tick;
-                    bulk_refresh_dispatcher_timer.Tick += bulkRefreshTimer_Tick;
-                    bulk_refresh_dispatcher_timer.Start();
+                    refreshDispatcherTimer.Tick -= refreshTimer_Tick;
+                    refreshDispatcherTimer.Tick += refreshTimer_Tick;
+                    refreshDispatcherTimer.Start();
                 }
                 else
                 {
-                    this.RaisePropertiesChanged();
+                    raisePropertyChangeDispatcherTimer.Tick -= RaisePropertyChangeDispatcherTimer_Tick;
+                    raisePropertyChangeDispatcherTimer.Tick += RaisePropertyChangeDispatcherTimer_Tick;
+                    raisePropertyChangeDispatcherTimer.Start();
                 }
             }
+        }
+
+        private void RaisePropertyChangeDispatcherTimer_Tick(object sender, EventArgs e)
+        {
+            this.RaisePropertiesChanged();
         }
 
         protected virtual void OnPersistentAfterAuxiliaryEntitiesChanges(object key, Type changedType, EntityMessageType messageType, object sender, bool isBulkRefresh)
@@ -381,7 +392,7 @@ namespace BaseModel.ViewModel.Loader
             }
         }
 
-        private void bulkRefreshTimer_Tick(object sender, EventArgs e)
+        private void refreshTimer_Tick(object sender, EventArgs e)
         {
             this.RaisePropertiesChanged();
         }

@@ -63,9 +63,18 @@ namespace BaseModel.Misc {
         /// <summary>
         ///   Looks up a localized string similar to 10.
         /// </summary>
-        internal static string BulkSave_BulkRefreshMinCount {
+        internal static string BulkOperationBulkRefreshMinCount {
             get {
-                return ResourceManager.GetString("BulkSave_BulkRefreshMinCount", resourceCulture);
+                return ResourceManager.GetString("BulkOperationBulkRefreshMinCount", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 100.
+        /// </summary>
+        internal static string BulkOperationLoadingScreenMinCount {
+            get {
+                return ResourceManager.GetString("BulkOperationLoadingScreenMinCount", resourceCulture);
             }
         }
         

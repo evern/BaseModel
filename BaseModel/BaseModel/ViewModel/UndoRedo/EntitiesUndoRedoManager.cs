@@ -90,8 +90,6 @@ namespace BaseModel.ViewModel.UndoRedo
                 UndoRedoEntityInfo<TEntity> item;
 
                 int undoActionCount = UndoList.Where(x => x.ActionId == undoActionId).Count();
-                LoadingScreenManager.ShowLoadingScreen(undoActionCount);
-
                 for (var i = UndoList.Count - 1; i >= 0; i--)
                 {
                     item = UndoList.Last();
@@ -106,7 +104,6 @@ namespace BaseModel.ViewModel.UndoRedo
                             FuncUndo(item);
                         else
                             bulkUndoList.Add(item);
-                        LoadingScreenManager.Progress();
                         // Now repopulate the undo and redo lists.
                         UpdateRedoList(copyRedoList);
                         UndoList.Clear();
@@ -142,7 +139,6 @@ namespace BaseModel.ViewModel.UndoRedo
                 UndoRedoEntityInfo<TEntity> item;
 
                 int redoActionCount = UndoList.Where(x => x.ActionId == redoActionId).Count();
-                LoadingScreenManager.ShowLoadingScreen(redoActionCount);
                 for (var i = RedoList.Count - 1; i >= 0; i--)
                 {
                     item = RedoList.Last();
@@ -165,7 +161,6 @@ namespace BaseModel.ViewModel.UndoRedo
                             bulkRedoList.Add(item);
                         }
 
-                        LoadingScreenManager.Progress();
                         // Add the last redo item into undo list
                         AddUndo(item.ChangedEntity, item.PropertyName, item.OldValue, item.NewValue, item.MessageType);
                         // Now reset the redo list.

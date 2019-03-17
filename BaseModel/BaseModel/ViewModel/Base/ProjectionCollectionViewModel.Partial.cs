@@ -219,18 +219,20 @@ namespace BaseModel.ViewModel.Base
             IEnumerable<UndoRedoEntityInfo<TProjection>> bulkDeleteProperties = entityProperties.Where(x => x.MessageType == EntityMessageType.Added);
             IEnumerable<UndoRedoEntityInfo<TProjection>> bulkAddProperties = entityProperties.Where(x => x.MessageType == EntityMessageType.Deleted);
 
-            //use ignore refresh here because it'll be refreshed in basebulksave
-            BaseBulkDelete(bulkDeleteProperties.Select(x => x.ChangedEntity), true);
-            foreach(UndoRedoEntityInfo<TProjection> entityProperty in bulkSaveProperties)
+            //change property before deleting, because if property is saved after it's deleted the entity will be restored
+            foreach (UndoRedoEntityInfo<TProjection> entityProperty in bulkSaveProperties)
             {
                 DataUtils.SetNestedValue(entityProperty.PropertyName, entityProperty.ChangedEntity, entityProperty.OldValue);
 
                 ICanUpdate canUpdateEntity = entityProperty as ICanUpdate;
                 canUpdateEntity?.Update();
             }
-
             BulkSave(bulkSaveProperties.Select(x => x.ChangedEntity));
             BulkSave(bulkAddProperties.Select(x => x.ChangedEntity));
+
+            //use ignore refresh here because it'll be refreshed in basebulksave
+            BaseBulkDelete(bulkDeleteProperties.Select(x => x.ChangedEntity), true);
+
 
             isBackgroundEdit = false;
         }
@@ -247,8 +249,7 @@ namespace BaseModel.ViewModel.Base
             IEnumerable<UndoRedoEntityInfo<TProjection>> bulkAddProperties = entityProperties.Where(x => x.MessageType == EntityMessageType.Added);
             IEnumerable<UndoRedoEntityInfo<TProjection>> bulkDeleteProperties = entityProperties.Where(x => x.MessageType == EntityMessageType.Deleted);
 
-            //use ignore refresh here because it'll be refreshed in basebulksave
-            BaseBulkDelete(bulkDeleteProperties.Select(x => x.ChangedEntity), true);
+            //change property before deleting, because if property is saved after it's deleted the entity will be restored
             foreach (UndoRedoEntityInfo<TProjection> entityProperty in bulkSaveProperties)
             {
                 DataUtils.SetNestedValue(entityProperty.PropertyName, entityProperty.ChangedEntity, entityProperty.NewValue);
@@ -259,6 +260,10 @@ namespace BaseModel.ViewModel.Base
 
             BulkSave(bulkSaveProperties.Select(x => x.ChangedEntity));
             BulkSave(bulkAddProperties.Select(x => x.ChangedEntity));
+
+            //use ignore refresh here because it'll be refreshed in basebulksave
+            BaseBulkDelete(bulkDeleteProperties.Select(x => x.ChangedEntity), true);
+            
             isBackgroundEdit = false;
         }
 

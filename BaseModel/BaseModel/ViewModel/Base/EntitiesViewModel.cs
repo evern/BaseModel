@@ -137,6 +137,9 @@ namespace BaseModel.ViewModel.Base
                 if (owner.AlwaysSkipMessage)
                     return;
 
+                if (message.WillPerformBulkRefresh)
+                    return;
+
                 bool skipOnMessage = message.Sender == null ? false : (!owner.RefreshOnSameSenderKey && message.Key == owner.Key) && message.HWID == owner.CurrentHWID;
                 switch (message.MessageType)
                 {

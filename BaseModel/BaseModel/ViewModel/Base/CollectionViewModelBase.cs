@@ -272,8 +272,12 @@ namespace BaseModel.ViewModel.Base
 
             try
             {
-                LoadingScreenManager.ShowLoadingScreen(projectionEntitiesWithTag.Count);
-                LoadingScreenManager.SetMessage("Deleting...");
+                if(projectionEntitiesWithTag.Count > Int32.Parse(CommonResources.BulkOperationLoadingScreenMinCount))
+                {
+                    LoadingScreenManager.ShowLoadingScreen(projectionEntitiesWithTag.Count);
+                    LoadingScreenManager.SetMessage("Deleting...");
+                }
+
                 foreach (var projectionEntityWithTag in projectionEntitiesWithTag)
                 {
                     var primaryKey = Repository.GetProjectionPrimaryKey(projectionEntityWithTag.Value);
@@ -309,8 +313,9 @@ namespace BaseModel.ViewModel.Base
                 MessageBoxService.ShowMessage(e.ErrorMessage, e.ErrorCaption, MessageButton.OK, MessageIcon.Error);
             }
 
-            if(!ignoreRefresh)
-                AfterBulkOperationRefreshCallBack?.Invoke();
+            //view doesn't respond with deletion, must be through messages
+            //if(!ignoreRefresh)
+            //    AfterBulkOperationRefreshCallBack?.Invoke();
         }
 
         public Action AfterBulkOperationRefreshCallBack;
@@ -325,14 +330,18 @@ namespace BaseModel.ViewModel.Base
             for (var i = 0; i < projectionEntitiesList.Count; i++)
                 projectionEntitiesWithTag.Add(new KeyValuePair<int, TProjection>(i, projectionEntitiesList[i]));
 
-            LoadingScreenManager.ShowLoadingScreen(projectionEntitiesWithTag.Count);
-            LoadingScreenManager.SetMessage("Saving...");
+            if (projectionEntitiesWithTag.Count > Int32.Parse(CommonResources.BulkOperationLoadingScreenMinCount))
+            {
+                LoadingScreenManager.ShowLoadingScreen(projectionEntitiesWithTag.Count);
+                LoadingScreenManager.SetMessage("Saving...");
+            }
+
             bool isContinueSave = true;
             bool haveNewEntity = false;
             bool doBulkRefresh = false;
 
             //when the total count of refreshes exceeds a certain threshold, it's faster to perform bulk refresh
-            if (projectionEntities.Count() > Int32.Parse(CommonResources.BulkSave_BulkRefreshMinCount))
+            if (projectionEntities.Count() > Int32.Parse(CommonResources.BulkOperationBulkRefreshMinCount))
                 doBulkRefresh = true;
 
             foreach (var projectionEntityWithTag in projectionEntitiesWithTag)
@@ -382,8 +391,8 @@ namespace BaseModel.ViewModel.Base
                     //Need to put here because any updates associated with the entity need to be committed before sending message
                     OnAfterEntitySavedCallBack?.Invoke(projectionEntity, entityWithTag.Value, isNewEntity);
 
-                    if(!doBulkRefresh || AfterBulkOperationRefreshCallBack == null)
-                        SendMessage(primaryKey, projectionEntity, entityWithTag.Value, isNewEntity);
+                    if(AfterBulkOperationRefreshCallBack == null)
+                        SendMessage(primaryKey, projectionEntity, entityWithTag.Value, isNewEntity, doBulkRefresh);
 
                     if(!haveNewEntity && doNotRefresh)
                     {
@@ -398,7 +407,7 @@ namespace BaseModel.ViewModel.Base
                 MessageBoxService.ShowMessage(e.ErrorMessage, e.ErrorCaption, MessageButton.OK, MessageIcon.Error);
             }
 
-            if((doBulkRefresh || (haveNewEntity || !doNotRefresh)) && AfterBulkOperationRefreshCallBack != null)
+            if(((doBulkRefresh && !doNotRefresh) || (haveNewEntity || !doNotRefresh)) && AfterBulkOperationRefreshCallBack != null)
                 AfterBulkOperationRefreshCallBack.Invoke();
         }
 
