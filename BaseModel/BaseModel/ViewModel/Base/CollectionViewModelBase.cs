@@ -242,7 +242,7 @@ namespace BaseModel.ViewModel.Base
             get { return typeof(TEntity).Name + "CollectionView"; }
         }
 
-        public virtual void BaseBulkDelete(IEnumerable<TProjection> projectionEntities, bool ignoreRefresh = false)
+        public virtual void BaseBulkDelete(IEnumerable<TProjection> projectionEntities)
         {
             var projectionEntitiesWithTag = new List<KeyValuePair<int, TProjection>>();
             var entitiesWithTag = new List<KeyValuePair<int, TEntity>>();
@@ -391,7 +391,7 @@ namespace BaseModel.ViewModel.Base
                     //Need to put here because any updates associated with the entity need to be committed before sending message
                     OnAfterEntitySavedCallBack?.Invoke(projectionEntity, entityWithTag.Value, isNewEntity);
 
-                    if(AfterBulkOperationRefreshCallBack == null)
+                    if(AfterBulkOperationRefreshCallBack == null || !doBulkRefresh)
                         SendMessage(primaryKey, projectionEntity, entityWithTag.Value, isNewEntity, doBulkRefresh);
 
                     if(!haveNewEntity && doNotRefresh)

@@ -227,12 +227,12 @@ namespace BaseModel.ViewModel.Base
                 ICanUpdate canUpdateEntity = entityProperty as ICanUpdate;
                 canUpdateEntity?.Update();
             }
+
             BulkSave(bulkSaveProperties.Select(x => x.ChangedEntity));
             BulkSave(bulkAddProperties.Select(x => x.ChangedEntity));
 
             //use ignore refresh here because it'll be refreshed in basebulksave
-            BaseBulkDelete(bulkDeleteProperties.Select(x => x.ChangedEntity), true);
-
+            BaseBulkDelete(bulkDeleteProperties.Select(x => x.ChangedEntity));
 
             isBackgroundEdit = false;
         }
@@ -262,7 +262,7 @@ namespace BaseModel.ViewModel.Base
             BulkSave(bulkAddProperties.Select(x => x.ChangedEntity));
 
             //use ignore refresh here because it'll be refreshed in basebulksave
-            BaseBulkDelete(bulkDeleteProperties.Select(x => x.ChangedEntity), true);
+            BaseBulkDelete(bulkDeleteProperties.Select(x => x.ChangedEntity));
             
             isBackgroundEdit = false;
         }

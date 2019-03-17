@@ -10,7 +10,7 @@ namespace BaseModel.Misc
         IEnumerable<TProjection> Entities { get; }
         void Save(TProjection entity);
         void Delete(TProjection entity);
-        void BaseBulkDelete(IEnumerable<TProjection> projectionEntities, bool ignoreRefresh = false);
+        void BaseBulkDelete(IEnumerable<TProjection> projectionEntities);
         void BulkSave(IEnumerable<TProjection> entities, bool doNotRefresh = true);
         void CleanUpCallBacks();
         void FullRefresh();
