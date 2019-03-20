@@ -585,7 +585,7 @@
             </Setter.Value>
         </Setter>
         <Setter Property="ParentFieldName" Value="ParentEntityKey" />
-        <Setter Property="KeyFieldName" Value="EntityKey" />
+        <Setter Property="KeyFieldName" Value="GUID" />
         <Setter Property="ExpandStateFieldName" Value="IsExpanded" />
         <Setter Property="ShowTotalSummary" Value="True" />
         <Setter Property="AllowPerPixelScrolling" Value="True" />
@@ -613,7 +613,7 @@
             </Setter.Value>
         </Setter>
         <Setter Property="ParentFieldName" Value="ParentEntityKey" />
-        <Setter Property="KeyFieldName" Value="EntityKey" />
+        <Setter Property="KeyFieldName" Value="GUID" />
         <Setter Property="ExpandStateFieldName" Value="IsExpanded" />
         <Setter Property="ShowTotalSummary" Value="True" />
         <Setter Property="AllowPerPixelScrolling" Value="True" />
@@ -641,7 +641,7 @@
             </Setter.Value>
         </Setter>
         <Setter Property="ParentFieldName" Value="ParentEntityKey" />
-        <Setter Property="KeyFieldName" Value="EntityKey" />
+        <Setter Property="KeyFieldName" Value="GUID" />
         <Setter Property="ExpandStateFieldName" Value="IsExpanded" />
         <Setter Property="ShowTotalSummary" Value="True" />
         <Setter Property="AllowPerPixelScrolling" Value="True" />
