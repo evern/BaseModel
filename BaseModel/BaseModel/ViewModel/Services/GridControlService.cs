@@ -23,6 +23,10 @@ namespace BaseModel.ViewModel.Services
 {
     public interface IGridControlService
     {
+        //for debugging purpose
+        //GridControl GridControl { get; set; }
+        void BeginDataUpdate();
+        void EndDataUpdate();
         void SetRowExpandedByColumnValue(string field_name, IHaveExpandState row);
         CriteriaOperator FilterCriteria { get; set; }
         void ClearFilterCriteria();
@@ -47,6 +51,7 @@ namespace BaseModel.ViewModel.Services
         void SetFilterCriteria(string filter_string);
         int[] GetSelectedRowHandles();
         int GetListIndexByRowHandle(int rowHandle);
+        int GetRowHandleByListIndex(int listIndex);
         void RemoveSelectedRows(int[] rowHandles);
         ObservableCollection<Misc.GroupInfo> GetExpansionState();
         GridColumnCollection GridColumns();
@@ -84,6 +89,11 @@ namespace BaseModel.ViewModel.Services
         public int GetListIndexByRowHandle(int rowHandle)
         {
             return GridControl.GetListIndexByRowHandle(rowHandle);
+        }
+
+        public int GetRowHandleByListIndex(int listIndex)
+        {
+            return GridControl.GetRowHandleByListIndex(listIndex);
         }
 
         public void SetFilterCriteria(string filter_string)
@@ -206,6 +216,22 @@ namespace BaseModel.ViewModel.Services
 
                 GridControl.FilterCriteria = value;
             }
+        }
+
+        public void BeginDataUpdate()
+        {
+            if (GridControl == null)
+                return;
+
+            GridControl.BeginDataUpdate();
+        }
+
+        public void EndDataUpdate()
+        {
+            if (GridControl == null)
+                return;
+
+            GridControl.EndDataUpdate();
         }
 
         public void ClearFilterCriteria()
