@@ -224,7 +224,7 @@
     </Style>
     <Style x:Key="AssociateGridControlTemplate" TargetType="{x:Type dxg:GridControl}">
         <Setter Property="ShowLoadingPanel" Value="{Binding IsLoading}" />
-        <Setter Property="ItemsSource" Value="{Binding DisplayEntities}" />
+        <Setter Property="ItemsSource" Value="{Binding Entities}" />
         <Setter Property="ClipboardCopyMode" Value="ExcludeHeader" />
         <Setter Property="SelectionMode" Value="{Binding SelectMode}" />
         <Setter Property="CurrentItem" Value="{Binding SelectedEntity, Mode=TwoWay}" />
