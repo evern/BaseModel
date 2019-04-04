@@ -75,6 +75,11 @@ namespace BaseModel.ViewModel.Base
         public Func<IEnumerable<TProjection>, bool> CanBulkDeleteCallBack;
 
         /// <summary>
+        /// Used to populate lookup cell values, so that when a value is change in a cell another cell of combobox type can be filtered based on the changes
+        /// </summary>
+        public Action<TProjection> UnifiedNewRowInitializationCallBack;
+
+        /// <summary>
         /// External call back used by copy paste, fill, new and existing row cell value changing to determine which other cells to affect
         /// </summary>
         public Action<string, object, object, TProjection, bool> UnifiedValueChangingCallback;
@@ -683,6 +688,7 @@ namespace BaseModel.ViewModel.Base
             if (!e.Handled)
             {
                 var projection = (TProjection)e.Row;
+                UnifiedNewRowInitializationCallBack?.Invoke(projection);
                 UnifiedValueChangedCallback?.Invoke(e.Column.FieldName, e.OldValue, e.Value, projection, true);
             }
         }
@@ -764,7 +770,7 @@ namespace BaseModel.ViewModel.Base
         public virtual void DeleteCellContent(GridControl gridControl)
         {
             string[] RowData = new string[] { string.Empty };
-            CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, MessageBoxService, UnifiedValueValidationCallback, FuncManualCellPastingIsContinue, FuncManualRowPastingIsContinue, UnifiedValueChangingCallback, UnifiedValueChangedCallback);
+            CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, MessageBoxService, UnifiedValueValidationCallback, FuncManualCellPastingIsContinue, FuncManualRowPastingIsContinue, UnifiedValueChangingCallback, UnifiedValueChangedCallback, UnifiedNewRowInitializationCallBack);
             List<TProjection> pasteProjections;
             if(gridControl.View.GetType() == typeof(TableView))
                 pasteProjections = copyPasteHelper.PastingFromClipboardCellLevel<TableView>(gridControl, RowData, EntitiesUndoRedoManager);
@@ -1330,7 +1336,7 @@ namespace BaseModel.ViewModel.Base
             if(!shouldSkip)
             {
                 PasteListener?.Invoke(PasteStatus.Start);
-                CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, MessageBoxService, UnifiedValueValidationCallback, FuncManualCellPastingIsContinue, FuncManualRowPastingIsContinue, UnifiedValueChangingCallback, UnifiedValueChangedCallback);
+                CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, MessageBoxService, UnifiedValueValidationCallback, FuncManualCellPastingIsContinue, FuncManualRowPastingIsContinue, UnifiedValueChangingCallback, UnifiedValueChangedCallback, UnifiedNewRowInitializationCallBack);
 
                 bool dontSplit = false;
                 if ((Keyboard.Modifiers | ModifierKeys.Shift) == Keyboard.Modifiers)

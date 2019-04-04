@@ -207,6 +207,7 @@ namespace BaseModel.ViewModel.Loader
             MainViewModel.SelectedEntities = this.DisplaySelectedEntities;
             MainViewModel.UnifiedValueChangingCallback = this.UnifiedCellValueChanging;
             MainViewModel.UnifiedValueChangedCallback = this.UnifiedCellValueChanged;
+            MainViewModel.UnifiedNewRowInitializationCallBack = this.UnifiedNewRowInitialization;
             MainViewModel.UnifiedValueValidationCallback = this.UnifiedValueValidation;
             MainViewModel.UnifiedValidateRow = this.UnifiedRowValidation;
             MainViewModel.AfterBulkOperationRefreshCallBack = this.FullRefreshWithoutClearingUndoRedo;
@@ -884,6 +885,15 @@ namespace BaseModel.ViewModel.Loader
 
             if (!disable_immediate_post)
                 CellValueChangedImmediatePost(e);
+        }
+
+        /// <summary>
+        /// Used to populate cell lookup properties in projection so when value is changed from a cell another combobox type cell values can be filtered
+        /// </summary>
+        /// <param name="projection">New projection</param>
+        public virtual void UnifiedNewRowInitialization(TMainProjectionEntity projection)
+        {
+
         }
 
         /// <summary>
