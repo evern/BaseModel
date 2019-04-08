@@ -36,6 +36,10 @@ namespace BaseModel.ViewModel.Services
         void HighlightIncorrectText(SpellChecker spellChecker);
         void SetCheckedListFilterPopUpMode();
         void SetGridColumnSortMode();
+        void ClearSorting();
+        void ClearGrouping();
+        void SortBy(string fieldName);
+        void GroupBy(string fieldName);
         void CopyWithHeader();
         void ClearSummary();
         void ExpandAllGroups();
@@ -252,6 +256,38 @@ namespace BaseModel.ViewModel.Services
                 if(grid_column.FilterPopupMode == FilterPopupMode.Default)
                     grid_column.FilterPopupMode = FilterPopupMode.CheckedList;
             }
+        }
+
+        public void ClearSorting()
+        {
+            if (GridControl == null)
+                return;
+
+            GridControl.ClearSorting();
+        }
+
+        public void SortBy(string fieldName)
+        {
+            if (GridControl == null)
+                return;
+
+            GridControl.SortBy(fieldName);
+        }
+
+        public void ClearGrouping()
+        {
+            if (GridControl == null)
+                return;
+
+            GridControl.ClearGrouping();
+        }
+
+        public void GroupBy(string fieldName)
+        {
+            if (GridControl == null)
+                return;
+
+            GridControl.GroupBy(fieldName);
         }
 
         public void SetGridColumnSortMode()
