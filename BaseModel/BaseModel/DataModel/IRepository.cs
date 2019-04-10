@@ -245,28 +245,20 @@ namespace BaseModel.DataModel
         {
             isNewEntity = false;
             bool projection = IsProjection<TEntity, TProjection>(projectionEntity);
-
+            //BaseModel Modification Start
             var projectionPrimaryKey = repository.GetProjectionPrimaryKey(projectionEntity);
             var isGuidEmpty = projectionPrimaryKey.GetType() == typeof(Guid) && projectionPrimaryKey.ToString() == Guid.Empty.ToString();
-            TEntity entity;
-            #region Short cut so we don't want to have to query the database to find projection primary key
-            //when it is not projection we don't have to find anything
-            if (!projection)
+            //BaseModel Modification End
+            TEntity entity = null;
+            if (!isGuidEmpty)
             {
-                if (isGuidEmpty)
-                {
-                    isNewEntity = true;
-                    entity = repository.Create();
+                entity = repository.Find(projectionPrimaryKey);
+                //entity properties might be different from projection when projection is from another view model
+                if (entity != null && typeof(TEntity) == typeof(TProjection))
                     DataUtils.ShallowCopy(entity, projectionEntity);
-                    return entity;
-                }
-                else
-                    return projectionEntity as TEntity;
-            } 
-            #endregion
+            }
 
-            entity = repository.Find(projectionPrimaryKey);
-            if (entity == null)
+            if (entity == null || isGuidEmpty)
             {
                 isNewEntity = true;
                 entity = repository.Create();
@@ -274,8 +266,6 @@ namespace BaseModel.DataModel
                 if (!projection)
                     DataUtils.ShallowCopy(entity, projectionEntity);
             }
-            else
-                isNewEntity = false;
 
             applyProjectionPropertiesToEntity(projectionEntity, entity);
             return entity;
