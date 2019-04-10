@@ -1243,6 +1243,9 @@ namespace BaseModel.ViewModel.Base
                                 if (error_message == string.Empty)
                                 {
                                     DataUtils.SetNestedValue(info.Column.FieldName, selectedProjection, currentValue);
+
+                                    UnifiedValueChangingCallback?.Invoke(info.Column.FieldName, currentValue, newValue, selectedProjection, false);
+                                    UnifiedValueChangedCallback?.Invoke(info.Column.FieldName, currentValue, newValue, selectedProjection, false);
                                     EntitiesUndoRedoManager.AddUndo(selectedProjection, info.Column.FieldName, currentOldValue, currentValue, EntityMessageType.Changed);
                                 }
                                 else
@@ -1267,6 +1270,9 @@ namespace BaseModel.ViewModel.Base
                                     if (newValue != null)
                                     {
                                         DataUtils.SetNestedValue(info.Column.FieldName, selectedProjection, newValue);
+
+                                        UnifiedValueChangingCallback?.Invoke(info.Column.FieldName, oldValue, newValue, selectedProjection, false);
+                                        UnifiedValueChangedCallback?.Invoke(info.Column.FieldName, oldValue, newValue, selectedProjection, false);
                                         EntitiesUndoRedoManager.AddUndo(selectedProjection, info.Column.FieldName, oldValue, newValue, EntityMessageType.Changed);
                                     }
                                 }

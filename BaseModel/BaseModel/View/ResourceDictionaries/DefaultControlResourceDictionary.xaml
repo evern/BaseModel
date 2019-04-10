@@ -384,14 +384,15 @@
             <Setter.Value>
                 <DataTemplate>
                     <ItemsControl>
+                        <!--ExistingRowAddUndoAndSave actually saves any changes made in UnifiedCellValueChanging within CellValueChanging, so CellValueChanging must be added first-->
+                        <dxmvvm:EventToCommand Command="{Binding DataContext.CellValueChangingCommand, ElementName=userControl}" EventName="CellValueChanging" PassEventArgsToCommand="True" />
+                        <dxmvvm:EventToCommand Command="{Binding DataContext.CellValueChangedCommand, ElementName=userControl}" EventName="CellValueChanged" PassEventArgsToCommand="True" />
                         <dxmvvm:EventToCommand Command="{Binding ExistingRowAddUndoAndSaveCommand}" EventName="CellValueChanged" PassEventArgsToCommand="True" />
                         <dxmvvm:EventToCommand Command="{Binding NewRowAddUndoAndSaveCommand}" EventName="RowUpdated" PassEventArgsToCommand="True" />
                         <dxmvvm:EventToCommand Command="{Binding ValidateCellCommand}" EventName="ValidateCell" PassEventArgsToCommand="True" />
                         <dxmvvm:EventToCommand Command="{Binding ValidateRowCommand}" EventName="ValidateRow" PassEventArgsToCommand="True" />
                         <dxmvvm:EventToCommand Command="{Binding PastingFromClipboardCommand}" EventName="PastingFromClipboard" PassEventArgsToCommand="True" />
                         <dxmvvm:EventToCommand Command="{Binding ShownEditorCommand}" EventName="ShownEditor" PassEventArgsToCommand="True" />
-                        <dxmvvm:EventToCommand Command="{Binding DataContext.CellValueChangingCommand, ElementName=userControl}" EventName="CellValueChanging" PassEventArgsToCommand="True" />
-                        <dxmvvm:EventToCommand Command="{Binding DataContext.CellValueChangedCommand, ElementName=userControl}" EventName="CellValueChanged" PassEventArgsToCommand="True" />
                         <dxmvvm:EventToCommand Command="{Binding DataContext.PreviewKeyDownCommand, ElementName=userControl}" EventName="PreviewKeyDown" PassEventArgsToCommand="True" />
                         <dxmvvm:KeyToCommand Command="{Binding UndoCommand}" KeyGesture="CTRL+Z" />
                         <dxmvvm:KeyToCommand Command="{Binding RedoCommand}" KeyGesture="CTRL+Y" />
@@ -427,14 +428,14 @@
             <Setter.Value>
                 <DataTemplate>
                     <ItemsControl>
+                        <dxmvvm:EventToCommand Command="{Binding CellValueChangingCommand}" EventName="CellValueChanging" PassEventArgsToCommand="True" />
+                        <dxmvvm:EventToCommand Command="{Binding CellValueChangedCommand}" EventName="CellValueChanged" PassEventArgsToCommand="True" />
                         <dxmvvm:EventToCommand Command="{Binding ExistingRowAddUndoAndSaveCommand}" EventName="CellValueChanged" PassEventArgsToCommand="True" />
                         <dxmvvm:EventToCommand Command="{Binding NewRowAddUndoAndSaveCommand}" EventName="RowUpdated" PassEventArgsToCommand="True" />
                         <dxmvvm:EventToCommand Command="{Binding ValidateCellCommand}" EventName="ValidateCell" PassEventArgsToCommand="True" />
                         <dxmvvm:EventToCommand Command="{Binding ValidateRowCommand}" EventName="ValidateRow" PassEventArgsToCommand="True" />
                         <dxmvvm:EventToCommand Command="{Binding PastingFromClipboardCommand}" EventName="PastingFromClipboard" PassEventArgsToCommand="True" />
                         <dxmvvm:EventToCommand Command="{Binding ShownEditorCommand}" EventName="ShownEditor" PassEventArgsToCommand="True" />
-                        <dxmvvm:EventToCommand Command="{Binding CellValueChangingCommand}" EventName="CellValueChanging" PassEventArgsToCommand="True" />
-                        <dxmvvm:EventToCommand Command="{Binding CellValueChangedCommand}" EventName="CellValueChanged" PassEventArgsToCommand="True" />
                         <dxmvvm:EventToCommand Command="{Binding PreviewKeyDownCommand}" EventName="PreviewKeyDown" PassEventArgsToCommand="True" />
                         <dxmvvm:KeyToCommand Command="{Binding UndoCommand}" KeyGesture="CTRL+Z" />
                         <dxmvvm:KeyToCommand Command="{Binding RedoCommand}" KeyGesture="CTRL+Y" />

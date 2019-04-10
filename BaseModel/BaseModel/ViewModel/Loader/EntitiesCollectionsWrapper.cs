@@ -424,7 +424,7 @@ namespace BaseModel.ViewModel.Loader
         }
 
         TMainProjectionEntity newlyAddedProjection;
-        protected void OnAfterNewRowAdded(TMainProjectionEntity projection)
+        protected virtual void OnAfterNewRowAdded(TMainProjectionEntity projection)
         {
             if (projection == null)
                 return;

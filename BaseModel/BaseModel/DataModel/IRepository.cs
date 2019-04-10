@@ -245,27 +245,37 @@ namespace BaseModel.DataModel
         {
             isNewEntity = false;
             bool projection = IsProjection<TEntity, TProjection>(projectionEntity);
-            //BaseModel Modification Start
+
             var projectionPrimaryKey = repository.GetProjectionPrimaryKey(projectionEntity);
             var isGuidEmpty = projectionPrimaryKey.GetType() == typeof(Guid) && projectionPrimaryKey.ToString() == Guid.Empty.ToString();
-            //BaseModel Modification End
-            TEntity entity = null;
-            if (!isGuidEmpty)
+            TEntity entity;
+            #region Short cut so we don't want to have to query the database to find projection primary key
+            //when it is not projection we don't have to find anything
+            if (!projection)
             {
-                entity = repository.Find(projectionPrimaryKey);
-                //entity properties might be different from projection when projection is from another view model
-                if(entity != null && typeof(TEntity) == typeof(TProjection))
+                if (isGuidEmpty)
+                {
+                    isNewEntity = true;
+                    entity = repository.Create();
                     DataUtils.ShallowCopy(entity, projectionEntity);
-            }
+                    return entity;
+                }
+                else
+                    return projectionEntity as TEntity;
+            } 
+            #endregion
 
-            if (entity == null || isGuidEmpty)
+            entity = repository.Find(projectionPrimaryKey);
+            if (entity == null)
             {
                 isNewEntity = true;
                 entity = repository.Create();
 
-                if(!projection)
+                if (!projection)
                     DataUtils.ShallowCopy(entity, projectionEntity);
             }
+            else
+                isNewEntity = false;
 
             applyProjectionPropertiesToEntity(projectionEntity, entity);
             return entity;
