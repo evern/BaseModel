@@ -380,6 +380,7 @@
     <Compile Include="View\BasicMessageBox.xaml.cs">
       <DependentUpon>BasicMessageBox.xaml</DependentUpon>
     </Compile>
+    <Compile Include="View\Behaviors\DetailGridSearchingBehavior.cs" />
     <Compile Include="View\Behaviors\DetailSyncBehavior.cs" />
     <Compile Include="View\BulkFindAndReplace.xaml.cs">
       <DependentUpon>BulkFindAndReplace.xaml</DependentUpon>
