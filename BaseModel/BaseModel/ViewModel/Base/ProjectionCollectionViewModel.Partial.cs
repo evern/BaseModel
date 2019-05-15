@@ -1333,6 +1333,10 @@ namespace BaseModel.ViewModel.Base
             bool shouldSkip = false;
             var gridControl = (GridControl)e.Source;
             TableView tableView = gridControl.View as TableView;
+            //when cell is in editing mode, user might want to paste clipboard data into cell
+            if (tableView.ActiveEditor != null)
+                return;
+
             if(tableView != null && tableView.FocusedRowHandle == GridControl.AutoFilterRowHandle)
             {
                 shouldSkip = true;
