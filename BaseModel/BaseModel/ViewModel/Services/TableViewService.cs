@@ -186,6 +186,9 @@ namespace BaseModel.ViewModel.Services
                 if (!column.Visible)
                     continue;
 
+                if (column.AllowBestFit == DevExpress.Utils.DefaultBoolean.False)
+                    continue;
+
                 column.BestFitMode = DevExpress.Xpf.Core.BestFitMode.VisibleRows;
                 double defaultMaxWidth = column.MaxWidth;
                 double defaultMinWidth = column.MinWidth;

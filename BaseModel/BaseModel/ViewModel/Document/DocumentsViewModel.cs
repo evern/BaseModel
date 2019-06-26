@@ -60,7 +60,7 @@ namespace BaseModel.ViewModel.Document
         /// Navigation list that represents a collection of module descriptions.
         /// </summary>
         public RangeObservableCollection<TModule> Modules { get; set; }
-
+        public bool AccordionExpanded { get; set; }
         protected TModule selectedModule { get; set; }
         /// <summary>
         /// A currently selected navigation list entry. This property is writable. When this property is assigned a new value, it triggers the navigating to the corresponding document.

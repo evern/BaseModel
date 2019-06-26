@@ -324,6 +324,7 @@
       <DependentUpon>CommonResources.resx</DependentUpon>
     </Compile>
     <Compile Include="Misc\Enums.cs" />
+    <Compile Include="Misc\GlobalMethods.cs" />
     <Compile Include="Misc\GridExtensions.cs" />
     <Compile Include="Misc\GroupChildSelector.cs" />
     <Compile Include="Misc\Interfaces.cs" />
