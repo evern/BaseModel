@@ -177,6 +177,9 @@ namespace BaseModel.ViewModel.Loader
         protected virtual bool OnMainViewModelLoaded(IEnumerable<TMainProjectionEntity> entities)
         {
             MainViewModel = (CollectionViewModel<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey, TMainEntityUnitOfWork>)mainEntityLoaderDescription.GetViewModel();
+            if (MainViewModel == null)
+                return false;
+
             MainViewModel.OnAfterSavedSendMessage = this.OnAfterSavedSendMessage;
             MainViewModel.OnAfterDeletedSendMessage = this.OnAfterDeletedSendMessage;
             refreshDispatcherTimer = new DispatcherTimer();
