@@ -24,7 +24,7 @@ namespace BaseModel.ViewModel.Services
     public interface IGridControlService
     {
         //for debugging purpose
-        //GridControl GridControl { get; set; }
+        GridControl GridControl { get; set; }
         void BeginDataUpdate();
         void EndDataUpdate();
         void SetRowExpandedByColumnValue(string field_name, IHaveExpandState row);
