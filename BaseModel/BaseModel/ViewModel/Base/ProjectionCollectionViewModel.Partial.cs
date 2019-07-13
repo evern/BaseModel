@@ -772,16 +772,20 @@ namespace BaseModel.ViewModel.Base
             string[] RowData = new string[] { string.Empty };
             CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, MessageBoxService, UnifiedValueValidationCallback, FuncManualCellPastingIsContinue, FuncManualRowPastingIsContinue, UnifiedValueChangingCallback, UnifiedValueChangedCallback, UnifiedNewRowInitializationCallBack);
             List<TProjection> pasteProjections;
-            if(gridControl.View.GetType() == typeof(TableView))
-                pasteProjections = copyPasteHelper.PastingFromClipboardCellLevel<TableView>(gridControl, RowData, EntitiesUndoRedoManager);
-            else
-                pasteProjections = copyPasteHelper.PastingFromClipboardTreeListCellLevel<TreeListView>(gridControl, RowData, EntitiesUndoRedoManager);
 
-            if (pasteProjections.Count > 0)
+            if(gridControl != null && gridControl.View != null)
             {
-                //For copy paste don't have to refresh the entire list, just call ICanUpdate.Update() on entity
-                BulkSave(pasteProjections, true);
-                //BulkSave(pasteProjections);
+                if (gridControl.View.GetType() == typeof(TableView))
+                    pasteProjections = copyPasteHelper.PastingFromClipboardCellLevel<TableView>(gridControl, RowData, EntitiesUndoRedoManager);
+                else
+                    pasteProjections = copyPasteHelper.PastingFromClipboardTreeListCellLevel<TreeListView>(gridControl, RowData, EntitiesUndoRedoManager);
+
+                if (pasteProjections.Count > 0)
+                {
+                    //For copy paste don't have to refresh the entire list, just call ICanUpdate.Update() on entity
+                    BulkSave(pasteProjections, true);
+                    //BulkSave(pasteProjections);
+                }
             }
         }
         #endregion
