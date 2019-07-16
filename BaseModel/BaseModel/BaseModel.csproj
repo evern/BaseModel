@@ -333,6 +333,7 @@
     <Compile Include="Misc\Messages.cs" />
     <Compile Include="Misc\OptionalEntitiesParameter.cs" />
     <Compile Include="Misc\PersistentLayoutHelper.cs" />
+    <Compile Include="Misc\PopupBaseEditEx.cs" />
     <Compile Include="Misc\ProjectionBase.cs" />
     <Compile Include="Misc\RangeObservableCollection.cs" />
     <Compile Include="Misc\TokenProperty.cs" />
