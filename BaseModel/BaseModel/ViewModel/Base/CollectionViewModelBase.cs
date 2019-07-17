@@ -392,7 +392,10 @@ namespace BaseModel.ViewModel.Base
                     OnAfterEntitySavedCallBack?.Invoke(projectionEntity, entityWithTag.Value, isNewEntity);
 
                     if(AfterBulkOperationRefreshCallBack == null || !doBulkRefresh)
-                        SendMessage(primaryKey, projectionEntity, entityWithTag.Value, isNewEntity, doBulkRefresh);
+                    {
+                        if(!AlwaysSkipMessage)
+                            SendMessage(primaryKey, projectionEntity, entityWithTag.Value, isNewEntity, doBulkRefresh);
+                    }
 
                     if(!haveNewEntity && doNotRefresh)
                     {
@@ -611,7 +614,8 @@ namespace BaseModel.ViewModel.Base
                 //ICanUpdate canUpdateEntity = projectionEntity as ICanUpdate;
                 //if (canUpdateEntity != null)
                 //    canUpdateEntity.Update();
-                SendMessage(primaryKey, projectionEntity, entity, isNewEntity);
+                if(!AlwaysSkipMessage)
+                    SendMessage(primaryKey, projectionEntity, entity, isNewEntity);
             }
             catch (DbException e)
             {
