@@ -176,6 +176,10 @@ namespace BaseModel.ViewModel.Loader
         public Func<object> OnEntitiesLoadedCallBackRelateParam { get; set; }
         protected virtual bool OnMainViewModelLoaded(IEnumerable<TMainProjectionEntity> entities)
         {
+            //if it was disposed before fully loaded
+            if (mainEntityLoaderDescription == null)
+                return false;
+
             MainViewModel = (CollectionViewModel<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey, TMainEntityUnitOfWork>)mainEntityLoaderDescription.GetViewModel();
             if (MainViewModel == null)
                 return false;
