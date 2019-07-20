@@ -98,6 +98,9 @@ namespace BaseModel.ViewModel.Loader
 
             if (isContinueLoadingCallBack != null && !isContinueLoadingCallBack(loadedEntities))
             {
+                if (collectionViewModel == null)
+                    return;
+
                 collectionViewModel.OnEntitiesLoadedCallBack = null;
                 return;
             }
