@@ -1145,7 +1145,8 @@ namespace BaseModel.Data.Helpers
         {
             var propertyNames = propertyString.Split('.');
             var firstPropertyName = propertyNames.First();
-            var childInstance = parentInstance.GetType().GetProperty(firstPropertyName).GetValue(parentInstance);
+
+            object childInstance = parentInstance.GetType().GetProperty(firstPropertyName).GetValue(parentInstance);
 
             if (!propertyString.Contains("."))
             {

@@ -1,4 +1,22 @@
-﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core" xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid" xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm" xmlns:dxsc="clr-namespace:DevExpress.Xpf.SpellChecker;assembly=DevExpress.Xpf.SpellChecker.v18.2" xmlns:misc="clr-namespace:BaseModel.Misc" xmlns:services="clr-namespace:BaseModel.ViewModel.Services">
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:dxgh="clr-namespace:DevExpress.Xpf.Grid.Hierarchy;assembly=DevExpress.Xpf.Grid.v18.2.Core" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core" xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid" xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm" xmlns:dxsc="clr-namespace:DevExpress.Xpf.SpellChecker;assembly=DevExpress.Xpf.SpellChecker.v18.2" xmlns:misc="clr-namespace:BaseModel.Misc" xmlns:services="clr-namespace:BaseModel.ViewModel.Services">
+    <Style x:Key="blindsStyle" TargetType="{x:Type dxg:RowControl}">
+        <Setter Property="RenderTransform">
+            <Setter.Value>
+                <ScaleTransform />
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding Path=(dxgh:HierarchyPanel.IsItemVisible)}" Value="True">
+                <DataTrigger.EnterActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleY" BeginTime="0:0:0" From="0" To="1" Duration="0:0:.2" />
+                        </Storyboard>
+                    </BeginStoryboard>
+                </DataTrigger.EnterActions>
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
     <Style x:Key="SingleObjectView.ControlContainer" TargetType="FrameworkElement">
         <Setter Property="dxmvvm:Interaction.BehaviorsTemplate">
             <Setter.Value>
@@ -378,6 +396,7 @@
         <Setter Property="BandSeparatorWidth" Value="3" />
         <Setter Property="BandHeaderSeparatorColor" Value="OrangeRed" />
         <Setter Property="BandCellSeparatorColor" Value="Orange" />
+        <Setter Property="RowStyle" Value="{StaticResource blindsStyle}" />
     </Style>
     <Style x:Key="DefaultTableViewTemplate" TargetType="{x:Type dxg:TableView}">
         <Setter Property="dxmvvm:Interaction.BehaviorsTemplate">
@@ -422,6 +441,7 @@
         <Setter Property="BandSeparatorWidth" Value="3" />
         <Setter Property="BandHeaderSeparatorColor" Value="OrangeRed" />
         <Setter Property="BandCellSeparatorColor" Value="Orange" />
+        <Setter Property="RowStyle" Value="{StaticResource blindsStyle}" />
     </Style>
     <Style x:Key="AssociateTableViewTemplate" TargetType="{x:Type dxg:TableView}">
         <Setter Property="dxmvvm:Interaction.BehaviorsTemplate">
