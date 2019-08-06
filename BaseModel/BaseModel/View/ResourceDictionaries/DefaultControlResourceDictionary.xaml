@@ -188,6 +188,7 @@
     </Style>
     <Style x:Key="DefaultGridControlTemplate" TargetType="{x:Type dxg:GridControl}">
         <Setter Property="ShowLoadingPanel" Value="{Binding DataContext.IsLoading, ElementName=userControl}" />
+        <Setter Property="UseLayoutRounding" Value="False" />
         <Setter Property="ItemsSource" Value="{Binding DataContext.DisplayEntities, ElementName=userControl}" />
         <Setter Property="ClipboardCopyMode" Value="ExcludeHeader" />
         <Setter Property="SelectionMode" Value="{Binding SelectMode}" />
@@ -377,7 +378,7 @@
     </Style>
     <Style x:Key="DefaultMinimalTableViewTemplate" TargetType="{x:Type dxg:TableView}">
         <Setter Property="GroupSummaryDisplayMode" Value="AlignByColumns" />
-        <Setter Property="AllowPerPixelScrolling" Value="True" />
+        <Setter Property="AllowPerPixelScrolling" Value="False" />
         <Setter Property="AllowScrollAnimation" Value="False" />
         <Setter Property="AllowHorizontalScrollingVirtualization" Value="False" />
         <Setter Property="AllowCascadeUpdate" Value="True" />
@@ -422,7 +423,7 @@
         <Setter Property="ShowTotalSummary" Value="True" />
         <Setter Property="GroupSummaryDisplayMode" Value="AlignByColumns" />
         <Setter Property="NewItemRowPosition" Value="Top" />
-        <Setter Property="AllowPerPixelScrolling" Value="True" />
+        <Setter Property="AllowPerPixelScrolling" Value="False" />
         <Setter Property="AllowScrollAnimation" Value="False" />
         <Setter Property="AllowHorizontalScrollingVirtualization" Value="False" />
         <Setter Property="AllowCascadeUpdate" Value="True" />
@@ -466,7 +467,7 @@
         <Setter Property="ShowTotalSummary" Value="True" />
         <Setter Property="GroupSummaryDisplayMode" Value="AlignByColumns" />
         <Setter Property="NewItemRowPosition" Value="Top" />
-        <Setter Property="AllowPerPixelScrolling" Value="True" />
+        <Setter Property="AllowPerPixelScrolling" Value="False" />
         <Setter Property="ShowGroupedColumns" Value="True" />
         <Setter Property="ShowSearchPanelMode" Value="Default" />
         <Setter Property="SearchDelay" Value="0" />
@@ -505,7 +506,7 @@
         <Setter Property="ShowTotalSummary" Value="True" />
         <Setter Property="GroupSummaryDisplayMode" Value="AlignByColumns" />
         <Setter Property="NewItemRowPosition" Value="Top" />
-        <Setter Property="AllowPerPixelScrolling" Value="True" />
+        <Setter Property="AllowPerPixelScrolling" Value="False" />
         <Setter Property="ShowGroupedColumns" Value="True" />
         <Setter Property="ShowSearchPanelMode" Value="Default" />
         <Setter Property="SearchDelay" Value="0" />
@@ -536,7 +537,7 @@
         </Setter>
         <Setter Property="ShowFixedTotalSummary" Value="False" />
         <Setter Property="NewItemRowPosition" Value="Top" />
-        <Setter Property="AllowPerPixelScrolling" Value="True" />
+        <Setter Property="AllowPerPixelScrolling" Value="False" />
         <Setter Property="ShowGroupedColumns" Value="False" />
         <Setter Property="ShowSearchPanelMode" Value="Never" />
         <Setter Property="SearchDelay" Value="0" />
@@ -560,7 +561,7 @@
         </Setter>
         <Setter Property="ShowFixedTotalSummary" Value="False" />
         <Setter Property="NewItemRowPosition" Value="Top" />
-        <Setter Property="AllowPerPixelScrolling" Value="True" />
+        <Setter Property="AllowPerPixelScrolling" Value="False" />
         <Setter Property="ShowGroupedColumns" Value="False" />
         <Setter Property="ShowSearchPanelMode" Value="Never" />
         <Setter Property="SearchDelay" Value="0" />
@@ -584,7 +585,7 @@
         </Setter>
         <Setter Property="ShowFixedTotalSummary" Value="False" />
         <Setter Property="NewItemRowPosition" Value="Top" />
-        <Setter Property="AllowPerPixelScrolling" Value="True" />
+        <Setter Property="AllowPerPixelScrolling" Value="False" />
         <Setter Property="ShowGroupedColumns" Value="False" />
         <Setter Property="ShowSearchPanelMode" Value="Never" />
         <Setter Property="SearchDelay" Value="0" />
@@ -609,7 +610,7 @@
         <Setter Property="KeyFieldName" Value="GUID" />
         <Setter Property="ExpandStateFieldName" Value="IsExpanded" />
         <Setter Property="ShowTotalSummary" Value="True" />
-        <Setter Property="AllowPerPixelScrolling" Value="True" />
+        <Setter Property="AllowPerPixelScrolling" Value="False" />
         <Setter Property="ShowSearchPanelMode" Value="Default" />
         <Setter Property="SearchDelay" Value="0" />
         <Setter Property="AllowScrollAnimation" Value="True" />
@@ -637,7 +638,7 @@
         <Setter Property="KeyFieldName" Value="GUID" />
         <Setter Property="ExpandStateFieldName" Value="IsExpanded" />
         <Setter Property="ShowTotalSummary" Value="True" />
-        <Setter Property="AllowPerPixelScrolling" Value="True" />
+        <Setter Property="AllowPerPixelScrolling" Value="False" />
         <Setter Property="ShowSearchPanelMode" Value="Default" />
         <Setter Property="SearchDelay" Value="0" />
         <Setter Property="AllowScrollAnimation" Value="True" />
@@ -665,7 +666,7 @@
         <Setter Property="KeyFieldName" Value="GUID" />
         <Setter Property="ExpandStateFieldName" Value="IsExpanded" />
         <Setter Property="ShowTotalSummary" Value="True" />
-        <Setter Property="AllowPerPixelScrolling" Value="True" />
+        <Setter Property="AllowPerPixelScrolling" Value="False" />
         <Setter Property="ShowSearchPanelMode" Value="Default" />
         <Setter Property="SearchDelay" Value="0" />
         <Setter Property="AllowScrollAnimation" Value="True" />

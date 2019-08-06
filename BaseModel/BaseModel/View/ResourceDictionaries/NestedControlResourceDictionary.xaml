@@ -46,7 +46,7 @@
         </Setter>
         <Setter Property="ShowFixedTotalSummary" Value="False" />
         <Setter Property="NewItemRowPosition" Value="Top" />
-        <Setter Property="AllowPerPixelScrolling" Value="True" />
+        <Setter Property="AllowPerPixelScrolling" Value="False" />
         <Setter Property="ShowGroupedColumns" Value="True" />
         <Setter Property="ShowSearchPanelMode" Value="Always" />
         <Setter Property="SearchDelay" Value="0" />
