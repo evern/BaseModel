@@ -1,22 +1,36 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.539
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BaseModel", "BaseModel\BaseModel.csproj", "{25F838CC-CF00-4BA1-A2DD-21B4C02592CE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
 		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{25F838CC-CF00-4BA1-A2DD-21B4C02592CE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{25F838CC-CF00-4BA1-A2DD-21B4C02592CE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{25F838CC-CF00-4BA1-A2DD-21B4C02592CE}.Debug|x64.ActiveCfg = Debug|x64
+		{25F838CC-CF00-4BA1-A2DD-21B4C02592CE}.Debug|x64.Build.0 = Debug|x64
+		{25F838CC-CF00-4BA1-A2DD-21B4C02592CE}.Debug|x64.Build.2 = Perth_Debug|x64
+		{25F838CC-CF00-4BA1-A2DD-21B4C02592CE}.Debug|x64.Build.4 = Montreal_Release|x64
+		{25F838CC-CF00-4BA1-A2DD-21B4C02592CE}.Debug|x64.Build.6 = Montreal_Beta|x64
+		{25F838CC-CF00-4BA1-A2DD-21B4C02592CE}.Debug|x64.Build.8 = Montreal|x64
+		{25F838CC-CF00-4BA1-A2DD-21B4C02592CE}.Debug|x64.Build.10 = Canada|x64
 		{25F838CC-CF00-4BA1-A2DD-21B4C02592CE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{25F838CC-CF00-4BA1-A2DD-21B4C02592CE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{25F838CC-CF00-4BA1-A2DD-21B4C02592CE}.Release|x64.ActiveCfg = Release|x64
+		{25F838CC-CF00-4BA1-A2DD-21B4C02592CE}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6A793386-B3EE-4964-9EDB-CD014C7B9DFF}
 	EndGlobalSection
 EndGlobal

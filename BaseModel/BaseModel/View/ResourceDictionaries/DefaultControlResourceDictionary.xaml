@@ -377,6 +377,7 @@
         </Setter>
     </Style>
     <Style x:Key="DefaultMinimalTableViewTemplate" TargetType="{x:Type dxg:TableView}">
+        <Setter Property="ScrollBarAnnotationMode" Value="All" />
         <Setter Property="GroupSummaryDisplayMode" Value="AlignByColumns" />
         <Setter Property="AllowPerPixelScrolling" Value="False" />
         <Setter Property="AllowScrollAnimation" Value="False" />
@@ -420,6 +421,7 @@
                 </DataTemplate>
             </Setter.Value>
         </Setter>
+        <Setter Property="ScrollBarAnnotationMode" Value="All" />
         <Setter Property="ShowTotalSummary" Value="True" />
         <Setter Property="GroupSummaryDisplayMode" Value="AlignByColumns" />
         <Setter Property="NewItemRowPosition" Value="Top" />
