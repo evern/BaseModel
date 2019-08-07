@@ -426,6 +426,7 @@ namespace BaseModel.Data.Helpers
                         columnData.Add(new KeyValuePair<ColumnBase, string>(copyColumn, ColumnStrings[i]));
                     }
 
+                    LoadingScreenManager.Progress();
                     if (funcManualRowPastingIsContinue != null)
                     {
                         if (!funcManualRowPastingIsContinue.Invoke(columnData, projection))
@@ -436,8 +437,6 @@ namespace BaseModel.Data.Helpers
                     {
                         pasteProjections.Add(projection);
                     }
-
-                    LoadingScreenManager.Progress();
                 }
 
                 foreach(TProjection projection in pasteProjections)
