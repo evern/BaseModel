@@ -639,6 +639,7 @@ namespace BaseModel.ViewModel.Base
         }
 
         public Action<TProjection> OnAfterNewRowAdded { get; set; }
+        public Func<CellValueChangedEventArgs, TProjection, bool> OnBeforeExistingRowAddUndoAndSaveIsContinue { get; set; }
 
         /// <summary>
         /// Remembers an entity property old value for undoing
@@ -649,6 +650,12 @@ namespace BaseModel.ViewModel.Base
             var projection = (TProjection)e.Row;
             if (e.RowHandle != DataControlBase.NewItemRowHandle)
             {
+                if(OnBeforeExistingRowAddUndoAndSaveIsContinue != null)
+                    if(!OnBeforeExistingRowAddUndoAndSaveIsContinue(e, projection))
+                    {
+                        return;
+                    }
+
                 EntitiesUndoRedoManager.PauseActionId();
                 EntitiesUndoRedoManager.AddUndo(projection, e.Column.FieldName, e.OldValue, e.Value, EntityMessageType.Changed);
                 EntitiesUndoRedoManager.UnpauseActionId();
