@@ -95,6 +95,9 @@ namespace BaseModel.View.Behaviors
             if (storedDetailColumn == null)
                 return true;
 
+            if (storedMasterColumn == null)
+                return true;
+
             if (masterCol.GetHashCode() != storedMasterColumn.GetHashCode() || detailCol.GetHashCode() != storedDetailColumn.GetHashCode())
             {
                 DependencyPropertyDescriptor.FromProperty(GridColumn.VisibleProperty, typeof(GridColumn)).RemoveValueChanged(storedMasterColumn, OnMasterColumnVisibleChanged);

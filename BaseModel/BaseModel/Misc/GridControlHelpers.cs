@@ -1,4 +1,5 @@
-﻿using BaseModel.ViewModel.UndoRedo;
+﻿using BaseModel.View;
+using BaseModel.ViewModel.UndoRedo;
 using DevExpress.Xpf.Grid;
 using System;
 using System.Collections.Generic;
@@ -11,7 +12,7 @@ namespace BaseModel.Misc
 {
     public static class GridControlHelpers
     {
-        public static void PasteCellData(GridControl gridControl, TableView gridTableView, string[] RowData, Func<DataRow, ColumnBase, string, bool> basePasteDataAction)
+        public static void PasteCellData(GridControl gridControl, TableView gridTableView, string[] RowData, Func<DataRow, ColumnBase, string, bool, bool> basePasteDataAction, bool showLoadingScreen = false)
         {
             var selected_cells = gridTableView.GetSelectedCells();
             if (selected_cells.Count == 0)
@@ -53,13 +54,22 @@ namespace BaseModel.Misc
             var selected_cells_groupby_columns = selected_cells.GroupBy(x => x.Column.FieldName).Select(group => new { FieldName = group.Key, Cells = group.ToList() });
             if (grouped_results.Count == 0)
             {
+                if (showLoadingScreen)
+                    LoadingScreenManager.ShowLoadingScreen(selected_cells.Count);
+
                 foreach (var selected_cell in selected_cells)
                 {
                     int row_handle = selected_cell.RowHandle;
                     DataRowView editing_row_view = (DataRowView)gridControl.GetRow(row_handle);
                     DataRow editing_row = editing_row_view.Row;
                     basePasteDataAction?.Invoke(editing_row, selected_cell.Column, string.Empty);
+
+                    if (showLoadingScreen)
+                        LoadingScreenManager.Progress();
                 }
+
+                if (showLoadingScreen)
+                    LoadingScreenManager.CloseLoadingScreen();
             }
             else
             {
@@ -87,6 +97,9 @@ namespace BaseModel.Misc
                 int columnOffsetSelection = numberOfSelectedColumns > numberOfCopiedColumns ? numberOfSelectedColumns : numberOfCopiedColumns;
 
                 int pasteValueRowOffset = 0;
+                if (showLoadingScreen)
+                    LoadingScreenManager.ShowLoadingScreen(rowOffsetSelection);
+
                 for (int rowOffset = 0; rowOffset < rowOffsetSelection; rowOffset++)
                 {
                     int pasteValueColumnOffset = 0;
@@ -112,8 +125,14 @@ namespace BaseModel.Misc
                         if (pasteValueColumnOffset >= grouped_results.Count)
                             pasteValueColumnOffset = 0;
 
-                        basePasteDataAction?.Invoke(editing_row, current_column, columnValue);
+                        basePasteDataAction?.Invoke(editing_row, current_column, columnValue, columnOffset == columnOffsetSelection - 1);
+
+                        if (showLoadingScreen)
+                            LoadingScreenManager.Progress();
                     }
+
+                    if (showLoadingScreen)
+                        LoadingScreenManager.CloseLoadingScreen();
 
                     pasteValueRowOffset += 1;
                     if (pasteValueRowOffset >= grouped_results[pasteValueColumnOffset].Count)
