@@ -62,7 +62,7 @@ namespace BaseModel.Misc
                     int row_handle = selected_cell.RowHandle;
                     DataRowView editing_row_view = (DataRowView)gridControl.GetRow(row_handle);
                     DataRow editing_row = editing_row_view.Row;
-                    basePasteDataAction?.Invoke(editing_row, selected_cell.Column, string.Empty);
+                    basePasteDataAction?.Invoke(editing_row, selected_cell.Column, string.Empty, true);
 
                     if (showLoadingScreen)
                         LoadingScreenManager.Progress();
