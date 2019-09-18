@@ -36,10 +36,10 @@ namespace BaseModel.Misc
             {
                 string formatRow = row;
                 //remove tab in front
-                if (row.Substring(0, 1) == "\t")
-                {
-                    formatRow = row.Substring(1, row.Length - 1);
-                }
+                //if (row.Substring(0, 1) == "\t")
+                //{
+                //    formatRow = row.Substring(1, row.Length - 1);
+                //}
 
                 List<string> column_data = formatRow.Split('\t').ToList();
                 row_data.Add(column_data);
