@@ -35,12 +35,12 @@ namespace BaseModel.Data.Helpers
         readonly Func<TProjection, bool> onBeforePasteWithValidationFunc;
         readonly IMessageBoxService messageBoxService;
         readonly Func<TProjection, string, object, string> unifiedValueValidationCallback;
-        readonly Func<List<KeyValuePair<ColumnBase, string>>, TProjection, bool> funcManualRowPastingIsContinue;
+        readonly Func<List<KeyValuePair<ColumnBase, string>>, TProjection, bool, bool> funcManualRowPastingIsContinue;
         readonly Func<TProjection, ColumnBase, string, List<UndoRedoArg<TProjection>>, bool> funcManualCellPastingIsContinue;
         public Action<string, object, object, TProjection, bool> cellValueChanging;
         public Action<string, object, object, TProjection, bool> cellValueChanged;
         public Action<TProjection> newRowInitialization;
-        public CopyPasteHelper(IsValidProjectionFunc isValidProjectionFunc = null, Func<TProjection, bool> onBeforePasteWithValidationFunc = null, IMessageBoxService messageBoxService = null, Func<TProjection, string, object, string> unifiedValueValidationCallback = null, Func<TProjection, ColumnBase, string, List<UndoRedoArg<TProjection>>, bool> funcManualCellPastingIsContinue = null, Func<List<KeyValuePair<ColumnBase, string>>, TProjection, bool> funcManualRowPastingIsContinue = null, Action<string, object, object, TProjection, bool> cellValueChanging = null, Action<string, object, object, TProjection, bool> cellValueChanged = null, Action<TProjection> newRowInitialization = null)
+        public CopyPasteHelper(IsValidProjectionFunc isValidProjectionFunc = null, Func<TProjection, bool> onBeforePasteWithValidationFunc = null, IMessageBoxService messageBoxService = null, Func<TProjection, string, object, string> unifiedValueValidationCallback = null, Func<TProjection, ColumnBase, string, List<UndoRedoArg<TProjection>>, bool> funcManualCellPastingIsContinue = null, Func<List<KeyValuePair<ColumnBase, string>>, TProjection, bool, bool> funcManualRowPastingIsContinue = null, Action<string, object, object, TProjection, bool> cellValueChanging = null, Action<string, object, object, TProjection, bool> cellValueChanged = null, Action<TProjection> newRowInitialization = null)
         {
             this.isValidProjectionFunc = isValidProjectionFunc;
             this.onBeforePasteWithValidationFunc = onBeforePasteWithValidationFunc;
@@ -429,7 +429,7 @@ namespace BaseModel.Data.Helpers
                     LoadingScreenManager.Progress();
                     if (funcManualRowPastingIsContinue != null)
                     {
-                        if (!funcManualRowPastingIsContinue.Invoke(columnData, projection))
+                        if (!funcManualRowPastingIsContinue.Invoke(columnData, projection, Row == RowData.Last()))
                             continue;
                     }
 

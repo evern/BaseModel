@@ -1139,7 +1139,7 @@ namespace BaseModel.ViewModel.Base
 
         //Denotes that edit operation comes from the background so onBeforeEntitySaved will not perform default actions
         public bool isBackgroundEdit = false;
-        public Func<List<KeyValuePair<ColumnBase, string>>, TProjection, bool> FuncManualRowPastingIsContinue;
+        public Func<List<KeyValuePair<ColumnBase, string>>, TProjection, bool, bool> FuncManualRowPastingIsContinue;
         public Func<TProjection, ColumnBase, string, List<UndoRedoArg<TProjection>>, bool> FuncManualCellPastingIsContinue;
         public Action<IEnumerable<string>> RawPasteOverride;
         public void BulkColumnEdit(object button)
