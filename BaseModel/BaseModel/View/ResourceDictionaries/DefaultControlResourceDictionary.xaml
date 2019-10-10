@@ -392,6 +392,7 @@
         <Setter Property="ShowAutoFilterRow" Value="True" />
         <Setter Property="ShowCriteriaInAutoFilterRow" Value="True" />
         <Setter Property="ShowFixedTotalSummary" Value="False" />
+        <Setter Property="ShowTotalSummary" Value="True" />
         <Setter Property="UseLightweightTemplates" Value="All" />
         <Setter Property="EditorShowMode" Value="MouseDownFocused" />
         <Setter Property="ImmediateUpdateRowPosition" Value="False" />
