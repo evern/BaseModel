@@ -410,7 +410,7 @@ namespace BaseModel.ViewModel.Base
                 MessageBoxService.ShowMessage(e.ErrorMessage, e.ErrorCaption, MessageButton.OK, MessageIcon.Error);
             }
 
-            if(((doBulkRefresh && !doNotRefresh) || (haveNewEntity || !doNotRefresh)) && AfterBulkOperationRefreshCallBack != null)
+            if ((doBulkRefresh && !doNotRefresh) && AfterBulkOperationRefreshCallBack != null)
                 AfterBulkOperationRefreshCallBack.Invoke();
         }
 

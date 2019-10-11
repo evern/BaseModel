@@ -629,7 +629,7 @@ namespace BaseModel.ViewModel.Base
                     if (!OnBeforeViewNewRowSavedIsContinueCallBack(e, projection))
                         return;
 
-                OnAfterNewRowAdded?.Invoke(projection);
+                OnAfterNewRowAdded?.Invoke(1);
                 Save(projection);
 
                 //add undo must be after so that Guid is populated
@@ -638,7 +638,7 @@ namespace BaseModel.ViewModel.Base
             }
         }
 
-        public Action<TProjection> OnAfterNewRowAdded { get; set; }
+        public Action<int> OnAfterNewRowAdded { get; set; }
         public Func<CellValueChangedEventArgs, TProjection, bool> OnBeforeExistingRowAddUndoAndSaveIsContinue { get; set; }
 
         /// <summary>
@@ -1405,6 +1405,9 @@ namespace BaseModel.ViewModel.Base
 
                         //For copy paste don't have to refresh the entire list, just call ICanUpdate.Update() on entity
                         BulkSave(pasteProjections, IsPasteCellLevel);
+
+                        if(!IsPasteCellLevel && !DisablePasteRowLevel)
+                            OnAfterNewRowAdded?.Invoke(pasteProjections.Count);
                     }
                 }
 

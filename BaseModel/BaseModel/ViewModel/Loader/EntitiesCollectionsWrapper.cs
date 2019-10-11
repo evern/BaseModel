@@ -430,13 +430,10 @@ namespace BaseModel.ViewModel.Loader
             }
         }
 
-        TMainProjectionEntity newlyAddedProjection;
-        protected virtual void OnAfterNewRowAdded(TMainProjectionEntity projection)
+        int newlyAddedProjectionCount;
+        protected virtual void OnAfterNewRowAdded(int newItemCount)
         {
-            if (projection == null)
-                return;
-
-            newlyAddedProjection = projection;
+            newlyAddedProjectionCount = newItemCount;
             //Uncomment this to allow grid to focus on new row
             focusNewlyAddedProjectionTimer.Start();
         }
@@ -444,14 +441,20 @@ namespace BaseModel.ViewModel.Loader
         private void FocusNewlyAddedProjectionTimer_Tick(object sender, EventArgs e)
         {
             focusNewlyAddedProjectionTimer.Stop();
-            if (DisplayEntities == null)
+            if (DisplayEntities == null || newlyAddedProjectionCount == 0)
                 return;
-
+            
+            IEnumerable<TMainProjectionEntity> selectEntities = DisplayEntities.Skip(Math.Max(0, DisplayEntities.Count() - newlyAddedProjectionCount));
             displaySelectedEntities.Clear();
-            displaySelectedEntities.Add(newlyAddedProjection);
-            displaySelectedEntity = newlyAddedProjection;
+
+            foreach(var selectEntity in selectEntities)
+            {
+                displaySelectedEntities.Add(selectEntity);
+            }
+
+            displaySelectedEntity = selectEntities.Last();
             this.RaisePropertyChanged(x => x.DisplaySelectedEntity);
-            this.RaisePropertyChanged(x => x.displaySelectedEntities);
+            this.RaisePropertyChanged(x => x.DisplaySelectedEntities);
         }
 
 
