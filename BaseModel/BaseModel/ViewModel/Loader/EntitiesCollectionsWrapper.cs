@@ -876,6 +876,11 @@ namespace BaseModel.ViewModel.Loader
                 UnifiedCellValueChanging(e.Column.FieldName, e.OldValue, e.Value, (TMainProjectionEntity)e.Row, e.RowHandle == DataControlBase.NewItemRowHandle);
                 //will be unpaused in existingrow or newrow save
             }
+
+            //so users don't have to exit cell for changes on checkboxes to happen
+
+            if (!disable_immediate_post && e.RowHandle != DataControlBase.NewItemRowHandle)
+                CellValueChangedImmediatePost(e);
         }
 
         /// <summary>
@@ -892,9 +897,6 @@ namespace BaseModel.ViewModel.Loader
                 UnifiedCellValueChanged(e.Column.FieldName, e.OldValue, e.Value, (TMainProjectionEntity)e.Row, e.RowHandle == DataControlBase.NewItemRowHandle);
                 //will be unpaused in existingrow or newrow save
             }
-
-            if (!disable_immediate_post)
-                CellValueChangedImmediatePost(e);
         }
 
         /// <summary>
