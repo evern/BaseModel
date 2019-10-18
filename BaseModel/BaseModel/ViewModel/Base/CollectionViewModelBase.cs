@@ -256,11 +256,10 @@ namespace BaseModel.ViewModel.Base
             for (var i = 0; i < projectionEntitiesList.Count; i++)
             {
                 AddUndoBeforeEntityDeleted(projectionEntitiesList[i]);
-
                 if (OnBeforeEntityDeletedIsContinueCallBack != null)
                 {
                     DeleteInterceptMode interceptMode = OnBeforeEntityDeletedIsContinueCallBack(projectionEntitiesList[i]);
-                    if (interceptMode == DeleteInterceptMode.Discontinue)
+                    if (interceptMode == DeleteInterceptMode.Skip)
                         continue;
                     else if (interceptMode == DeleteInterceptMode.DiscontinueAll)
                         return;

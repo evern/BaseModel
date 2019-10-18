@@ -942,7 +942,7 @@ namespace BaseModel.ViewModel.Loader
         /// <param name="field_name">Field name changed</param>
         /// <param name="new_value">New value that projection is going to use</param>
         /// <param name="error_message">Default is empty string, set value to indicate error</param>
-        public abstract string UnifiedValueValidation(TMainProjectionEntity projection, string field_name, object new_value);
+        public abstract string UnifiedValueValidation(TMainProjectionEntity projection, string field_name, object new_value, bool isPaste);
 
         public abstract string UnifiedRowValidation(TMainProjectionEntity projection);
 

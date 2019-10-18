@@ -160,10 +160,16 @@ namespace BaseModel.ViewModel.Base
 
             private void OnEntityAdded(TPrimaryKey primaryKey)
             {
-                var projectionEntity = FindActualProjectionByKey(primaryKey);
-                var entity = FindLocalProjectionByKey(primaryKey);
-                if (projectionEntity != null && entity == null && !owner.IsPersistentView)
-                    Entities.Add(projectionEntity);
+                var actualEntity = FindActualProjectionByKey(primaryKey);
+                var existingProjectionEntity = FindLocalProjectionByKey(primaryKey);
+
+                if (actualEntity != null && existingProjectionEntity == null && !owner.IsPersistentView)
+                    Entities.Add(actualEntity);
+                else if(existingProjectionEntity != null)
+                {
+                    Entities[Entities.IndexOf(existingProjectionEntity)] = actualEntity;
+                    owner.RestoreSelectedEntity(existingProjectionEntity, actualEntity);
+                }
             }
 
             private void OnEntityChanged(TPrimaryKey primaryKey, bool skipOnMessage)
@@ -186,9 +192,9 @@ namespace BaseModel.ViewModel.Base
                     }
                 }
 
-                var projectionEntity = FindActualProjectionByKey(primaryKey);
+                var actualEntity = FindActualProjectionByKey(primaryKey);
 
-                if (projectionEntity == null)
+                if (actualEntity == null)
                 {
                     if (!owner.IsPersistentView)
                         Entities.Remove(existingProjectionEntity);
@@ -196,9 +202,9 @@ namespace BaseModel.ViewModel.Base
                 }
                 if (existingProjectionEntity != null)
                 {
-                    owner.OnBeforeAssignRepositoryToExistingProjection?.Invoke(existingProjectionEntity, projectionEntity);
-                    Entities[Entities.IndexOf(existingProjectionEntity)] = projectionEntity;
-                    owner.RestoreSelectedEntity(existingProjectionEntity, projectionEntity);
+                    owner.OnBeforeAssignRepositoryToExistingProjection?.Invoke(existingProjectionEntity, actualEntity);
+                    Entities[Entities.IndexOf(existingProjectionEntity)] = actualEntity;
+                    owner.RestoreSelectedEntity(existingProjectionEntity, actualEntity);
                     return;
                 }
 

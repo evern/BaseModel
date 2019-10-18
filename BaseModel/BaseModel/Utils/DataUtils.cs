@@ -34,13 +34,13 @@ namespace BaseModel.Data.Helpers
         readonly IsValidProjectionFunc isValidProjectionFunc;
         readonly Func<TProjection, bool> onBeforePasteWithValidationFunc;
         readonly IMessageBoxService messageBoxService;
-        readonly Func<TProjection, string, object, string> unifiedValueValidationCallback;
+        readonly Func<TProjection, string, object, bool, string> unifiedValueValidationCallback;
         readonly Func<List<KeyValuePair<ColumnBase, string>>, TProjection, bool, bool> funcManualRowPastingIsContinue;
         readonly Func<TProjection, ColumnBase, string, List<UndoRedoArg<TProjection>>, bool> funcManualCellPastingIsContinue;
         public Action<string, object, object, TProjection, bool> cellValueChanging;
         public Action<string, object, object, TProjection, bool> cellValueChanged;
         public Action<TProjection> newRowInitialization;
-        public CopyPasteHelper(IsValidProjectionFunc isValidProjectionFunc = null, Func<TProjection, bool> onBeforePasteWithValidationFunc = null, IMessageBoxService messageBoxService = null, Func<TProjection, string, object, string> unifiedValueValidationCallback = null, Func<TProjection, ColumnBase, string, List<UndoRedoArg<TProjection>>, bool> funcManualCellPastingIsContinue = null, Func<List<KeyValuePair<ColumnBase, string>>, TProjection, bool, bool> funcManualRowPastingIsContinue = null, Action<string, object, object, TProjection, bool> cellValueChanging = null, Action<string, object, object, TProjection, bool> cellValueChanged = null, Action<TProjection> newRowInitialization = null)
+        public CopyPasteHelper(IsValidProjectionFunc isValidProjectionFunc = null, Func<TProjection, bool> onBeforePasteWithValidationFunc = null, IMessageBoxService messageBoxService = null, Func<TProjection, string, object, bool, string> unifiedValueValidationCallback = null, Func<TProjection, ColumnBase, string, List<UndoRedoArg<TProjection>>, bool> funcManualCellPastingIsContinue = null, Func<List<KeyValuePair<ColumnBase, string>>, TProjection, bool, bool> funcManualRowPastingIsContinue = null, Action<string, object, object, TProjection, bool> cellValueChanging = null, Action<string, object, object, TProjection, bool> cellValueChanged = null, Action<TProjection> newRowInitialization = null)
         {
             this.isValidProjectionFunc = isValidProjectionFunc;
             this.onBeforePasteWithValidationFunc = onBeforePasteWithValidationFunc;
@@ -536,28 +536,7 @@ namespace BaseModel.Data.Helpers
 
                             if (editSettings != null)
                             {
-                                var copyColumnValueMember = (string)editSettings.GetType().GetProperty("ValueMember").GetValue(editSettings);
-                                var copyColumnDisplayMember = (string)editSettings.GetType().GetProperty("DisplayMember").GetValue(editSettings);
-                                var copyColumnItemsSource = (IEnumerable<object>)editSettings.GetType().GetProperty("ItemsSource").GetValue(editSettings);
-
-                                Guid? guid_value = null;
-
-                                if (copyColumnItemsSource == null || copyColumnValueMember == null || copyColumnDisplayMember == null)
-                                    return PasteResult.Skip;
-
-                                foreach (var copyColumnItem in copyColumnItemsSource)
-                                {
-                                    var itemDisplayMemberPropertyInfo =
-                                        copyColumnItem.GetType().GetProperty(copyColumnDisplayMember);
-                                    var itemValueMemberPropertyInfo =
-                                        copyColumnItem.GetType().GetProperty(copyColumnValueMember);
-                                    if (itemDisplayMemberPropertyInfo.GetValue(copyColumnItem).ToString().ToUpper() == pasteData.ToUpper())
-                                    {
-                                        guid_value = (Guid)itemValueMemberPropertyInfo.GetValue(copyColumnItem);
-                                        break;
-                                    }
-                                }
-
+                                Guid? guid_value = getEditSettingsValueMemberValue<Guid?>(editSettings, pasteData);
                                 if (guid_value != null)
                                     return trySetValueInProjection(projection, column_name, guid_value, undoRedoArguments);
                                 else
@@ -572,7 +551,23 @@ namespace BaseModel.Data.Helpers
                         }
                         else if (columnPropertyInfo.PropertyType == typeof(string))
                         {
+                            Type editSettingsType = null;
+                            //try to retrieve data template type for RowData.Row items source binding
+                            editSettingsType = column.ActualEditSettings.GetType();
+                            object editSettings = null;
+                            if (editSettingsType == typeof(ComboBoxEditSettings))
+                                editSettings = column.ActualEditSettings as ComboBoxEditSettings;
+                            else if (editSettingsType == typeof(LookUpEditSettings))
+                                editSettings = column.ActualEditSettings as LookUpEditSettingsBase;
+
                             string new_string = pasteData.ToString();
+                            if (editSettings != null)
+                            {
+                                new_string = getEditSettingsValueMemberValue<string>(editSettings, pasteData);
+                            }
+                            else if (Attribute.IsDefined(columnPropertyInfo, typeof(PasteSkipAttribute)) && pasteData.ToUpper() == DataUtils.GetPasteSkipAttributeString(typeof(TProjection)))
+                                return PasteResult.Skip;
+
                             if (new_string == string.Empty)
                             {
                                 if (Attribute.IsDefined(columnPropertyInfo, typeof(RequiredAttribute)))
@@ -627,27 +622,7 @@ namespace BaseModel.Data.Helpers
                                 ComboBoxEditSettings editSettings = column.ActualEditSettings as ComboBoxEditSettings;
                                 if (editSettings != null)
                                 {
-                                    var copyColumnValueMember = (string)editSettings.GetType().GetProperty("ValueMember").GetValue(editSettings);
-                                    var copyColumnDisplayMember = (string)editSettings.GetType().GetProperty("DisplayMember").GetValue(editSettings);
-                                    var copyColumnItemsSource = (IEnumerable<object>)editSettings.GetType().GetProperty("ItemsSource").GetValue(editSettings);
-                                    int? int_value = null;
-
-                                    if (copyColumnItemsSource == null || copyColumnValueMember == null || copyColumnDisplayMember == null)
-                                        return PasteResult.Skip;
-
-                                    foreach (var copyColumnItem in copyColumnItemsSource)
-                                    {
-                                        var itemDisplayMemberPropertyInfo =
-                                            copyColumnItem.GetType().GetProperty(copyColumnDisplayMember);
-                                        var itemValueMemberPropertyInfo =
-                                            copyColumnItem.GetType().GetProperty(copyColumnValueMember);
-                                        if (itemDisplayMemberPropertyInfo.GetValue(copyColumnItem).ToString().ToUpper() == pasteData.ToUpper())
-                                        {
-                                            int_value = (int)itemValueMemberPropertyInfo.GetValue(copyColumnItem);
-                                            break;
-                                        }
-                                    }
-
+                                    int? int_value = getEditSettingsValueMemberValue<int?>(editSettings, pasteData);
                                     if (int_value != null)
                                         return trySetValueInProjection(projection, column_name, int_value, undoRedoArguments);
                                     else
@@ -749,9 +724,36 @@ namespace BaseModel.Data.Helpers
             return PasteResult.Success;
         }
 
+        private T getEditSettingsValueMemberValue<T>(object editSettings, string searchData)
+        {
+            var copyColumnValueMember = (string)editSettings.GetType().GetProperty("ValueMember").GetValue(editSettings);
+            var copyColumnDisplayMember = (string)editSettings.GetType().GetProperty("DisplayMember").GetValue(editSettings);
+            var copyColumnItemsSource = (IEnumerable<object>)editSettings.GetType().GetProperty("ItemsSource").GetValue(editSettings);
+
+            T editValue = default(T);
+
+            if (copyColumnItemsSource == null || copyColumnValueMember == null || copyColumnDisplayMember == null)
+                return editValue;
+
+            foreach (var copyColumnItem in copyColumnItemsSource)
+            {
+                var itemDisplayMemberPropertyInfo =
+                    copyColumnItem.GetType().GetProperty(copyColumnDisplayMember);
+                var itemValueMemberPropertyInfo =
+                    copyColumnItem.GetType().GetProperty(copyColumnValueMember);
+                if (itemDisplayMemberPropertyInfo.GetValue(copyColumnItem).ToString().ToUpper() == searchData.ToUpper())
+                {
+                    editValue = (T)itemValueMemberPropertyInfo.GetValue(copyColumnItem);
+                    break;
+                }
+            }
+
+            return editValue;
+        }
+
         private PasteResult trySetValueInProjection(TProjection projection, string column_name, object new_value, List<UndoRedoArg<TProjection>> undoRedoArguments = null)
         {
-            string error_message = unifiedValueValidationCallback == null ? string.Empty : unifiedValueValidationCallback(projection, column_name, new_value);
+            string error_message = unifiedValueValidationCallback == null ? string.Empty : unifiedValueValidationCallback(projection, column_name, new_value, true);
             if (error_message == string.Empty)
             {
                 object old_value = DataUtils.GetNestedValue(column_name, projection);
@@ -936,7 +938,9 @@ namespace BaseModel.Data.Helpers
                 PropertyInfo copyObjectProperty = copyObject.GetType().GetProperty(objectToCopyProperty.Name);
                 //var objectValue = copyObjectProperty.GetValue(copyObject);
 
-                copyObjectProperty.SetValue(copyObject, objectToCopyValue);
+                //when projection has a property that entity doesn't
+                if(copyObjectProperty != null)
+                    copyObjectProperty.SetValue(copyObject, objectToCopyValue);
             }
         }
 
@@ -1015,6 +1019,17 @@ namespace BaseModel.Data.Helpers
             {
                 return null;
             }
+        }
+
+
+        public static string GetPasteSkipAttributeString(Type type)
+        {
+            var TypeSpecificSkipAttribute =
+                (PasteSkipAttribute)Attribute.GetCustomAttribute(type, typeof(PasteSkipAttribute), false);
+            if (TypeSpecificSkipAttribute != null)
+                return TypeSpecificSkipAttribute.SkipString;
+
+            return null;
         }
 
         public static IEnumerable<string> GetConstraintPropertyStrings(Type type)

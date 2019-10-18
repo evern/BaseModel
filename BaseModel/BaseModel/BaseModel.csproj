@@ -291,6 +291,7 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Attribute\PasteSkipAttribute.cs" />
     <Compile Include="Attribute\BulkEditDisabledAttributes.cs" />
     <Compile Include="Attribute\ConstraintAttributes.cs" />
     <Compile Include="Attribute\FilterNameAttribute.cs" />

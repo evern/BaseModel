@@ -23,7 +23,7 @@ namespace BaseModel.ViewModel.Composition
         private Func<IRepositoryQuery<TMainEntity>, IQueryable<TMainProjectionEntity>> _projectionFunc;
         public delegate string UnifiedRowValidationDelegate(TMainProjectionEntity projection);
         public event UnifiedRowValidationDelegate OnRowValidationEvent;
-        public delegate string UnifiedValueValidationDelegate(TMainProjectionEntity projection, string field_name, object new_value);
+        public delegate string UnifiedValueValidationDelegate(TMainProjectionEntity projection, string field_name, object new_value, bool isPaste);
         public event UnifiedValueValidationDelegate OnValueValidationEvent;
         public delegate bool OnBeforeEntitySavedDelegate(TMainProjectionEntity projection);
         public event OnBeforeEntitySavedDelegate OnBeforeEntitySavedEvent;
@@ -73,9 +73,9 @@ namespace BaseModel.ViewModel.Composition
             return OnRowValidationEvent?.Invoke(projection);
         }
 
-        public override string UnifiedValueValidation(TMainProjectionEntity projection, string field_name, object new_value)
+        public override string UnifiedValueValidation(TMainProjectionEntity projection, string field_name, object new_value, bool isPaste)
         {
-            return OnValueValidationEvent?.Invoke(projection, field_name, new_value);
+            return OnValueValidationEvent?.Invoke(projection, field_name, new_value, isPaste);
         }
 
         protected override void addEntitiesLoader()

@@ -29,7 +29,7 @@ namespace BaseModel.Misc
         [Display(Name = "Continue deletion")]
         Continue,
         [Display(Name = "Discontinue only this instance")]
-        Discontinue,
+        Skip,
         [Display(Name = "Discontinue subsequent deletion is bulk delete")]
         DiscontinueAll
     }

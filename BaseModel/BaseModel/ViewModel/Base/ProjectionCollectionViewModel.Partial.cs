@@ -92,7 +92,7 @@ namespace BaseModel.ViewModel.Base
         /// <summary>
         /// External call back used by copy paste, fill, new and existing row cell value changing to determine whether value is valid
         /// </summary>
-        public Func<TProjection, string, object, string> UnifiedValueValidationCallback;
+        public Func<TProjection, string, object, bool, string> UnifiedValueValidationCallback;
         #endregion
 
         /// <summary>
@@ -739,7 +739,7 @@ namespace BaseModel.ViewModel.Base
 
             if(UnifiedValueValidationCallback != null)
             {
-                string error_message = UnifiedValueValidationCallback((TProjection)e.Row, e.Column.FieldName, e.Value);
+                string error_message = UnifiedValueValidationCallback((TProjection)e.Row, e.Column.FieldName, e.Value, false);
                 if (error_message != null && error_message != string.Empty)
                 {
                     e.IsValid = false;
@@ -874,7 +874,7 @@ namespace BaseModel.ViewModel.Base
                     TProjection seletedEntity = SelectedEntities[i];
                     if (UnifiedValueValidationCallback != null)
                     {
-                        string error_message = UnifiedValueValidationCallback.Invoke(seletedEntity, info.Column.FieldName, valueToFill);
+                        string error_message = UnifiedValueValidationCallback.Invoke(seletedEntity, info.Column.FieldName, valueToFill, false);
                         if (error_message == string.Empty)
                         {
                             setEntityProperty(seletedEntity, info, valueToFill, numericIndex, enumerator, numericFieldLength);
@@ -901,7 +901,7 @@ namespace BaseModel.ViewModel.Base
                     TProjection seletedEntity = SelectedEntities[i];
                     if (UnifiedValueValidationCallback != null)
                     {
-                        string error_message = UnifiedValueValidationCallback.Invoke(seletedEntity, info.Column.FieldName, valueToFill);
+                        string error_message = UnifiedValueValidationCallback.Invoke(seletedEntity, info.Column.FieldName, valueToFill, false);
                         if (error_message == string.Empty)
                         {
                             setEntityProperty(seletedEntity, info, valueToFill, numericIndex, enumerator, numericFieldLength);
@@ -1107,6 +1107,9 @@ namespace BaseModel.ViewModel.Base
 
             //Use first selected entity instead of SelectedEntity in ReadOnlyCollectionViewModel because it cannot be referenced from EntitiesCollectionsWrapper
             TProjection firstSelectedEntity = SelectedEntities.First();
+            if (info.Column.FieldName == string.Empty)
+                return false;
+
             var columnPropertyInfo = DataUtils.GetNestedPropertyInfo(info.Column.FieldName, firstSelectedEntity);
             if (columnPropertyInfo.PropertyType == typeof(Guid) ||
                 columnPropertyInfo.PropertyType == typeof(Guid?) ||
@@ -1250,7 +1253,7 @@ namespace BaseModel.ViewModel.Base
 
                             if (UnifiedValueValidationCallback != null)
                             {
-                                string error_message = UnifiedValueValidationCallback.Invoke(selectedProjection, info.Column.FieldName, currentValue);
+                                string error_message = UnifiedValueValidationCallback.Invoke(selectedProjection, info.Column.FieldName, currentValue, false);
                                 if (error_message == string.Empty)
                                 {
                                     DataUtils.SetNestedValue(info.Column.FieldName, selectedProjection, currentValue);
@@ -1269,7 +1272,7 @@ namespace BaseModel.ViewModel.Base
                         {
                             if (UnifiedValueValidationCallback != null)
                             {
-                                string error_message = UnifiedValueValidationCallback.Invoke(selectedProjection, info.Column.FieldName, newValue);
+                                string error_message = UnifiedValueValidationCallback.Invoke(selectedProjection, info.Column.FieldName, newValue, false);
                                 if (error_message == string.Empty)
                                 {
                                     oldValue = DataUtils.GetNestedValue(info.Column.FieldName, selectedProjection);
