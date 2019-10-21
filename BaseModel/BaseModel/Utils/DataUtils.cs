@@ -732,7 +732,7 @@ namespace BaseModel.Data.Helpers
 
             T editValue = default(T);
 
-            if (copyColumnItemsSource == null || copyColumnValueMember == null || copyColumnDisplayMember == null)
+            if (copyColumnItemsSource == null || (copyColumnValueMember == null || copyColumnValueMember == string.Empty) || (copyColumnDisplayMember == null || copyColumnDisplayMember == string.Empty))
                 return editValue;
 
             foreach (var copyColumnItem in copyColumnItemsSource)
