@@ -22,14 +22,19 @@ namespace BaseModel.View.Behaviors
         private int onAttached = 0;
         private WidthAdjustmentConverter widthAdjustmentConverter = new WidthAdjustmentConverter();
         private double widthAdjustmentValue = 0.0f;
-
-        private Dictionary<int, GridColumn> masterColumns = new Dictionary<int, GridColumn>();
-        private Dictionary<int, GridColumn> detailColumns = new Dictionary<int, GridColumn>();
+        private double leftMarginWidthAdjustmentValue = 0.0f;
 
         private void SetColumnBinding(GridColumn masterCol, GridColumn detailCol)
         {
-            DependencyPropertyDescriptor.FromProperty(GridColumn.VisibleProperty, typeof(GridColumn)).AddValueChanged(masterCol, OnMasterColumnVisibleChanged);
-            DependencyPropertyDescriptor.FromProperty(GridColumn.VisibleProperty, typeof(GridColumn)).AddValueChanged(detailCol, OnDetailColumnVisibleChanged);
+            TableView masterView = MasterGrid.View as TableView;
+            foreach (GridColumn masterColumn in masterView.VisibleColumns)
+            {
+                DependencyPropertyDescriptor.FromProperty(GridColumn.VisibleIndexProperty, typeof(GridColumn)).AddValueChanged(masterColumn, OnMasterColumnPropertyChanged);
+                DependencyPropertyDescriptor.FromProperty(GridColumn.VisibleProperty, typeof(GridColumn)).AddValueChanged(masterColumn, OnMasterColumnPropertyChanged);
+                DependencyPropertyDescriptor.FromProperty(GridColumn.WidthProperty, typeof(GridColumn)).AddValueChanged(masterColumn, OnMasterColumnPropertyChanged);
+            }
+
+            DependencyPropertyDescriptor.FromProperty(GridColumn.VisibleProperty, typeof(GridColumn)).AddValueChanged(detailCol, OnDetailColumnPropertyChanged);
             detailCol.AllowResizing = DefaultBoolean.False;
 
             if (detailCol.VisibleIndex == 0)
@@ -37,16 +42,22 @@ namespace BaseModel.View.Behaviors
             else
                 detailCol.SetBinding(GridColumn.WidthProperty, new Binding("ActualDataWidth") { Source = masterCol });
 
-            masterColumns[masterCol.VisibleIndex] = masterCol;
-            detailColumns[detailCol.VisibleIndex] = detailCol;
+            detailCol.SetBinding(GridColumn.VisibleProperty, new Binding("Visible") { Source = masterCol });
         }
 
         private void RemoveColumnBinding(GridColumn masterCol, GridColumn detailCol)
         {
-            if (masterCol != null)
-                DependencyPropertyDescriptor.FromProperty(GridColumn.VisibleProperty, typeof(GridColumn)).RemoveValueChanged(masterCol, OnMasterColumnVisibleChanged);
-            DependencyPropertyDescriptor.FromProperty(GridColumn.VisibleProperty, typeof(GridColumn)).RemoveValueChanged(detailCol, OnDetailColumnVisibleChanged);
+            TableView masterView = MasterGrid.View as TableView;
+            foreach (GridColumn masterColumn in masterView.VisibleColumns)
+            {
+                DependencyPropertyDescriptor.FromProperty(GridColumn.VisibleIndexProperty, typeof(GridColumn)).RemoveValueChanged(masterColumn, OnMasterColumnPropertyChanged);
+                DependencyPropertyDescriptor.FromProperty(GridColumn.VisibleProperty, typeof(GridColumn)).RemoveValueChanged(masterColumn, OnMasterColumnPropertyChanged);
+                DependencyPropertyDescriptor.FromProperty(GridColumn.WidthProperty, typeof(GridColumn)).RemoveValueChanged(masterColumn, OnMasterColumnPropertyChanged);
+            }
+
+            DependencyPropertyDescriptor.FromProperty(GridColumn.VisibleProperty, typeof(GridColumn)).RemoveValueChanged(detailCol, OnDetailColumnPropertyChanged);
             BindingOperations.ClearBinding(detailCol, GridColumn.WidthProperty);
+            BindingOperations.ClearBinding(detailCol, GridColumn.VisibleProperty);
             detailCol.AllowResizing = DefaultBoolean.Default;
         }
 
@@ -57,10 +68,11 @@ namespace BaseModel.View.Behaviors
 
             foreach (GridColumn detailCol in detailView.VisibleColumns)
             {
-                if (detailCol.VisibleIndex < 0 || detailCol.VisibleIndex >= masterView.VisibleColumns.Count)
-                    continue;
+                //if (detailCol.VisibleIndex < 0 || detailCol.VisibleIndex >= masterView.VisibleColumns.Count)
+                //    continue;
 
-                GridColumn masterCol = masterView.VisibleColumns[detailCol.VisibleIndex];
+                //GridColumn masterCol = masterView.VisibleColumns[detailCol.VisibleIndex];
+                GridColumn masterCol = masterView.VisibleColumns.FirstOrDefault(x => x.Header.ToString() == detailCol.Header.ToString());
                 SetColumnBinding(masterCol, detailCol);
             }
         }
@@ -72,40 +84,6 @@ namespace BaseModel.View.Behaviors
             {
                 RemoveColumnBinding(null, detailCol);
             }
-
-            masterColumns.Clear();
-            detailColumns.Clear();
-        }
-
-        private bool CheckNeedReset(GridColumn masterCol, GridColumn detailCol)
-        {
-            int key = detailCol.VisibleIndex;
-
-            GridColumn storedMasterColumn = null;
-            GridColumn storedDetailColumn = null;
-            masterColumns.TryGetValue(key, out storedMasterColumn);
-            detailColumns.TryGetValue(key, out storedDetailColumn);
-
-            if (masterCol == null && storedMasterColumn != null)
-            {
-                DependencyPropertyDescriptor.FromProperty(GridColumn.VisibleProperty, typeof(GridColumn)).RemoveValueChanged(storedMasterColumn, OnMasterColumnVisibleChanged);
-                return true;
-            }
-
-            if (storedDetailColumn == null)
-                return true;
-
-            if (storedMasterColumn == null)
-                return true;
-
-            if (masterCol.GetHashCode() != storedMasterColumn.GetHashCode() || detailCol.GetHashCode() != storedDetailColumn.GetHashCode())
-            {
-                DependencyPropertyDescriptor.FromProperty(GridColumn.VisibleProperty, typeof(GridColumn)).RemoveValueChanged(storedMasterColumn, OnMasterColumnVisibleChanged);
-                DependencyPropertyDescriptor.FromProperty(GridColumn.VisibleProperty, typeof(GridColumn)).RemoveValueChanged(storedDetailColumn, OnDetailColumnVisibleChanged);
-                return true;
-            }
-
-            return false;
         }
 
         private void ResetWidthBindings()
@@ -116,11 +94,22 @@ namespace BaseModel.View.Behaviors
             foreach (GridColumn detailCol in detailView.VisibleColumns)
             {
                 GridColumn masterCol = null;
-                if (detailCol.VisibleIndex >= 0 && detailCol.VisibleIndex < masterView.VisibleColumns.Count)
-                    masterCol = masterView.VisibleColumns[detailCol.VisibleIndex];
+                //if (detailCol.VisibleIndex >= 0 && detailCol.VisibleIndex < masterView.VisibleColumns.Count)
+                //masterCol = masterView.VisibleColumns[detailCol.VisibleIndex];
 
-                if (!CheckNeedReset(masterCol, detailCol))
-                    continue;
+                if (detailCol.HeaderCaption.ToString() != string.Empty)
+                {
+                    IEnumerable<GridColumn> masterColumnsWithHeader = masterView.VisibleColumns.Where(x => x.HeaderCaption.ToString() != string.Empty);
+                    masterCol = masterColumnsWithHeader.FirstOrDefault(x => x.HeaderCaption.ToString() == detailCol.HeaderCaption.ToString());
+                }
+                else if(masterView.VisibleColumns.Count > 0)
+                    masterCol = masterView.VisibleColumns.First();
+
+                IEnumerable<GridColumn> masterColumnsWithoutChild = masterView.VisibleColumns.Where(x => !detailView.VisibleColumns.Any(y => y.HeaderCaption.ToString() == x.HeaderCaption.ToString()));
+                widthAdjustmentValue = masterColumnsWithoutChild.Sum(x => x.Width.Value);
+
+                //if (!CheckNeedReset(masterCol, detailCol))
+                //    continue;
 
                 RemoveColumnBinding(masterCol, detailCol);
                 if (masterCol != null)
@@ -128,16 +117,16 @@ namespace BaseModel.View.Behaviors
             }
         }
 
-        private void OnMasterColumnVisibleChanged(object sender, EventArgs e)
+        private void OnMasterColumnPropertyChanged(object sender, EventArgs e)
         {
             GridColumn masterColumn = (GridColumn)sender;
-            if (!masterColumn.Visible)
-            {
-                Dispatcher.BeginInvoke(new Action(() => {
-                    DependencyPropertyDescriptor.FromProperty(GridColumn.VisibleProperty, typeof(GridColumn)).RemoveValueChanged(masterColumn, OnMasterColumnVisibleChanged);
-                    ResetWidthBindings();
-                }), DispatcherPriority.Render);
-            }
+            Dispatcher.BeginInvoke(new Action(() => {
+
+                DependencyPropertyDescriptor.FromProperty(GridColumn.VisibleIndexProperty, typeof(GridColumn)).RemoveValueChanged(masterColumn, OnMasterColumnPropertyChanged);
+                DependencyPropertyDescriptor.FromProperty(GridColumn.VisibleProperty, typeof(GridColumn)).RemoveValueChanged(masterColumn, OnMasterColumnPropertyChanged);
+                DependencyPropertyDescriptor.FromProperty(GridColumn.WidthProperty, typeof(GridColumn)).RemoveValueChanged(masterColumn, OnMasterColumnPropertyChanged);
+                ResetWidthBindings();
+            }), DispatcherPriority.Render);
         }
 
         private void MasterGridColumns_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
@@ -149,13 +138,13 @@ namespace BaseModel.View.Behaviors
                 ResetWidthBindings();
         }
 
-        private void OnDetailColumnVisibleChanged(object sender, EventArgs e)
+        private void OnDetailColumnPropertyChanged(object sender, EventArgs e)
         {
             GridColumn detailColumn = (GridColumn)sender;
             if (!detailColumn.Visible)
             {
                 Dispatcher.BeginInvoke(new Action(() => {
-                    DependencyPropertyDescriptor.FromProperty(GridColumn.VisibleProperty, typeof(GridColumn)).RemoveValueChanged(detailColumn, OnDetailColumnVisibleChanged);
+                    DependencyPropertyDescriptor.FromProperty(GridColumn.VisibleProperty, typeof(GridColumn)).RemoveValueChanged(detailColumn, OnDetailColumnPropertyChanged);
                     BindingOperations.ClearBinding(detailColumn, GridColumn.WidthProperty);
                     ResetWidthBindings();
                 }), DispatcherPriority.Render);
@@ -188,10 +177,10 @@ namespace BaseModel.View.Behaviors
                     MasterGrid = mainGrid as GridControl;
                     if(MasterGrid != null)
                     {
-                        widthAdjustmentValue = (MasterGrid.View as TableView).ExpandDetailButtonWidth;
+                        leftMarginWidthAdjustmentValue = (MasterGrid.View as TableView).ExpandDetailButtonWidth;
                         FrameworkElement content = LayoutHelper.FindElement(MasterGrid, (element) => element is ContentPresenter && element.Name == "content");
                         if (content != null)
-                            widthAdjustmentValue += content.Margin.Left;
+                            leftMarginWidthAdjustmentValue += content.Margin.Left;
                         SetWidthBindings();
                         DetailGrid.ItemsSourceChanged += DetailGrid_ItemsSourceChanged;
                         DetailGrid.Columns.CollectionChanged += DetailGridColumns_CollectionChanged;
@@ -228,11 +217,10 @@ namespace BaseModel.View.Behaviors
             double doubleValue = (double)value;
             double doubleParameter = (double)parameter;
 
-            if (Double.IsNaN(doubleValue) || Double.IsNaN(doubleParameter))
+            if (Double.IsNaN(doubleParameter))
                 return doubleValue;
-
-            return doubleValue;
-            //return doubleValue - doubleParameter;
+            else
+                return doubleParameter;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
