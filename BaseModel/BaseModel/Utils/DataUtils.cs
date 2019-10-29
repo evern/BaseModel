@@ -1,4 +1,5 @@
 ﻿using BaseModel.Attributes;
+using BaseModel.Helpers;
 using BaseModel.Misc;
 using BaseModel.View;
 using BaseModel.ViewModel.UndoRedo;
@@ -500,6 +501,7 @@ namespace BaseModel.Data.Helpers
                 return PasteResult.Skip;
 
             string column_name = column.FieldName;
+            pasteData = pasteData.Trim();
 
             try
             {
@@ -1152,6 +1154,54 @@ namespace BaseModel.Data.Helpers
 
                 childPropertyString = childPropertyString.Substring(0, childPropertyString.Length - 1);
                 return GetNestedValue(childPropertyString, childInstance);
+            }
+        }
+
+        public static EnumerationType GetEnumerateType(string value, string nextvalue, out long? differences, out long? startEnumeration, out int? numericIndex, out int numericFieldLength)
+        {
+            long? nextEnumerator = null;
+            int? nextNumericIndex = null;
+            int nextNumericFieldLength = 0;
+
+            differences = null;
+            numericIndex = StringFormatUtils.GetNumericIndex(value, out numericFieldLength);
+            if (numericIndex != null)
+                startEnumeration = Int64.Parse(value.Substring(numericIndex.Value, value.Length - numericIndex.Value));
+            else
+            {
+                startEnumeration = null;
+                return EnumerationType.None;
+            }
+
+            nextNumericIndex = StringFormatUtils.GetNumericIndex(nextvalue, out nextNumericFieldLength);
+            if (nextNumericIndex != null)
+            {
+                if (numericIndex == nextNumericIndex)
+                    nextEnumerator = Int64.Parse(nextvalue.Substring(nextNumericIndex.Value, nextvalue.Length - nextNumericIndex.Value));
+                else
+                    return EnumerationType.None;
+            }
+
+            if (startEnumeration < nextEnumerator)
+            {
+                if (startEnumeration != null && nextEnumerator != null)
+                {
+                    differences = (long)nextEnumerator - (long)startEnumeration;
+                    return EnumerationType.Increase;
+                }
+                else
+                    return EnumerationType.None;
+
+            }
+            else
+            {
+                if (startEnumeration != null && nextEnumerator != null)
+                {
+                    differences = (long)startEnumeration - (long)nextEnumerator;
+                    return EnumerationType.Decrease;
+                }
+                else
+                    return EnumerationType.None;
             }
         }
 

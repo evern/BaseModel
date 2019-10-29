@@ -853,7 +853,7 @@ namespace BaseModel.ViewModel.Base
             int numericFieldLength = 0;
             EnumerationType enumerationType;
             if (valueToFill != null && valueToFill.GetType() == typeof(string) && nextValueInSequence != null)
-                enumerationType = getEnumerateType(valueToFill.ToString(), nextValueInSequence.ToString(), out enumerationDifferences, out enumerator, out numericIndex, out numericFieldLength);
+                enumerationType = DataUtils.GetEnumerateType(valueToFill.ToString(), nextValueInSequence.ToString(), out enumerationDifferences, out enumerator, out numericIndex, out numericFieldLength);
             else
                 enumerationType = EnumerationType.None;
 
@@ -916,55 +916,7 @@ namespace BaseModel.ViewModel.Base
             EntitiesUndoRedoManager.UnpauseActionId();
             isBackgroundEdit = false;
         }
-
-        private EnumerationType getEnumerateType(string value, string nextvalue, out long? differences, out long? startEnumeration, out int? numericIndex, out int numericFieldLength)
-        {
-            long? nextEnumerator = null;
-            int? nextNumericIndex = null;
-            int nextNumericFieldLength = 0;
-
-            differences = null;
-            numericIndex = StringFormatUtils.GetNumericIndex(value, out numericFieldLength);
-            if (numericIndex != null)
-                startEnumeration = Int64.Parse(value.Substring(numericIndex.Value, value.Length - numericIndex.Value));
-            else
-            {
-                startEnumeration = null;
-                return EnumerationType.None;
-            }
-
-            nextNumericIndex = StringFormatUtils.GetNumericIndex(nextvalue, out nextNumericFieldLength);
-            if (nextNumericIndex != null)
-            {
-                if (numericIndex == nextNumericIndex)
-                    nextEnumerator = Int64.Parse(nextvalue.Substring(nextNumericIndex.Value, nextvalue.Length - nextNumericIndex.Value));
-                else
-                    return EnumerationType.None;
-            }
-
-            if (startEnumeration < nextEnumerator)
-            {
-                if (startEnumeration != null && nextEnumerator != null)
-                {
-                    differences = (long)nextEnumerator - (long)startEnumeration;
-                    return EnumerationType.Increase;
-                }
-                else
-                    return EnumerationType.None;
-
-            }
-            else
-            {
-                if (startEnumeration != null && nextEnumerator != null)
-                {
-                    differences = (long)startEnumeration - (long)nextEnumerator;
-                    return EnumerationType.Decrease;
-                }
-                else
-                    return EnumerationType.None;
-            }
-        }
-
+        
         private void setEntityProperty(TProjection editEntity, GridMenuInfo info, object valueToFill, int? numericIndex, long? enumerator, int numericFieldLength)
         {
             if (numericIndex != null && enumerator != null)
