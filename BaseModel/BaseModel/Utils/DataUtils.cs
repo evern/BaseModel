@@ -743,7 +743,7 @@ namespace BaseModel.Data.Helpers
                     copyColumnItem.GetType().GetProperty(copyColumnDisplayMember);
                 var itemValueMemberPropertyInfo =
                     copyColumnItem.GetType().GetProperty(copyColumnValueMember);
-                if (itemDisplayMemberPropertyInfo.GetValue(copyColumnItem).ToString().ToUpper() == searchData.ToUpper())
+                if (itemDisplayMemberPropertyInfo.GetValue(copyColumnItem) != null && itemDisplayMemberPropertyInfo.GetValue(copyColumnItem).ToString().ToUpper() == searchData.ToUpper())
                 {
                     editValue = (T)itemValueMemberPropertyInfo.GetValue(copyColumnItem);
                     break;
