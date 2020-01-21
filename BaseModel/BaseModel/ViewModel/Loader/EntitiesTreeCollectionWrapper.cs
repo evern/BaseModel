@@ -59,6 +59,11 @@ namespace BaseModel.ViewModel.Loader
             base.AssignCallBacksAndRaisePropertyChange(entities);
         }
 
+        public virtual void BulkDelete()
+        {
+            MainViewModel.BulkDelete();
+        }
+
         protected virtual bool onBeforeEntitySavedIsContinue(TMainProjectionEntity entity)
         {
             return true;
