@@ -263,8 +263,8 @@ namespace BaseModel.ViewModel.Base
                 canUpdateEntity?.Update();
             }
 
-            BulkSave(bulkSaveProperties.Select(x => x.ChangedEntity));
             BulkSave(bulkAddProperties.Select(x => x.ChangedEntity));
+            BulkSave(bulkSaveProperties.Select(x => x.ChangedEntity));
 
             //use ignore refresh here because it'll be refreshed in basebulksave
             BaseBulkDelete(bulkDeleteProperties.Select(x => x.ChangedEntity));
