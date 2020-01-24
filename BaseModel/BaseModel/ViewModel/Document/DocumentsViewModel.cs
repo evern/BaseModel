@@ -183,7 +183,7 @@ namespace BaseModel.ViewModel.Document
             if (module == null || DocumentManagerService == null)
                 return null;
 
-            DocumentInfo documentInfo = new DocumentInfo(module.Id, module.DocumentParameter, module.DocumentType, module.ModuleTitle);
+            DocumentInfo documentInfo = new DocumentInfo(module.NavigationId, module.DocumentParameter, module.DocumentType, module.ModuleTitle);
             var document = DocumentManagerService.ShowExistingEntityDocument(documentInfo, this);
 
             return document;
@@ -198,7 +198,7 @@ namespace BaseModel.ViewModel.Document
                 return;
 
             TModule navigateModule = (TModule)module;
-            DocumentInfo documentInfo = new DocumentInfo(navigateModule.Id, navigateModule.DocumentParameter, navigateModule.DocumentType, navigateModule.ModuleTitle);
+            DocumentInfo documentInfo = new DocumentInfo(navigateModule.NavigationId, navigateModule.DocumentParameter, navigateModule.DocumentType, navigateModule.ModuleTitle);
             var document = DocumentManagerService.ShowExistingEntityDocument(documentInfo, this);
         }
 
@@ -208,7 +208,7 @@ namespace BaseModel.ViewModel.Document
             if (module == null || DocumentManagerService == null)
                 return;
 
-            DocumentInfo documentInfo = new DocumentInfo(module.Id, module.DocumentParameter, module.DocumentType, module.ModuleTitle);
+            DocumentInfo documentInfo = new DocumentInfo(module.NavigationId, module.DocumentParameter, module.DocumentType, module.ModuleTitle);
             var document = DocumentManagerService.ShowExistingEntityDocument(documentInfo, this);
             //var document = DocumentManagerService.FindDocumentByIdOrCreate(module.ModuleTitle,
             //    x => NavigateToDocument(module));

@@ -12,12 +12,13 @@ namespace BaseModel.ViewModel.Document
         /// <summary>
         ///     Initializes a new instance of the ModuleDescription class.
         /// </summary>
-        protected ModuleDescription(object id, object parentId, string title, string documentType = null, object documentParameter = null, ImageSource image = null, string navigationTitle = null, bool treeViewIsExpanded = false, bool showInCollapseMode = false)
+        protected ModuleDescription(string securityId, string projectSpecificKey, string parentId, string title, string documentType = null, object documentParameter = null, ImageSource image = null, string navigationTitle = null, bool treeViewIsExpanded = false, bool showInCollapseMode = false)
         {
             ModuleTitle = title;
             DocumentType = documentType == null ? string.Empty : documentType;
             DocumentParameter = documentParameter;
-            Id = id;
+            NavigationId = securityId + projectSpecificKey;
+            SecurityId = securityId;
             ParentId = parentId;
             Image = Image;
             TreeViewIsExpanded = treeViewIsExpanded;
@@ -56,12 +57,17 @@ namespace BaseModel.ViewModel.Document
         /// <summary>
         ///     Specifies the parentId for treeview binding, cannot be nested since dxTreeView doesn't support nested for Ids
         /// </summary>
-        public object ParentId { get; private set; }
+        public string ParentId { get; private set; }
 
         /// <summary>
         ///     Specifies the Id for treeview binding, cannot be nested since dxTreeView doesn't support nested for Ids
         /// </summary>
-        public object Id { get; private set; }
+        public string NavigationId { get; private set; }
+
+        /// <summary>
+        ///     Specifies the Id used for security profiles
+        /// </summary>
+        public string SecurityId { get; private set; }
         
         /// <summary>
         ///     Specify the treeview image property when binded to TreeViewControl
