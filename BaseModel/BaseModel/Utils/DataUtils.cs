@@ -13,6 +13,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Windows;
@@ -1227,6 +1228,11 @@ namespace BaseModel.Data.Helpers
                 childPropertyString = childPropertyString.Substring(0, childPropertyString.Length - 1);
                 return GetNestedPropertyInfo(childPropertyString, childInstance);
             }
+        }
+
+        public static string GetNameOf<T>(Expression<Func<T>> property)
+        {
+            return (property.Body as MemberExpression).Member.Name;
         }
     }
 }

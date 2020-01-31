@@ -12,13 +12,13 @@ namespace BaseModel.ViewModel.Document
         /// <summary>
         ///     Initializes a new instance of the ModuleDescription class.
         /// </summary>
-        protected ModuleDescription(string securityId, string projectSpecificKey, string parentId, string title, string documentType = null, object documentParameter = null, ImageSource image = null, string navigationTitle = null, bool treeViewIsExpanded = false, bool showInCollapseMode = false)
+        protected ModuleDescription(string securityKey, string uniqueNavigationKey, string parentId, string title, string documentType = null, object documentParameter = null, ImageSource image = null, string navigationTitle = null, bool treeViewIsExpanded = false, bool showInCollapseMode = false)
         {
             ModuleTitle = title;
             DocumentType = documentType == null ? string.Empty : documentType;
             DocumentParameter = documentParameter;
-            NavigationId = securityId + projectSpecificKey;
-            SecurityId = securityId;
+            NavigationId = securityKey + uniqueNavigationKey;
+            SecurityKey = securityKey;
             ParentId = parentId;
             Image = Image;
             TreeViewIsExpanded = treeViewIsExpanded;
@@ -67,7 +67,7 @@ namespace BaseModel.ViewModel.Document
         /// <summary>
         ///     Specifies the Id used for security profiles
         /// </summary>
-        public string SecurityId { get; private set; }
+        public string SecurityKey { get; private set; }
         
         /// <summary>
         ///     Specify the treeview image property when binded to TreeViewControl
