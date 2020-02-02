@@ -36,6 +36,8 @@ namespace BaseModel.ViewModel.Loader
         protected EntitiesLoaderDescriptionCollection loaderCollection = null;
         protected EntitiesLoaderDescription<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey, TMainEntityUnitOfWork> mainEntityLoaderDescription;
 
+        public bool IsReadOnly { get; set; }
+        protected virtual string readOnlyMessage => string.Empty;
         public CollectionViewModel<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey, TMainEntityUnitOfWork> MainViewModel { get; set; }
         public bool SuppressNotification { get; set; }
         public bool AlwaysSkipMessage { get; set; }
@@ -269,6 +271,9 @@ namespace BaseModel.ViewModel.Loader
                             TableViewService.ApplyBestFit();
                 }
             }
+
+            if(IsReadOnly)
+                MessageBoxService.ShowMessage(readOnlyMessage, "Read Only", MessageButton.OK);
         }
 
         protected void ApplyProjectionPropertiesAndCreatedDateToEntity(TMainProjectionEntity projectionEntity, TMainEntity entity)

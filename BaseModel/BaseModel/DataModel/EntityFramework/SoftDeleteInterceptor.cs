@@ -14,12 +14,14 @@ namespace BaseModel.DataModel.EntityFramework
         private readonly string DeletedColumnName;
         private readonly string DeletedByColumnName;
         private readonly List<string> ApplicableContext;
+        private readonly Func<Guid> GetGuidFunc;
 
-        public SoftDeleteInterceptor(string deletedColumnName, string deletedByColumnName, List<string> applicableContext)
+        public SoftDeleteInterceptor(string deletedColumnName, string deletedByColumnName, Func<Guid> getGuidFunc, List<string> applicableContext)
         {
             DeletedColumnName = deletedColumnName;
             DeletedByColumnName = deletedByColumnName;
             ApplicableContext = applicableContext;
+            GetGuidFunc = getGuidFunc;
         }
 
         public void TreeCreated(DbCommandTreeInterceptionContext interceptionContext)
@@ -59,10 +61,10 @@ namespace BaseModel.DataModel.EntityFramework
                     .Property(DeletedColumnName),
                 DbExpression.FromDateTime(now)));
 
-            //setClauses.Add(DbExpressionBuilder.SetClause(
-            //    deleteCommand.Target.VariableType.Variable(deleteCommand.Target.VariableName)
-            //        .Property(DeletedByColumnName),
-            //    DbExpression.FromGuid(LoginCredentials.CurrentUserGuid())));
+            setClauses.Add(DbExpressionBuilder.SetClause(
+                deleteCommand.Target.VariableType.Variable(deleteCommand.Target.VariableName)
+                    .Property(DeletedByColumnName),
+                DbExpression.FromGuid(GetGuidFunc == null ? Guid.Empty : GetGuidFunc())));
 
             return new DbUpdateCommandTree(
                 deleteCommand.MetadataWorkspace,
