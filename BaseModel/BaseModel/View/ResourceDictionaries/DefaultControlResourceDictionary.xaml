@@ -379,6 +379,7 @@
     <Style x:Key="DefaultMinimalTableViewTemplate" TargetType="{x:Type dxg:TableView}">
         <Setter Property="ScrollBarAnnotationMode" Value="All" />
         <Setter Property="GroupSummaryDisplayMode" Value="AlignByColumns" />
+        <Setter Property="ColumnFilterPopupMode" Value="Excel" />
         <Setter Property="AllowPerPixelScrolling" Value="False" />
         <Setter Property="AllowScrollAnimation" Value="False" />
         <Setter Property="AllowHorizontalScrollingVirtualization" Value="False" />
@@ -422,6 +423,7 @@
                 </DataTemplate>
             </Setter.Value>
         </Setter>
+        <Setter Property="ColumnFilterPopupMode" Value="Excel" />
         <Setter Property="ScrollBarAnnotationMode" Value="All" />
         <Setter Property="ShowTotalSummary" Value="True" />
         <Setter Property="GroupSummaryDisplayMode" Value="AlignByColumns" />

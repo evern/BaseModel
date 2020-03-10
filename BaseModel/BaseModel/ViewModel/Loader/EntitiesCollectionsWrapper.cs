@@ -254,7 +254,7 @@ namespace BaseModel.ViewModel.Loader
         {
             if (GridControlService != null)
             {
-                GridControlService.SetCheckedListFilterPopUpMode();
+                GridControlService.SetExcelFilterPopUpMode();
                 //GridControlService.SetGridColumnSortMode();
                 GridControlService.CombineMasterDetailSearch();
             }

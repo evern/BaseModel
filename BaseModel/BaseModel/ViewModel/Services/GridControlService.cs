@@ -34,7 +34,7 @@ namespace BaseModel.ViewModel.Services
         void RefreshData();
         IEnumerable<object> GetVisibleRowObjects();
         void HighlightIncorrectText(SpellChecker spellChecker);
-        void SetCheckedListFilterPopUpMode();
+        void SetExcelFilterPopUpMode();
         void SetGridColumnSortMode();
         void ClearSorting();
         void ClearGrouping();
@@ -247,7 +247,7 @@ namespace BaseModel.ViewModel.Services
             GridControl.FilterCriteria = null;
         }
 
-        public void SetCheckedListFilterPopUpMode()
+        public void SetExcelFilterPopUpMode()
         {
             if (GridControl == null)
                 return;
@@ -255,7 +255,7 @@ namespace BaseModel.ViewModel.Services
             foreach(GridColumn grid_column in GridControl.Columns)
             {
                 if(grid_column.FilterPopupMode == FilterPopupMode.Default)
-                    grid_column.FilterPopupMode = FilterPopupMode.CheckedList;
+                    grid_column.FilterPopupMode = FilterPopupMode.Excel;
             }
         }
 

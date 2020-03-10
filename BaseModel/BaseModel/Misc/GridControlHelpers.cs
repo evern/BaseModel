@@ -59,6 +59,9 @@ namespace BaseModel.Misc
 
                 foreach (var selected_cell in selected_cells)
                 {
+                    if (selected_cell.Column.ReadOnly)
+                        continue;
+
                     int row_handle = selected_cell.RowHandle;
                     DataRowView editing_row_view = (DataRowView)gridControl.GetRow(row_handle);
                     DataRow editing_row = editing_row_view.Row;
@@ -75,68 +78,70 @@ namespace BaseModel.Misc
             {
                 GridCell first_selected_cell = selected_cells.First();
                 GridCell last_selected_cell = selected_cells.Last();
-
-                int first_row_handle = selected_cells.Min(x => x.RowHandle);
-                int last_row_handle = selected_cells.Max(x => x.RowHandle);
-                int first_row_visible_index = gridControl.GetRowVisibleIndexByHandle(first_row_handle);
-                int last_row_visible_index = gridControl.GetRowVisibleIndexByHandle(last_row_handle);
-                int numberOfSelectedRows = (last_row_visible_index - first_row_visible_index) + 1;
-                int numberOfCopiedRows = grouped_results.First().Count;
-
-                List<GridColumn> visible_columns = gridTableView.VisibleColumns.ToList();
-                int first_column_visible_index = visible_columns.First(x => x.FieldName == first_selected_cell.Column.FieldName).VisibleIndex;
-                int last_column_visible_index = visible_columns.First(x => x.FieldName == last_selected_cell.Column.FieldName).VisibleIndex;
-
-                int numberOfSelectedColumns = (last_column_visible_index - first_column_visible_index) + 1;
-                int numberOfCopiedColumns = grouped_results.Count;
-
-                //commented out because not accurate during banded view
-                //int first_column_visible_index = first_selected_cell.Column.VisibleIndex;
-
-                int rowOffsetSelection = numberOfSelectedRows > numberOfCopiedRows ? numberOfSelectedRows : numberOfCopiedRows;
-                int columnOffsetSelection = numberOfSelectedColumns > numberOfCopiedColumns ? numberOfSelectedColumns : numberOfCopiedColumns;
-
-                int pasteValueRowOffset = 0;
-                if (showLoadingScreen)
-                    LoadingScreenManager.ShowLoadingScreen(rowOffsetSelection);
-
-                for (int rowOffset = 0; rowOffset < rowOffsetSelection; rowOffset++)
+                if (!first_selected_cell.Column.ReadOnly)
                 {
-                    int pasteValueColumnOffset = 0;
-                    for (int columnOffset = 0; columnOffset < columnOffsetSelection; columnOffset++)
+                    int first_row_handle = selected_cells.Min(x => x.RowHandle);
+                    int last_row_handle = selected_cells.Max(x => x.RowHandle);
+                    int first_row_visible_index = gridControl.GetRowVisibleIndexByHandle(first_row_handle);
+                    int last_row_visible_index = gridControl.GetRowVisibleIndexByHandle(last_row_handle);
+                    int numberOfSelectedRows = (last_row_visible_index - first_row_visible_index) + 1;
+                    int numberOfCopiedRows = grouped_results.First().Count;
+
+                    List<GridColumn> visible_columns = gridTableView.VisibleColumns.ToList();
+                    int first_column_visible_index = visible_columns.First(x => x.FieldName == first_selected_cell.Column.FieldName).VisibleIndex;
+                    int last_column_visible_index = visible_columns.First(x => x.FieldName == last_selected_cell.Column.FieldName).VisibleIndex;
+
+                    int numberOfSelectedColumns = (last_column_visible_index - first_column_visible_index) + 1;
+                    int numberOfCopiedColumns = grouped_results.Count;
+
+                    //commented out because not accurate during banded view
+                    //int first_column_visible_index = first_selected_cell.Column.VisibleIndex;
+
+                    int rowOffsetSelection = numberOfSelectedRows > numberOfCopiedRows ? numberOfSelectedRows : numberOfCopiedRows;
+                    int columnOffsetSelection = numberOfSelectedColumns > numberOfCopiedColumns ? numberOfSelectedColumns : numberOfCopiedColumns;
+
+                    int pasteValueRowOffset = 0;
+                    if (showLoadingScreen)
+                        LoadingScreenManager.ShowLoadingScreen(rowOffsetSelection);
+
+                    for (int rowOffset = 0; rowOffset < rowOffsetSelection; rowOffset++)
                     {
-                        if (!visible_columns.Any(x => x.VisibleIndex == (first_column_visible_index + columnOffset)))
-                            continue;
+                        int pasteValueColumnOffset = 0;
+                        for (int columnOffset = 0; columnOffset < columnOffsetSelection; columnOffset++)
+                        {
+                            if (!visible_columns.Any(x => x.VisibleIndex == (first_column_visible_index + columnOffset)))
+                                continue;
 
-                        GridColumn current_column = visible_columns.First(x => x.VisibleIndex == (first_column_visible_index + columnOffset));
-                        string columnValue = grouped_results[pasteValueColumnOffset][pasteValueRowOffset];
+                            GridColumn current_column = visible_columns.First(x => x.VisibleIndex == (first_column_visible_index + columnOffset));
+                            string columnValue = grouped_results[pasteValueColumnOffset][pasteValueRowOffset];
 
-                        int current_row_visible_index = first_row_visible_index + rowOffset;
-                        int current_row_handle = gridControl.GetRowHandleByVisibleIndex(current_row_visible_index);
+                            int current_row_visible_index = first_row_visible_index + rowOffset;
+                            int current_row_handle = gridControl.GetRowHandleByVisibleIndex(current_row_visible_index);
 
-                        object rowObject = gridControl.GetRow(current_row_handle);
-                        if (rowObject == null)
-                            continue;
+                            object rowObject = gridControl.GetRow(current_row_handle);
+                            if (rowObject == null)
+                                continue;
 
-                        DataRowView editing_row_view = (DataRowView)rowObject;
-                        DataRow editing_row = editing_row_view.Row;
+                            DataRowView editing_row_view = (DataRowView)rowObject;
+                            DataRow editing_row = editing_row_view.Row;
 
-                        pasteValueColumnOffset += 1;
-                        if (pasteValueColumnOffset >= grouped_results.Count)
-                            pasteValueColumnOffset = 0;
+                            pasteValueColumnOffset += 1;
+                            if (pasteValueColumnOffset >= grouped_results.Count)
+                                pasteValueColumnOffset = 0;
 
-                        basePasteDataAction?.Invoke(editing_row, current_column, columnValue, columnOffset == columnOffsetSelection - 1);
+                            basePasteDataAction?.Invoke(editing_row, current_column, columnValue, columnOffset == columnOffsetSelection - 1);
+
+                            if (showLoadingScreen)
+                                LoadingScreenManager.Progress();
+                        }
 
                         if (showLoadingScreen)
-                            LoadingScreenManager.Progress();
+                            LoadingScreenManager.CloseLoadingScreen();
+
+                        pasteValueRowOffset += 1;
+                        if (pasteValueRowOffset >= grouped_results[pasteValueColumnOffset].Count)
+                            pasteValueRowOffset = 0;
                     }
-
-                    if (showLoadingScreen)
-                        LoadingScreenManager.CloseLoadingScreen();
-
-                    pasteValueRowOffset += 1;
-                    if (pasteValueRowOffset >= grouped_results[pasteValueColumnOffset].Count)
-                        pasteValueRowOffset = 0;
                 }
             }
         }
