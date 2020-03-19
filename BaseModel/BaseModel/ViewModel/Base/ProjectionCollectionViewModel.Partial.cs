@@ -93,6 +93,11 @@ namespace BaseModel.ViewModel.Base
         /// External call back used by copy paste, fill, new and existing row cell value changing to determine whether value is valid
         /// </summary>
         public Func<TProjection, string, object, bool, string> UnifiedValueValidationCallback;
+
+        /// <summary>
+        /// External call back used to format error messages
+        /// </summary>
+        public Action<IEnumerable<ErrorMessage>> FormatErrorMessagesCallBack;
         #endregion
 
         /// <summary>
@@ -340,11 +345,12 @@ namespace BaseModel.ViewModel.Base
         /// <param name="entity">The entity to be validated</param>
         /// <param name="errorMessage">Error message to notify the user of conflicting constraints</param>
         /// <returns>Returns true if no other entity contains similar constraint member values</returns>
-        public bool IsValidEntity(TProjection entity, IEnumerable<TProjection> preCommittedProjections, ref string errorMessage)
+        public bool IsValidEntity(TProjection entity, IEnumerable<TProjection> preCommittedProjections, ref string errorMessage, out List<KeyValuePair<string, string>> constraintIssues)
         {
             //if (OnBeforeEntitySavedIsContinueCallBack != null && !OnBeforeEntitySavedIsContinueCallBack(entity))
             //    return false;
 
+            constraintIssues = new List<KeyValuePair<string, string>>();
             if (!isRequiredAttributesHasValue(entity, ref errorMessage))
                 return false;
 
@@ -352,7 +358,7 @@ namespace BaseModel.ViewModel.Base
             if (errorMessage != null && errorMessage != string.Empty)
                 return false;
 
-            if (IsUniqueEntityConstraintValues(entity, preCommittedProjections, ref errorMessage))
+            if (IsUniqueEntityConstraintValues(entity, preCommittedProjections, ref errorMessage, out constraintIssues))
             {
                 errorMessage = string.Empty;
                 return true;
@@ -371,12 +377,24 @@ namespace BaseModel.ViewModel.Base
         /// <param name="newValue">New value of the current changing cell</param>
         /// <param name="errorMessage">Error message to notify the user of conflicting constraints</param>
         /// <returns>Returns true if no other entity contains similar constraint member values</returns>
-        public bool IsValidEntityCellValue(TProjection entity, string fieldName, object newValue,
-            ref string errorMessage)
+        public bool IsValidEntityCellValue(TProjection entity, string fieldName, object newValue, ref string errorMessage, out string invalidFieldName)
         {
-            return IsUniqueEntityConstraintValues(entity, null, ref errorMessage,
-                new KeyValuePair<string, object>(fieldName, newValue));
-            //return IsUniqueEntityConstraintValues(entity, ref errorMessage);
+            List<KeyValuePair<string, string>> constraintIssues;
+            invalidFieldName = string.Empty;
+            bool isUnique = IsUniqueEntityConstraintValues(entity, null, ref errorMessage, out constraintIssues, new KeyValuePair<string, object>(fieldName, newValue));
+            if (isUnique)
+                invalidFieldName = string.Empty;
+            else
+            {
+                foreach(var constraintIssue in constraintIssues)
+                {
+                    invalidFieldName += constraintIssue.Key + ": " + constraintIssue.Value + " ,";
+                } 
+
+                invalidFieldName = invalidFieldName.Substring(0, invalidFieldName.Length - 2);
+            }
+
+            return isUnique;
         }
 
         /// <summary>
@@ -386,9 +404,10 @@ namespace BaseModel.ViewModel.Base
         /// <param name="errorMessage">Error message to be populated with entity member constraint field names</param>
         /// <param name="keyValuePairNewFieldValue">In some instance the new value isn't yet updated on the entity, so this provides other ways pass in the new value</param>
         /// <returns>Concatenated constraint value string</returns>
-        private bool IsUniqueEntityConstraintValues(TProjection entity, IEnumerable<TProjection> preCommittedProjections, ref string errorMessage,
+        private bool IsUniqueEntityConstraintValues(TProjection entity, IEnumerable<TProjection> preCommittedProjections, ref string errorMessage, out List<KeyValuePair<string, string>> constraintIssues,
             KeyValuePair<string, object>? keyValuePairNewFieldValue = null)
         {
+            constraintIssues = new List<KeyValuePair<string, string>>();
             var currentEntityConcatenatedConstraints = string.Empty;
 
             var constraintMemberPropertyStrings =
@@ -417,18 +436,19 @@ namespace BaseModel.ViewModel.Base
                 if (constraintMemberPropertyValue != null)
                 {
                     var immediatePropertyString = constraintMemberPropertyString.Split('.').Last();
-                    errorMessage += immediatePropertyString + " and ";
                     string constraintMemberPropertyStringFormat;
                     if (constraintMemberPropertyValue.GetType() == typeof(decimal))
                         constraintMemberPropertyStringFormat = ((decimal)constraintMemberPropertyValue).ToString("0.00");
                     else
                         constraintMemberPropertyStringFormat = constraintMemberPropertyValue.ToString();
                     currentEntityConcatenatedConstraints += constraintMemberPropertyStringFormat;
+
+                    constraintIssues.Add(new KeyValuePair<string, string>(immediatePropertyString, constraintMemberPropertyStringFormat));
                 }
             }
 
             return IsConstraintExistsInOtherEntities(entity, preCommittedProjections, currentEntityConcatenatedConstraints,
-                constraintMemberPropertyStrings, ref errorMessage);
+                constraintMemberPropertyStrings, ref errorMessage, out constraintIssues);
         }
 
 
@@ -441,8 +461,9 @@ namespace BaseModel.ViewModel.Base
         /// <param name="constraintErrorMessage">Error message to notify the user of conflicting constraints</param>
         /// <returns>Returns true if no other entity contains similar constraint member values</returns>
         private bool IsConstraintExistsInOtherEntities(TProjection entity, IEnumerable<TProjection> preCommittedProjections, string entityConstraint,
-            IEnumerable<string> constraintMemberPropertyStrings, ref string constraintErrorMessage)
+            IEnumerable<string> constraintMemberPropertyStrings, ref string constraintErrorMessage, out List<KeyValuePair<string, string>> constraintFieldNames)
         {
+            constraintFieldNames = new List<KeyValuePair<string, string>>();
             if (entityConstraint == string.Empty)
                 return true;
 
@@ -471,6 +492,7 @@ namespace BaseModel.ViewModel.Base
                             continue;
                     }
 
+                    List<KeyValuePair<string, string>> errorValuePairs = new List<KeyValuePair<string, string>>();
                     var otherEntityConcatenatedConstraints = string.Empty;
                     foreach (var constraintMemberPropertyString in constraintMemberPropertyStrings)
                     {
@@ -486,15 +508,29 @@ namespace BaseModel.ViewModel.Base
                                 constraintMemberPropertyStringFormat = constraintMemberPropertyValue.ToString();
 
                             otherEntityConcatenatedConstraints += constraintMemberPropertyStringFormat;
+
+                            errorValuePairs.Add(new KeyValuePair<string, string>(constraintMemberPropertyString, constraintMemberPropertyStringFormat));
                         }
                     }
 
-                    if (otherEntityConcatenatedConstraints != string.Empty &&
-                        otherEntityConcatenatedConstraints == entityConstraint)
+                    if (otherEntityConcatenatedConstraints != string.Empty && otherEntityConcatenatedConstraints == entityConstraint)
                     {
-                        constraintErrorMessage = constraintErrorMessage.Substring(0, constraintErrorMessage.Length - 5);
-                        constraintErrorMessage = constraintErrorMessage.Replace("GUID_", string.Empty);
-                        constraintErrorMessage = "Duplicate entries exists by " + constraintErrorMessage;
+                        IEnumerable<KeyValuePair<string, string>> validIssues = errorValuePairs.Where(x => x.Value != string.Empty);
+                        foreach (KeyValuePair<string, string> constraintIssue in validIssues)
+                        {
+                            if (constraintIssue.Key == validIssues.Last().Key && constraintIssue.Key != validIssues.First().Key)
+                            {
+                                constraintErrorMessage = constraintErrorMessage.Substring(0, constraintErrorMessage.Length - 2);
+                                constraintErrorMessage += " and ";
+                            }
+
+                            string propertyStringFormat = constraintIssue.Key.Replace("GUID_", string.Empty);
+                            propertyStringFormat = StringFormatUtils.DisplayCamelCaseString(propertyStringFormat);
+                            constraintErrorMessage += "[" + propertyStringFormat + "] = " + constraintIssue.Value + ", ";
+                        }
+
+                        constraintErrorMessage = "Entry already exist for " + constraintErrorMessage;
+                        constraintFieldNames = errorValuePairs.ToList();
                         return false;
                     }
                 }
@@ -629,7 +665,9 @@ namespace BaseModel.ViewModel.Base
                     if (!OnBeforeViewNewRowSavedIsContinueCallBack(e, projection))
                         return;
 
-                OnAfterNewRowAdded?.Invoke(1);
+                List<TProjection> newlyAddedProjections = new List<TProjection>();
+                newlyAddedProjections.Add(projection);
+                OnAfterNewRowAdded?.Invoke(newlyAddedProjections);
                 Save(projection);
 
                 //add undo must be after so that Guid is populated
@@ -638,7 +676,7 @@ namespace BaseModel.ViewModel.Base
             }
         }
 
-        public Action<int> OnAfterNewRowAdded { get; set; }
+        public Action<IEnumerable<TProjection>> OnAfterNewRowAdded { get; set; }
         public Func<CellValueChangedEventArgs, TProjection, bool> OnBeforeExistingRowAddUndoAndSaveIsContinue { get; set; }
 
         /// <summary>
@@ -729,12 +767,13 @@ namespace BaseModel.ViewModel.Base
         /// <param name="e"></param>
         public virtual void ValidateCell(GridCellValidationEventArgs e)
         {
-            var constraintName = string.Empty;
-            if (!IsValidEntityCellValue((TProjection)e.Row, e.Column.FieldName, e.Value, ref constraintName))
+            string constraintName = string.Empty;
+            string errorMessage = string.Empty;
+            if (!IsValidEntityCellValue((TProjection)e.Row, e.Column.FieldName, e.Value, ref errorMessage, out constraintName))
             {
                 e.IsValid = false;
                 e.ErrorType = DevExpress.XtraEditors.DXErrorProvider.ErrorType.Critical;
-                e.ErrorContent = constraintName + " is not unique";
+                e.ErrorContent = errorMessage;
             }
 
             if(UnifiedValueValidationCallback != null)
@@ -752,7 +791,8 @@ namespace BaseModel.ViewModel.Base
         public virtual void ValidateRow(GridRowValidationEventArgs e)
         {
             var errorMessage = string.Empty;
-            if (!IsValidEntity((TProjection)e.Row, null, ref errorMessage))
+            List<KeyValuePair<string, string>> constraintIssues;
+            if (!IsValidEntity((TProjection)e.Row, null, ref errorMessage, out constraintIssues))
             {
                 e.IsValid = false;
                 e.ErrorType = DevExpress.XtraEditors.DXErrorProvider.ErrorType.Critical;
@@ -777,21 +817,29 @@ namespace BaseModel.ViewModel.Base
         public virtual void DeleteCellContent(GridControl gridControl)
         {
             string[] RowData = new string[] { string.Empty };
-            CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, MessageBoxService, UnifiedValueValidationCallback, FuncManualCellPastingIsContinue, FuncManualRowPastingIsContinue, UnifiedValueChangingCallback, UnifiedValueChangedCallback, UnifiedNewRowInitializationCallBack);
+            CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, ErrorMessagesDialogService, UnifiedValueValidationCallback, FuncManualCellPastingIsContinue, FuncManualRowPastingIsContinue, UnifiedValueChangingCallback, UnifiedValueChangedCallback, UnifiedNewRowInitializationCallBack, FormatErrorMessagesCallBack);
             List<TProjection> pasteProjections;
 
+            List<ErrorMessage> errorMessages = new List<ErrorMessage>();
             if(gridControl != null && gridControl.View != null)
             {
                 if (gridControl.View.GetType() == typeof(TableView))
-                    pasteProjections = copyPasteHelper.PastingFromClipboardCellLevel<TableView>(gridControl, RowData, EntitiesUndoRedoManager);
+                    pasteProjections = copyPasteHelper.PastingFromClipboardCellLevel<TableView>(gridControl, RowData, EntitiesUndoRedoManager, out errorMessages);
                 else
-                    pasteProjections = copyPasteHelper.PastingFromClipboardTreeListCellLevel<TreeListView>(gridControl, RowData, EntitiesUndoRedoManager);
+                    pasteProjections = copyPasteHelper.PastingFromClipboardTreeListCellLevel<TreeListView>(gridControl, RowData, EntitiesUndoRedoManager, out errorMessages);
 
                 if (pasteProjections.Count > 0)
                 {
                     //For copy paste don't have to refresh the entire list, just call ICanUpdate.Update() on entity
                     BulkSave(pasteProjections, true);
                     //BulkSave(pasteProjections);
+                }
+
+                if (errorMessages.Count > 0)
+                {
+                    FormatErrorMessagesCallBack?.Invoke(errorMessages);
+                    DialogCollectionViewModel<ErrorMessage> viewModel = DialogCollectionViewModel<ErrorMessage>.Create(errorMessages, "The following data cannot be deleted");
+                    ErrorMessagesDialogService.ShowDialog(MessageButton.OKCancel, string.Empty, "ListErrorMessages", viewModel);
                 }
             }
         }
@@ -1312,7 +1360,7 @@ namespace BaseModel.ViewModel.Base
             if(!shouldSkip)
             {
                 PasteListener?.Invoke(PasteStatus.Start);
-                CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, MessageBoxService, UnifiedValueValidationCallback, FuncManualCellPastingIsContinue, FuncManualRowPastingIsContinue, UnifiedValueChangingCallback, UnifiedValueChangedCallback, UnifiedNewRowInitializationCallBack);
+                CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, ErrorMessagesDialogService, UnifiedValueValidationCallback, FuncManualCellPastingIsContinue, FuncManualRowPastingIsContinue, UnifiedValueChangingCallback, UnifiedValueChangedCallback, UnifiedNewRowInitializationCallBack, FormatErrorMessagesCallBack);
 
                 bool dontSplit = false;
                 if ((Keyboard.Modifiers | ModifierKeys.Shift) == Keyboard.Modifiers)
@@ -1342,10 +1390,11 @@ namespace BaseModel.ViewModel.Base
                     RawPasteOverride.Invoke(RowData);
                 else
                 {
+                    List<ErrorMessage> errorMessages = new List<ErrorMessage>();
                     if (IsPasteCellLevel)
-                        pasteProjections = copyPasteHelper.PastingFromClipboardCellLevel<TableView>(gridControl, RowData, EntitiesUndoRedoManager);
+                        pasteProjections = copyPasteHelper.PastingFromClipboardCellLevel<TableView>(gridControl, RowData, EntitiesUndoRedoManager, out errorMessages);
                     else if (!DisablePasteRowLevel)
-                        pasteProjections = copyPasteHelper.PastingFromClipboard<TableView>(gridControl, RowData);
+                        pasteProjections = copyPasteHelper.PastingFromClipboard<TableView>(gridControl, RowData, out errorMessages);
                     else
                         pasteProjections = new List<TProjection>();
 
@@ -1362,7 +1411,14 @@ namespace BaseModel.ViewModel.Base
                         BulkSave(pasteProjections, IsPasteCellLevel);
 
                         if(!IsPasteCellLevel && !DisablePasteRowLevel)
-                            OnAfterNewRowAdded?.Invoke(pasteProjections.Count);
+                            OnAfterNewRowAdded?.Invoke(pasteProjections);
+                    }
+
+                    if (errorMessages.Count > 0)
+                    {
+                        FormatErrorMessagesCallBack?.Invoke(errorMessages);
+                        DialogCollectionViewModel<ErrorMessage> viewModel = DialogCollectionViewModel<ErrorMessage>.Create(errorMessages, "The following data cannot be pasted");
+                        ErrorMessagesDialogService.ShowDialog(MessageButton.OKCancel, string.Empty, "ListErrorMessages", viewModel);
                     }
                 }
 
@@ -1381,7 +1437,7 @@ namespace BaseModel.ViewModel.Base
                 return;
 
             PasteListener?.Invoke(PasteStatus.Start);
-            CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, MessageBoxService, UnifiedValueValidationCallback);
+            CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, ErrorMessagesDialogService, UnifiedValueValidationCallback, null, null, null, null, null, FormatErrorMessagesCallBack);
             bool dontSplit = false;
             if ((Keyboard.Modifiers | ModifierKeys.Shift) == Keyboard.Modifiers)
             {
@@ -1399,11 +1455,12 @@ namespace BaseModel.ViewModel.Base
                 RowData = PasteString.Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
 
             GridControl gridControl = e.Source as GridControl;
+            List<ErrorMessage> errorMessages = new List<ErrorMessage>();
             List<TProjection> pasteProjections;
             if (IsPasteCellLevel)
-                pasteProjections = copyPasteHelper.PastingFromClipboardTreeListCellLevel<TreeListView>(gridControl, RowData, EntitiesUndoRedoManager);
+                pasteProjections = copyPasteHelper.PastingFromClipboardTreeListCellLevel<TreeListView>(gridControl, RowData, EntitiesUndoRedoManager, out errorMessages);
             else
-                pasteProjections = copyPasteHelper.PastingFromClipboard<TreeListView>(gridControl, RowData);
+                pasteProjections = copyPasteHelper.PastingFromClipboard<TreeListView>(gridControl, RowData, out errorMessages);
 
             if (pasteProjections.Count > 0)
             {
@@ -1415,9 +1472,15 @@ namespace BaseModel.ViewModel.Base
                 e.Handled = true;
             }
 
+            if (errorMessages.Count > 0)
+            {
+                FormatErrorMessagesCallBack?.Invoke(errorMessages);
+                DialogCollectionViewModel<ErrorMessage> viewModel = DialogCollectionViewModel<ErrorMessage>.Create(errorMessages, "The following data cannot be pasted");
+                ErrorMessagesDialogService.ShowDialog(MessageButton.OKCancel, string.Empty, "ListErrorMessages", viewModel);
+            }
+
             PasteListener?.Invoke(PasteStatus.Stop);
         }
-
         #endregion
 
         public virtual void CleanUpCallBacks()

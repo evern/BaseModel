@@ -32,27 +32,29 @@ namespace BaseModel.Data.Helpers
     public class CopyPasteHelper<TProjection>
         where TProjection : class, new()
     {
-        public delegate bool IsValidProjectionFunc(TProjection projection, IEnumerable<TProjection> preCommittedProjections, ref string errorMessage);
+        public delegate bool IsValidProjectionFunc(TProjection projection, IEnumerable<TProjection> preCommittedProjections, ref string errorMessage, out List<KeyValuePair<string, string>> constraintIssues);
         readonly IsValidProjectionFunc isValidProjectionFunc;
         readonly Func<TProjection, bool> onBeforePasteWithValidationFunc;
-        readonly IMessageBoxService messageBoxService;
+        readonly IDialogService errorMessagesDialogService;
         readonly Func<TProjection, string, object, bool, string> unifiedValueValidationCallback;
         readonly Func<List<KeyValuePair<ColumnBase, string>>, TProjection, bool, bool> funcManualRowPastingIsContinue;
         readonly Func<TProjection, ColumnBase, string, List<UndoRedoArg<TProjection>>, bool> funcManualCellPastingIsContinue;
+        readonly Action<IEnumerable<ErrorMessage>> formatErrorMessages;
         public Action<string, object, object, TProjection, bool> cellValueChanging;
         public Action<string, object, object, TProjection, bool> cellValueChanged;
         public Action<TProjection> newRowInitialization;
-        public CopyPasteHelper(IsValidProjectionFunc isValidProjectionFunc = null, Func<TProjection, bool> onBeforePasteWithValidationFunc = null, IMessageBoxService messageBoxService = null, Func<TProjection, string, object, bool, string> unifiedValueValidationCallback = null, Func<TProjection, ColumnBase, string, List<UndoRedoArg<TProjection>>, bool> funcManualCellPastingIsContinue = null, Func<List<KeyValuePair<ColumnBase, string>>, TProjection, bool, bool> funcManualRowPastingIsContinue = null, Action<string, object, object, TProjection, bool> cellValueChanging = null, Action<string, object, object, TProjection, bool> cellValueChanged = null, Action<TProjection> newRowInitialization = null)
+        public CopyPasteHelper(IsValidProjectionFunc isValidProjectionFunc = null, Func<TProjection, bool> onBeforePasteWithValidationFunc = null, IDialogService errorMessagesDialogService = null, Func<TProjection, string, object, bool, string> unifiedValueValidationCallback = null, Func<TProjection, ColumnBase, string, List<UndoRedoArg<TProjection>>, bool> funcManualCellPastingIsContinue = null, Func<List<KeyValuePair<ColumnBase, string>>, TProjection, bool, bool> funcManualRowPastingIsContinue = null, Action<string, object, object, TProjection, bool> cellValueChanging = null, Action<string, object, object, TProjection, bool> cellValueChanged = null, Action<TProjection> newRowInitialization = null, Action<IEnumerable<ErrorMessage>> formatErrorMessages = null)
         {
             this.isValidProjectionFunc = isValidProjectionFunc;
             this.onBeforePasteWithValidationFunc = onBeforePasteWithValidationFunc;
-            this.messageBoxService = messageBoxService;
+            this.errorMessagesDialogService = errorMessagesDialogService;
             this.unifiedValueValidationCallback = unifiedValueValidationCallback;
             this.funcManualRowPastingIsContinue = funcManualRowPastingIsContinue;
             this.funcManualCellPastingIsContinue = funcManualCellPastingIsContinue;
             this.cellValueChanging = cellValueChanging;
             this.cellValueChanged = cellValueChanged;
             this.newRowInitialization = newRowInitialization;
+            this.formatErrorMessages = formatErrorMessages;
         }
 
         public enum PasteResult
@@ -63,11 +65,12 @@ namespace BaseModel.Data.Helpers
             FailOnRequired
         }
 
-        public List<TProjection> PastingFromClipboardCellLevel<TView>(GridControl gridControl, string[] RowData, EntitiesUndoRedoManager<TProjection> undo_redo_manager)
+        public List<TProjection> PastingFromClipboardCellLevel<TView>(GridControl gridControl, string[] RowData, EntitiesUndoRedoManager<TProjection> undo_redo_manager, out List<ErrorMessage> errorMessages)
             where TView : DataViewBase
         {
             var gridView = gridControl.View;
 
+            errorMessages = new List<ErrorMessage>();
             HashSet<TProjection> preValidatedProjections = new HashSet<TProjection>();
             List<TProjection> validatedProjections = new List<TProjection>();
             List<UndoRedoArg<TProjection>> undoRedoArguments = new List<UndoRedoArg<TProjection>>();
@@ -162,14 +165,14 @@ namespace BaseModel.Data.Helpers
                             validate_row = editing_row;
                             if (editing_row == null)
                             {
-                                messageBoxService.ShowMessage("Please remove all line break from paste data or double click into cell to paste your data with line breaks");
+                                errorMessages.Add(new ErrorMessage(current_column.Header.ToString(), "Please remove all line break from paste data or double click into cell to paste your data with line breaks"));
                                 break;
                             }
 
                             PasteResult result = pasteDataInProjectionColumn(editing_row, current_column, columnValue, undoRedoArguments);
                             if (result == PasteResult.FailOnRequired)
                             {
-                                messageBoxService.ShowMessage("Cannot set null in required cell, operation has been terminated");
+                                errorMessages.Add(new ErrorMessage(current_column.Header.ToString(), "Cannot set null in required cell, operation has been terminated"));
                                 break;
                             }
                             if (result != PasteResult.Success)
@@ -189,8 +192,9 @@ namespace BaseModel.Data.Helpers
                 undo_redo_manager.PauseActionId();
                 foreach (TProjection preValidatedProjection in preValidatedProjections)
                 {
-                    var errorMessage = "Duplicate exists on constraint field named: ";
-                    if (isValidProjectionFunc(preValidatedProjection, validatedProjections, ref errorMessage))
+                    string errorMessage = string.Empty;
+                    List<KeyValuePair<string, string>> constraintIssues;
+                    if (isValidProjectionFunc(preValidatedProjection, validatedProjections, ref errorMessage, out constraintIssues))
                         if (onBeforePasteWithValidationFunc != null)
                         {
                             if (onBeforePasteWithValidationFunc(preValidatedProjection))
@@ -222,13 +226,8 @@ namespace BaseModel.Data.Helpers
                         }
                     else
                     {
-                        if (messageBoxService != null)
-                        {
-                            errorMessage += " , paste operation will be terminated";
-                            messageBoxService.ShowMessage(errorMessage, CommonResources.Exception_UpdateErrorCaption, MessageButton.OK);
-                        }
-
-                        break;
+                        formatErrorMessages?.Invoke(errorMessages);
+                        errorMessages.Add(new ErrorMessage("Cell edit error", errorMessage, constraintIssues));
                     }
                 }
             }
@@ -237,11 +236,11 @@ namespace BaseModel.Data.Helpers
             return validatedProjections;
         }
 
-        public List<TProjection> PastingFromClipboardTreeListCellLevel<TView>(GridControl gridControl, string[] RowData, EntitiesUndoRedoManager<TProjection> undo_redo_manager)
+        public List<TProjection> PastingFromClipboardTreeListCellLevel<TView>(GridControl gridControl, string[] RowData, EntitiesUndoRedoManager<TProjection> undo_redo_manager, out List<ErrorMessage> errorMessages)
             where TView : DataViewBase
         {
             var gridView = gridControl.View;
-
+            errorMessages = new List<ErrorMessage>();
             HashSet<TProjection> preValidatedProjections = new HashSet<TProjection>();
             List<TProjection> validatedProjections = new List<TProjection>();
             List<UndoRedoArg<TProjection>> undoRedoArguments = new List<UndoRedoArg<TProjection>>();
@@ -302,7 +301,7 @@ namespace BaseModel.Data.Helpers
 
                             if (result == PasteResult.FailOnRequired)
                             {
-                                messageBoxService.ShowMessage("Cannot set null in required cell, operation has been terminated");
+                                errorMessages.Add(new ErrorMessage(current_column.Header.ToString(), "Cannot set null in required cell, operation has been terminated"));
                                 break;
                             }
                             if (result != PasteResult.Success)
@@ -337,7 +336,7 @@ namespace BaseModel.Data.Helpers
                             PasteResult result = pasteDataInProjectionColumn(editing_row, current_column, rowValue, undoRedoArguments);
                             if (result == PasteResult.FailOnRequired)
                             {
-                                messageBoxService.ShowMessage("Cannot set null in required cell, operation has been terminated");
+                                errorMessages.Add(new ErrorMessage(current_column.Header.ToString(), "Cannot set null in required cell, operation has been terminated"));
                                 break;
                             }
                             if (result != PasteResult.Success)
@@ -353,8 +352,9 @@ namespace BaseModel.Data.Helpers
                 undo_redo_manager.PauseActionId();
                 foreach (TProjection preValidatedProjection in preValidatedProjections)
                 {
-                    var errorMessage = "Duplicate exists on constraint field named: ";
-                    if (isValidProjectionFunc(preValidatedProjection, validatedProjections, ref errorMessage))
+                    string errorMessage = string.Empty;
+                    List<KeyValuePair<string, string>> constraintIssues;
+                    if (isValidProjectionFunc(preValidatedProjection, validatedProjections, ref errorMessage, out constraintIssues))
                         if (onBeforePasteWithValidationFunc != null)
                         {
                             if (onBeforePasteWithValidationFunc(preValidatedProjection))
@@ -376,13 +376,8 @@ namespace BaseModel.Data.Helpers
                         }
                     else
                     {
-                        if (messageBoxService != null)
-                        {
-                            errorMessage += " , paste operation will be terminated";
-                            messageBoxService.ShowMessage(errorMessage, CommonResources.Exception_UpdateErrorCaption, MessageButton.OK);
-                        }
-
-                        break;
+                        formatErrorMessages?.Invoke(errorMessages);
+                        errorMessages.Add(new ErrorMessage("Row add error", errorMessage, constraintIssues));
                     }
                 }
 
@@ -392,11 +387,11 @@ namespace BaseModel.Data.Helpers
             return validatedProjections;
         }
 
-        public List<TProjection> PastingFromClipboard<TView>(GridControl gridControl, string[] RowData)
+        public List<TProjection> PastingFromClipboard<TView>(GridControl gridControl, string[] RowData, out List<ErrorMessage> errorMessages)
             where TView : DataViewBase
         {
             var gridView = gridControl.View;
-
+            errorMessages = new List<ErrorMessage>();
             List<TProjection> pasteProjections = new List<TProjection>();
             List<TProjection> validatedProjections = new List<TProjection>();
             if (gridView.ActiveEditor == null && (gridView.GetType() == typeof(TView)) && !ShouldSkipPasting(gridControl))
@@ -441,10 +436,12 @@ namespace BaseModel.Data.Helpers
                     }
                 }
 
-                foreach(TProjection projection in pasteProjections)
+                List<ErrorMessage> pasteErrorMessages = new List<ErrorMessage>();
+                foreach (TProjection projection in pasteProjections)
                 {
-                    var errorMessage = "Duplicate exists on constraint field named: ";
-                    if (isValidProjectionFunc(projection, validatedProjections, ref errorMessage))
+                    string errorMessage = string.Empty;
+                    List<KeyValuePair<string, string>> constraintIssues;
+                    if (isValidProjectionFunc(projection, validatedProjections, ref errorMessage, out constraintIssues))
                         if (onBeforePasteWithValidationFunc != null)
                         {
                             if (onBeforePasteWithValidationFunc(projection))
@@ -454,11 +451,8 @@ namespace BaseModel.Data.Helpers
                             validatedProjections.Add(projection);
                     else
                     {
-                        if (messageBoxService != null)
-                        {
-                            errorMessage += " , paste operation will skip duplicate rows";
-                            messageBoxService.ShowMessage(errorMessage, CommonResources.Exception_UpdateErrorCaption, MessageButton.OK);
-                        }
+                        formatErrorMessages?.Invoke(errorMessages);
+                        errorMessages.Add(new ErrorMessage("Row error", errorMessage, constraintIssues));
                     }
                 }
 
@@ -566,7 +560,8 @@ namespace BaseModel.Data.Helpers
                             string new_string = pasteData.ToString();
                             if (editSettings != null)
                             {
-                                new_string = getEditSettingsValueMemberValue<string>(editSettings, pasteData);
+                                if ((string)editSettings.GetType().GetProperty("ValueMember").GetValue(editSettings) != string.Empty)
+                                    new_string = getEditSettingsValueMemberValue<string>(editSettings, pasteData);
                             }
                             else if (Attribute.IsDefined(columnPropertyInfo, typeof(PasteSkipAttribute)) && pasteData.ToUpper() == DataUtils.GetPasteSkipAttributeString(typeof(TProjection)))
                                 return PasteResult.Skip;
@@ -736,7 +731,9 @@ namespace BaseModel.Data.Helpers
             T editValue = default(T);
 
             if (copyColumnItemsSource == null || (copyColumnValueMember == null || copyColumnValueMember == string.Empty) || (copyColumnDisplayMember == null || copyColumnDisplayMember == string.Empty))
+            {
                 return editValue;
+            }
 
             foreach (var copyColumnItem in copyColumnItemsSource)
             {
@@ -768,12 +765,7 @@ namespace BaseModel.Data.Helpers
                 return PasteResult.Success;
             }
             else
-            {
-                if (messageBoxService != null)
-                    messageBoxService.ShowMessage(error_message + " current row will not be pasted");
-
                 return PasteResult.Failed;
-            }
         }
     }
 
