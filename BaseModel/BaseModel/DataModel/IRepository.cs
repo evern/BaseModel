@@ -252,18 +252,7 @@ namespace BaseModel.DataModel
             TEntity entity = null;
             if (!isGuidEmpty)
             {
-                if (!projection)
-                {
-                    //speed up process, draw back is deleted entity is not checked
-                    entity = projectionEntity as TEntity;
-                    //entity properties might be different from projection when projection is from another view model
-                    if (entity != null)
-                        DataUtils.ShallowCopy(entity, projectionEntity);
-                }
-                else
-                {
-                    entity = repository.Find(projectionPrimaryKey);
-                }
+                entity = repository.Find(projectionPrimaryKey);
             }
 
             if (entity == null || isGuidEmpty)
