@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 
 namespace BaseModel.Misc
@@ -146,13 +147,20 @@ namespace BaseModel.Misc
 
     public class ErrorMessage
     {
-        public ErrorMessage(string name, string error)
+        public ErrorMessage(string name, string error, IEnumerable<KeyValuePair<string, string>> constraintIssues = null)
         {
             NAME = name;
             ERROR = error;
+
+            CONSTRAINT_ISSUES = new List<KeyValuePair<string, string>>();
+            if(constraintIssues != null)
+            {
+                CONSTRAINT_ISSUES.AddRange(constraintIssues);
+            }
         }
 
         public string NAME { get; set; }
         public string ERROR { get; set; }
+        public List<KeyValuePair<string, string>> CONSTRAINT_ISSUES { get; set; }
     }
 }

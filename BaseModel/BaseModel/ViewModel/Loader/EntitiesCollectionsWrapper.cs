@@ -223,6 +223,7 @@ namespace BaseModel.ViewModel.Loader
             MainViewModel.UnifiedValidateRow = this.UnifiedRowValidation;
             MainViewModel.AfterBulkOperationRefreshCallBack = this.FullRefreshWithoutClearingUndoRedo;
             MainViewModel.ApplyProjectionPropertiesToEntityCallBack = ApplyProjectionPropertiesAndCreatedDateToEntity;
+            MainViewModel.FormatErrorMessagesCallBack = FormatErrorMessages;
             BackgroundRefresh();
 
             if(!delayPostLoadedTimer)
@@ -437,10 +438,10 @@ namespace BaseModel.ViewModel.Loader
             }
         }
 
-        int newlyAddedProjectionCount;
-        protected virtual void OnAfterNewRowAdded(int newItemCount)
+        IEnumerable<TMainProjectionEntity> newlyAddedProjections;
+        protected virtual void OnAfterNewRowAdded(IEnumerable<TMainProjectionEntity> newItems)
         {
-            newlyAddedProjectionCount = newItemCount;
+            newlyAddedProjections = newItems;
             //Uncomment this to allow grid to focus on new row
             focusNewlyAddedProjectionTimer.Start();
         }
@@ -448,18 +449,23 @@ namespace BaseModel.ViewModel.Loader
         private void FocusNewlyAddedProjectionTimer_Tick(object sender, EventArgs e)
         {
             focusNewlyAddedProjectionTimer.Stop();
-            if (DisplayEntities == null || newlyAddedProjectionCount == 0)
+            if (DisplayEntities == null || newlyAddedProjections.Count() == 0)
                 return;
-            
-            IEnumerable<TMainProjectionEntity> selectEntities = DisplayEntities.Skip(Math.Max(0, DisplayEntities.Count() - newlyAddedProjectionCount));
-            displaySelectedEntities.Clear();
 
-            foreach(var selectEntity in selectEntities)
+            List<TMainProjectionEntity> selectedProjections = new List<TMainProjectionEntity>();
+            foreach(TMainProjectionEntity newlyAddedProjection in newlyAddedProjections)
             {
-                displaySelectedEntities.Add(selectEntity);
+                selectedProjections.Add(newlyAddedProjection);
             }
 
-            displaySelectedEntity = selectEntities.Last();
+            displaySelectedEntities.Clear();
+
+            foreach(TMainProjectionEntity selectedProjection in selectedProjections)
+            {
+                displaySelectedEntities.Add(selectedProjection);
+            }
+
+            displaySelectedEntity = selectedProjections.Last();
             this.RaisePropertyChanged(x => x.DisplaySelectedEntity);
             this.RaisePropertyChanged(x => x.DisplaySelectedEntities);
         }
@@ -651,8 +657,11 @@ namespace BaseModel.ViewModel.Loader
 
         public abstract string ViewName { get; }
 
+        //because onloaded will be called repeatedly during tab switching, only allow it to be invoked once
+        protected bool isFirstLoaded;
         public virtual void OnLoaded()
         {
+            isFirstLoaded = true;
             //PersistentLayoutHelper.TryDeserializeLayout(LayoutSerializationService, ViewName);
         }
 
@@ -952,6 +961,42 @@ namespace BaseModel.ViewModel.Loader
         public abstract string UnifiedValueValidation(TMainProjectionEntity projection, string field_name, object new_value, bool isPaste);
 
         public abstract string UnifiedRowValidation(TMainProjectionEntity projection);
+
+        protected virtual void FormatErrorMessages(IEnumerable<ErrorMessage> errorMessages)
+        {
+            if(GridControlService != null)
+            {
+                GridColumnCollection gridColumns = GridControlService.GridColumns();
+                foreach (ErrorMessage errorMessage in errorMessages)
+                {
+                    if (errorMessage.CONSTRAINT_ISSUES.Count > 0)
+                    {
+                        string newErrorMessage = string.Empty;
+                        IEnumerable<KeyValuePair<string, string>> validIssues = errorMessage.CONSTRAINT_ISSUES.Where(x => x.Value != string.Empty);
+                        foreach (KeyValuePair<string, string> constraintIssue in validIssues)
+                        {
+                            GridColumn gridColumn = gridColumns.FirstOrDefault(x => x.FieldName == constraintIssue.Key);
+                            if (gridColumn != null)
+                            {
+                                if(constraintIssue.Key == validIssues.Last().Key && constraintIssue.Key != validIssues.First().Key)
+                                {
+                                    newErrorMessage = newErrorMessage.Substring(0, newErrorMessage.Length - 2);
+                                    newErrorMessage += " and ";
+                                }
+
+                                newErrorMessage += "[" + gridColumn.Header.ToString() + "] = " + constraintIssue.Value + ", ";
+                            }
+                        }
+
+                        if(newErrorMessage != string.Empty)
+                        {
+                            newErrorMessage = newErrorMessage.Substring(0, newErrorMessage.Length - 2);
+                            errorMessage.ERROR = "Entry already exist for " + newErrorMessage;
+                        }
+                    }
+                }
+            }
+        }
 
         protected virtual void CellValueChangedImmediatePost(CellValueChangedEventArgs e)
         {
