@@ -85,7 +85,6 @@ namespace BaseModel.ViewModel.Composition
         protected override void onAuxiliaryEntitiesCollectionLoaded()
         {
             CreateMainViewModel(_unitOfWorkFactory, _getRepositoryFunc);
-            mainThreadDispatcher.BeginInvoke(new Action(() => mainEntityLoaderDescription.CreateCollectionViewModel()));
         }
     }
 }

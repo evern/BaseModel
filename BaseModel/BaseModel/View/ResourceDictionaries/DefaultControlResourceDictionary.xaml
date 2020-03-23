@@ -227,6 +227,19 @@
         </Setter>
         <Setter Property="LayoutTransform" Value="{Binding Zoom, Mode=OneWay}" />
     </Style>
+    <Style x:Key="DefaultMinimalGridControlTemplate" TargetType="{x:Type dxg:GridControl}">
+        <Setter Property="ShowLoadingPanel" Value="{Binding DataContext.IsLoading, ElementName=userControl}" />
+        <Setter Property="UseLayoutRounding" Value="False" />
+        <Setter Property="ClipboardCopyMode" Value="ExcludeHeader" />
+        <Setter Property="SelectionMode" Value="{Binding SelectMode}" />
+        <Setter Property="ShowBorder" Value="False" />
+        <Setter Property="AutoExpandAllGroups" Value="False" />
+        <Setter Property="ShowAllTableValuesInCheckedFilterPopup" Value="False" />
+        <Setter Property="dxsc:SpellingSettings.CheckAsYouType" Value="True" />
+        <Setter Property="dxsc:SpellingSettings.ShowSpellCheckMenu" Value="True" />
+        <Setter Property="dxsc:SpellingSettings.SpellChecker" Value="{Binding DataContext.SpellCheckerModule.SpellChecker, ElementName=userControl}" />
+        <Setter Property="LayoutTransform" Value="{Binding Zoom, Mode=OneWay}" />
+    </Style>
     <Style x:Key="CompositionGridControlTemplate" TargetType="{x:Type dxg:GridControl}">
         <Setter Property="ShowLoadingPanel" Value="{Binding IsLoading}" />
         <Setter Property="ItemsSource" Value="{Binding DisplayEntities}" />

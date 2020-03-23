@@ -66,9 +66,7 @@ namespace BaseModel.ViewModel.Loader
             if (constructProjectionCallBackFunc != null)
                 projection = constructProjectionCallBackFunc();
 
-            collectionViewModel =
-                CollectionViewModel<TEntity, TProjection, TPrimaryKey, TUnitOfWork>.CreateCollectionViewModel(
-                    unitOfWorkFactory, getRepositoryFunc, projection);
+            collectionViewModel = CollectionViewModel<TEntity, TProjection, TPrimaryKey, TUnitOfWork>.CreateCollectionViewModel(unitOfWorkFactory, getRepositoryFunc, projection);
             collectionViewModel.OnEntitiesLoadedCallBack = OnEntitiesFirstLoaded;
             collectionViewModel.OnAfterEntitiesChangedCallBack = collectionViewModelChangedCallBack;
             collectionViewModel.OnBeforeEntitiesChangedCallBack = collectionViewModelBeforeChangedCallBack;
@@ -76,6 +74,28 @@ namespace BaseModel.ViewModel.Loader
             collectionViewModel.OnAfterSavedSendMessage = owner.OnAfterSavedSendMessage;
             collectionViewModel.AlwaysSkipMessage = this.AlwaysSkipMessage;
             collectionViewModel.CurrentHWID = owner.CurrentHWID;
+            collectionViewModel.Entities.ToList();
+        }
+
+        public CollectionViewModel<TEntity, TProjection, TPrimaryKey, TUnitOfWork> CreateMainCollectionViewModel()
+        {
+            Func<IRepositoryQuery<TEntity>, IQueryable<TProjection>> projection = null;
+            if (constructProjectionCallBackFunc != null)
+                projection = constructProjectionCallBackFunc();
+
+            collectionViewModel = CollectionViewModel<TEntity, TProjection, TPrimaryKey, TUnitOfWork>.CreateCollectionViewModel(unitOfWorkFactory, getRepositoryFunc, projection);
+            collectionViewModel.OnEntitiesLoadedCallBack = OnEntitiesFirstLoaded;
+            collectionViewModel.OnAfterEntitiesChangedCallBack = collectionViewModelChangedCallBack;
+            collectionViewModel.OnBeforeEntitiesChangedCallBack = collectionViewModelBeforeChangedCallBack;
+            collectionViewModel.OnAfterDeletedSendMessage = owner.OnAfterDeletedSendMessage;
+            collectionViewModel.OnAfterSavedSendMessage = owner.OnAfterSavedSendMessage;
+            collectionViewModel.AlwaysSkipMessage = this.AlwaysSkipMessage;
+            collectionViewModel.CurrentHWID = owner.CurrentHWID;
+            return collectionViewModel;
+        }
+
+        public void LoadMainCollectionViewModel()
+        {
             collectionViewModel.Entities.ToList();
         }
 

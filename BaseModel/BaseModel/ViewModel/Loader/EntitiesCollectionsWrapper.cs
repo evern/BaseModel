@@ -170,6 +170,11 @@ namespace BaseModel.ViewModel.Loader
                     <TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey, TMainEntityUnitOfWork>(this, 0,
                         unitOfWorkFactory, getRepositoryFunc, OnMainViewModelLoaded, OnBeforeEntitiesChanged, OnAfterAuxiliaryEntitiesChanged, 
                         specifyMainViewModelProjection, null, this.AlwaysSkipMessage);
+
+            MainViewModel = mainEntityLoaderDescription.CreateMainCollectionViewModel();
+            MainViewModel.OnAfterSavedSendMessage = this.OnAfterSavedSendMessage;
+            MainViewModel.OnAfterDeletedSendMessage = this.OnAfterDeletedSendMessage;
+            mainEntityLoaderDescription.LoadMainCollectionViewModel();
         }
 
         protected abstract Func<IRepositoryQuery<TMainEntity>, IQueryable<TMainProjectionEntity>> specifyMainViewModelProjection();
@@ -182,12 +187,9 @@ namespace BaseModel.ViewModel.Loader
             if (mainEntityLoaderDescription == null)
                 return false;
 
-            MainViewModel = (CollectionViewModel<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey, TMainEntityUnitOfWork>)mainEntityLoaderDescription.GetViewModel();
             if (MainViewModel == null)
                 return false;
 
-            MainViewModel.OnAfterSavedSendMessage = this.OnAfterSavedSendMessage;
-            MainViewModel.OnAfterDeletedSendMessage = this.OnAfterDeletedSendMessage;
             refreshDispatcherTimer = new DispatcherTimer();
             refreshDispatcherTimer.Interval = new TimeSpan(0, 0, 0, 3);
             raisePropertyChangeDispatcherTimer = new DispatcherTimer();
