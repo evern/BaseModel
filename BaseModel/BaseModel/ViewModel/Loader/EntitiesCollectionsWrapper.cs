@@ -59,7 +59,7 @@ namespace BaseModel.ViewModel.Loader
             selectedEntitiesChangedDispatchTimer = new DispatcherTimer();
             selectedEntitiesChangedDispatchTimer.Interval = new TimeSpan(0, 0, 0, 0, 1);
             focusNewlyAddedProjectionTimer = new DispatcherTimer();
-            focusNewlyAddedProjectionTimer.Interval = new TimeSpan(0, 0, 0, 0, 50);
+            focusNewlyAddedProjectionTimer.Interval = new TimeSpan(0, 0, 0, 0, 250);
             focusNewlyAddedProjectionTimer.Tick += FocusNewlyAddedProjectionTimer_Tick;
 
             refreshBackgroundWorker = new BackgroundWorker();
@@ -486,9 +486,12 @@ namespace BaseModel.ViewModel.Loader
                 displaySelectedEntities.Add(selectedProjection);
             }
 
-            displaySelectedEntity = selectedProjections.Last();
-            this.RaisePropertyChanged(x => x.DisplaySelectedEntity);
-            this.RaisePropertyChanged(x => x.DisplaySelectedEntities);
+            if(selectedProjections.Count > 0)
+            {
+                displaySelectedEntity = selectedProjections.Last();
+                this.RaisePropertyChanged(x => x.DisplaySelectedEntity);
+                this.RaisePropertyChanged(x => x.DisplaySelectedEntities);
+            }
         }
 
 

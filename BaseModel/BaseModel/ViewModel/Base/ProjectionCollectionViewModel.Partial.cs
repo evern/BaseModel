@@ -671,7 +671,6 @@ namespace BaseModel.ViewModel.Base
 
                 List<TProjection> newlyAddedProjections = new List<TProjection>();
                 newlyAddedProjections.Add(projection);
-                OnAfterNewRowAdded?.Invoke(newlyAddedProjections);
                 Save(projection);
 
                 //add undo must be after so that Guid is populated
@@ -680,7 +679,6 @@ namespace BaseModel.ViewModel.Base
             }
         }
 
-        public Action<IEnumerable<TProjection>> OnAfterNewRowAdded { get; set; }
         public Func<CellValueChangedEventArgs, TProjection, bool> OnBeforeExistingRowAddUndoAndSaveIsContinue { get; set; }
 
         /// <summary>

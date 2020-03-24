@@ -61,7 +61,7 @@ namespace BaseModel.Misc {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 10.
+        ///   Looks up a localized string similar to 100.
         /// </summary>
         internal static string BulkOperationBulkRefreshMinCount {
             get {

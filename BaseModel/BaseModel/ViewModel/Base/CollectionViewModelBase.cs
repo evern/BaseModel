@@ -83,6 +83,11 @@ namespace BaseModel.ViewModel.Base
         /// Used for sending SignalR messages after saving
         /// </summary>
         public Action<string, string, string, string> OnAfterSavedSendMessage;
+
+        /// <summary>
+        /// Used for focusing on new row when they are added
+        /// </summary>
+        public Action<IEnumerable<TProjection>> OnAfterNewRowAdded { get; set; }
         #endregion
 
         /// <summary>
@@ -372,8 +377,20 @@ namespace BaseModel.ViewModel.Base
                 LoadingScreenManager.Progress();
             }
 
+            List<TProjection> newlyAddedEntities = new List<TProjection>();
+
+            foreach (var entityWithTag in entitiesWithTag)
+            {
+                var isNewEntity = isNewEntityWithTag.First(x => x.Key == entityWithTag.Key).Value;
+                if (isNewEntity)
+                    newlyAddedEntities.Add(projectionEntitiesWithTag.First(x => x.Key == entityWithTag.Key).Value);
+            }
+
             if (!isContinueSave)
+            {
+                OnAfterNewRowAdded?.Invoke(newlyAddedEntities);
                 return;
+            }
 
             try
             {
@@ -403,6 +420,8 @@ namespace BaseModel.ViewModel.Base
                             updatableEntity.Update();
                     }
                 }
+
+                OnAfterNewRowAdded?.Invoke(newlyAddedEntities);
             }
             catch (DbException e)
             {
@@ -615,6 +634,13 @@ namespace BaseModel.ViewModel.Base
                 //    canUpdateEntity.Update();
                 if(!AlwaysSkipMessage)
                     SendMessage(primaryKey, projectionEntity, entity, isNewEntity);
+
+                if(isNewEntity)
+                {
+                    List<TProjection> newlyAddedEntities = new List<TProjection>();
+                    newlyAddedEntities.Add(projectionEntity);
+                    OnAfterNewRowAdded?.Invoke(newlyAddedEntities);
+                }
             }
             catch (DbException e)
             {
