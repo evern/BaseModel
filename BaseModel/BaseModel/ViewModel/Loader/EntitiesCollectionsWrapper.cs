@@ -23,6 +23,9 @@ using System.Collections;
 using DevExpress.Mvvm.DataAnnotations;
 using DevExpress.Data.Filtering;
 using System.Threading.Tasks;
+using System.Reflection;
+using DevExpress.Xpf.Editors.Settings;
+using DevExpress.Xpf.Grid.LookUp;
 
 namespace BaseModel.ViewModel.Loader
 {
@@ -453,13 +456,31 @@ namespace BaseModel.ViewModel.Loader
                 return;
 
             List<TMainProjectionEntity> selectedProjections = new List<TMainProjectionEntity>();
-            foreach(TMainProjectionEntity newlyAddedProjection in newlyAddedProjections)
+            var keyPropertyInfo = DataUtils.GetKeyPropertyInfo(typeof(TMainProjectionEntity));
+
+            if(keyPropertyInfo != null)
             {
-                selectedProjections.Add(newlyAddedProjection);
+                object findKeyValue = null;
+                if (keyPropertyInfo != null)
+                {
+                    foreach (TMainProjectionEntity newlyAddedProjection in newlyAddedProjections)
+                    {
+                        findKeyValue = keyPropertyInfo.GetValue(newlyAddedProjection);
+                        TMainProjectionEntity actualNewlyAddedProjection = DisplayEntities.FirstOrDefault(x => keyPropertyInfo.GetValue(x).ToString() == findKeyValue.ToString());
+                        if(actualNewlyAddedProjection != null)
+                            selectedProjections.Add(actualNewlyAddedProjection);
+                    }
+                }
+            }
+            else
+            {
+                foreach (TMainProjectionEntity newlyAddedProjection in newlyAddedProjections)
+                {
+                    selectedProjections.Add(newlyAddedProjection);
+                }
             }
 
             displaySelectedEntities.Clear();
-
             foreach(TMainProjectionEntity selectedProjection in selectedProjections)
             {
                 displaySelectedEntities.Add(selectedProjection);
@@ -978,13 +999,30 @@ namespace BaseModel.ViewModel.Loader
                             GridColumn gridColumn = gridColumns.FirstOrDefault(x => x.FieldName == constraintIssue.Key);
                             if (gridColumn != null)
                             {
-                                if(constraintIssue.Key == validIssues.Last().Key && constraintIssue.Key != validIssues.First().Key)
+                                if (constraintIssue.Key == validIssues.Last().Key && constraintIssue.Key != validIssues.First().Key)
                                 {
                                     newErrorMessage = newErrorMessage.Substring(0, newErrorMessage.Length - 2);
                                     newErrorMessage += " and ";
                                 }
 
-                                newErrorMessage += "[" + gridColumn.Header.ToString() + "] = " + constraintIssue.Value + ", ";
+                                object cellTemplate = gridColumn.CellTemplate;
+                                DataTemplate dataTemplate = cellTemplate as DataTemplate;
+                                Type editSettingsType = null;
+                                //try to retrieve data template type for RowData.Row items source binding
+                                editSettingsType = gridColumn.ActualEditSettings.GetType();
+
+                                string displayValue = constraintIssue.Value;
+                                object editSettings = null;
+                                if (editSettingsType == typeof(ComboBoxEditSettings))
+                                    editSettings = gridColumn.ActualEditSettings as ComboBoxEditSettings;
+                                else if (editSettingsType == typeof(LookUpEditSettings))
+                                    editSettings = gridColumn.ActualEditSettings as LookUpEditSettingsBase;
+                                if (editSettings != null)
+                                {
+                                    displayValue = DataUtils.GetEditSettingsDisplayMemberValue(editSettings, constraintIssue.Value);
+                                }
+
+                                newErrorMessage += "[" + gridColumn.Header.ToString() + "] = " + displayValue + ", ";
                             }
                         }
 

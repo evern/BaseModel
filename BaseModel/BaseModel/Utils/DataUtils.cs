@@ -1226,5 +1226,33 @@ namespace BaseModel.Data.Helpers
         {
             return (property.Body as MemberExpression).Member.Name;
         }
+
+
+        public static string GetEditSettingsDisplayMemberValue(object editSettings, string searchData)
+        {
+            var copyColumnValueMember = (string)editSettings.GetType().GetProperty("ValueMember").GetValue(editSettings);
+            var copyColumnDisplayMember = (string)editSettings.GetType().GetProperty("DisplayMember").GetValue(editSettings);
+            var copyColumnItemsSource = (IEnumerable<object>)editSettings.GetType().GetProperty("ItemsSource").GetValue(editSettings);
+
+            string displayValue = string.Empty;
+
+            if (copyColumnItemsSource == null || (copyColumnValueMember == null || copyColumnValueMember == string.Empty) || (copyColumnDisplayMember == null || copyColumnDisplayMember == string.Empty))
+            {
+                return searchData;
+            }
+
+            foreach (var copyColumnItem in copyColumnItemsSource)
+            {
+                var itemDisplayMemberPropertyInfo = copyColumnItem.GetType().GetProperty(copyColumnDisplayMember);
+                var itemValueMemberPropertyInfo = copyColumnItem.GetType().GetProperty(copyColumnValueMember);
+                if (itemValueMemberPropertyInfo.GetValue(copyColumnItem) != null && itemValueMemberPropertyInfo.GetValue(copyColumnItem).ToString().ToUpper() == searchData.ToUpper())
+                {
+                    displayValue = itemDisplayMemberPropertyInfo.GetValue(copyColumnItem).ToString();
+                    break;
+                }
+            }
+
+            return displayValue;
+        }
     }
 }
