@@ -232,7 +232,9 @@ namespace BaseModel.ViewModel.Base
             //change property before deleting, because if property is saved after it's deleted the entity will be restored
             foreach (UndoRedoEntityInfo<TProjection> entityProperty in bulkSaveProperties)
             {
+                UnifiedValueChangingCallback?.Invoke(entityProperty.PropertyName, entityProperty.OldValue, entityProperty.NewValue, entityProperty.ChangedEntity, false);
                 DataUtils.SetNestedValue(entityProperty.PropertyName, entityProperty.ChangedEntity, entityProperty.OldValue);
+                UnifiedValueChangedCallback?.Invoke(entityProperty.PropertyName, entityProperty.OldValue, entityProperty.NewValue, entityProperty.ChangedEntity, false);
 
                 ICanUpdate canUpdateEntity = entityProperty as ICanUpdate;
                 canUpdateEntity?.Update();
@@ -262,7 +264,9 @@ namespace BaseModel.ViewModel.Base
             //change property before deleting, because if property is saved after it's deleted the entity will be restored
             foreach (UndoRedoEntityInfo<TProjection> entityProperty in bulkSaveProperties)
             {
+                UnifiedValueChangingCallback?.Invoke(entityProperty.PropertyName, entityProperty.OldValue, entityProperty.NewValue, entityProperty.ChangedEntity, false);
                 DataUtils.SetNestedValue(entityProperty.PropertyName, entityProperty.ChangedEntity, entityProperty.NewValue);
+                UnifiedValueChangedCallback?.Invoke(entityProperty.PropertyName, entityProperty.OldValue, entityProperty.NewValue, entityProperty.ChangedEntity, false);
 
                 ICanUpdate canUpdateEntity = entityProperty as ICanUpdate;
                 canUpdateEntity?.Update();
