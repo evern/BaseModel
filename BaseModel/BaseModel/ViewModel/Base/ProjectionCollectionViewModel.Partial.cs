@@ -128,6 +128,13 @@ namespace BaseModel.ViewModel.Base
         }
 
         #region Interceptors
+        protected override void AddUndoBeforeEntityAdded(TProjection projection)
+        {
+            if (!EntitiesUndoRedoManager.IsInUndoRedoOperation())
+                EntitiesUndoRedoManager.AddUndo(projection, null, null, null, EntityMessageType.Added);
+
+            base.AddUndoBeforeEntityAdded(projection);
+        }
 
         protected override void AddUndoBeforeEntityDeleted(TProjection projection)
         {
@@ -136,6 +143,21 @@ namespace BaseModel.ViewModel.Base
             base.AddUndoBeforeEntityDeleted(projection);
         }
 
+        protected override void PauseEntitiesUndoRedoManager()
+        {
+            if (!EntitiesUndoRedoManager.IsInUndoRedoOperation())
+                EntitiesUndoRedoManager.PauseActionId();
+
+            base.PauseEntitiesUndoRedoManager();
+        }
+
+        protected override void UnpauseEntitiesUndoRedoManager()
+        {
+            if (!EntitiesUndoRedoManager.IsInUndoRedoOperation())
+                EntitiesUndoRedoManager.UnpauseActionId();
+
+            base.UnpauseEntitiesUndoRedoManager();
+        }
         #endregion
 
         protected virtual void SelectedEntities_CollectionChanged(object sender,

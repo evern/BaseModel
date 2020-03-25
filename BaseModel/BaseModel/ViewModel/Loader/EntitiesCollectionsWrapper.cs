@@ -441,12 +441,18 @@ namespace BaseModel.ViewModel.Loader
             }
         }
 
-        IEnumerable<TMainProjectionEntity> newlyAddedProjections;
+        List<TMainProjectionEntity> newlyAddedProjections;
         protected virtual void OnAfterNewRowAdded(IEnumerable<TMainProjectionEntity> newItems)
         {
-            newlyAddedProjections = newItems;
-            //Uncomment this to allow grid to focus on new row
-            focusNewlyAddedProjectionTimer.Start();
+            if(newItems.Count() > 0)
+            {
+                if (newlyAddedProjections == null)
+                    newlyAddedProjections = new List<TMainProjectionEntity>();
+
+                newlyAddedProjections.AddRange(newItems);
+                //Uncomment this to allow grid to focus on new row
+                focusNewlyAddedProjectionTimer.Start();
+            }
         }
 
         private void FocusNewlyAddedProjectionTimer_Tick(object sender, EventArgs e)
@@ -480,6 +486,7 @@ namespace BaseModel.ViewModel.Loader
                 }
             }
 
+            newlyAddedProjections.Clear();
             displaySelectedEntities.Clear();
             foreach(TMainProjectionEntity selectedProjection in selectedProjections)
             {

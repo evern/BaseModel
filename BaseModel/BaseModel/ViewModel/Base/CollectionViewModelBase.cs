@@ -258,22 +258,27 @@ namespace BaseModel.ViewModel.Base
             if (OnBeforeEntitiesDeleteIsContinueCallBack != null && !OnBeforeEntitiesDeleteIsContinueCallBack(projectionEntities))
                 return;
 
+            PauseEntitiesUndoRedoManager();
             for (var i = 0; i < projectionEntitiesList.Count; i++)
             {
-                AddUndoBeforeEntityDeleted(projectionEntitiesList[i]);
                 if (OnBeforeEntityDeletedIsContinueCallBack != null)
                 {
+                    AddUndoBeforeEntityDeleted(projectionEntitiesList[i]);
                     DeleteInterceptMode interceptMode = OnBeforeEntityDeletedIsContinueCallBack(projectionEntitiesList[i]);
                     if (interceptMode == DeleteInterceptMode.Skip)
                         continue;
                     else if (interceptMode == DeleteInterceptMode.DiscontinueAll)
+                    {
+                        UnpauseEntitiesUndoRedoManager();
                         return;
+                    }
                 }
 
                 Entities.Remove(projectionEntitiesList[i]);
                 projectionEntitiesWithTag.Add(new KeyValuePair<int, TProjection>(i, projectionEntitiesList[i]));
             }
 
+            UnpauseEntitiesUndoRedoManager();
             try
             {
                 if(projectionEntitiesWithTag.Count > Int32.Parse(CommonResources.BulkOperationLoadingScreenMinCount))
@@ -348,9 +353,10 @@ namespace BaseModel.ViewModel.Base
             if (projectionEntities.Count() > Int32.Parse(CommonResources.BulkOperationBulkRefreshMinCount))
                 doBulkRefresh = true;
 
+            PauseEntitiesUndoRedoManager();
             foreach (var projectionEntityWithTag in projectionEntitiesWithTag)
             {
-                bool isNewEntity;
+                bool isNewEntity = false;
                 if (OnBeforeEntitySavedIsContinueCallBack != null)
                     isContinueSave = OnBeforeEntitySavedIsContinueCallBack(projectionEntityWithTag.Value);
 
@@ -360,6 +366,7 @@ namespace BaseModel.ViewModel.Base
                     continue;
                 }
 
+                AddUndoBeforeEntityAdded(projectionEntityWithTag.Value);
                 var findOrAddNewEntity = Repository.FindExistingOrAddNewEntity(projectionEntityWithTag.Value,
                     (p, e) => { ApplyProjectionPropertiesToEntity(p, e); }, out isNewEntity);
 
@@ -377,6 +384,7 @@ namespace BaseModel.ViewModel.Base
                 LoadingScreenManager.Progress();
             }
 
+            UnpauseEntitiesUndoRedoManager();
             List<TProjection> newlyAddedEntities = new List<TProjection>();
 
             foreach (var entityWithTag in entitiesWithTag)
@@ -387,10 +395,7 @@ namespace BaseModel.ViewModel.Base
             }
 
             if (!isContinueSave)
-            {
-                OnAfterNewRowAdded?.Invoke(newlyAddedEntities);
                 return;
-            }
 
             try
             {
@@ -733,8 +738,23 @@ namespace BaseModel.ViewModel.Base
         #endregion
 
         #region BaseModel Customization
+        protected virtual void AddUndoBeforeEntityAdded(TProjection projectionEntity)
+        {
+
+        }
+
         protected virtual void AddUndoBeforeEntityDeleted(TProjection projectionEntity)
         {
+        }
+
+        protected virtual void PauseEntitiesUndoRedoManager()
+        {
+
+        }
+
+        protected virtual void UnpauseEntitiesUndoRedoManager()
+        {
+
         }
 
         /// <summary>
