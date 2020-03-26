@@ -217,7 +217,7 @@ namespace BaseModel.ViewModel.Composition
                     bulkDeleteAttachmentPermissions.Add(attachmentPermission);
             }
 
-            AttachmentPermissionsViewModel.BaseBulkDelete(bulkDeleteAttachmentPermissions);
+            AttachmentPermissionsViewModel.BulkDelete(bulkDeleteAttachmentPermissions);
             RefreshPermissions();
         }
     }

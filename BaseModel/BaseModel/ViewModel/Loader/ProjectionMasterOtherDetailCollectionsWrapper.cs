@@ -29,8 +29,7 @@ namespace BaseModel.ViewModel.Loader
 
         protected override void AssignCallBacksAndRaisePropertyChange(IEnumerable<TMainProjectionEntity> entities)
         {
-            ChildEntitiesViewModel.OnBeforeEntitySavedIsContinueCallBack = onBeforeEntitySavedIsContinue;
-            ChildEntitiesViewModel.OnBeforeViewNewRowSavedIsContinueCallBack = onBeforeViewNewRowSavedIsContinue;
+            ChildEntitiesViewModel.OnBeforeNewRowSavedIsContinueFromViewCallBack = onBeforeViewNewRowSavedIsContinue;
             MainViewModel.SetParentViewModel(this);
             base.AssignCallBacksAndRaisePropertyChange(entities);
         }
@@ -48,6 +47,13 @@ namespace BaseModel.ViewModel.Loader
                 var masterEntity = (TMainProjectionEntity)masterGrid.GetRow(masterRowHandle);
                 if (OnBeforeParentAssigned(masterEntity, childEntity))
                 {
+                    IHaveCreatedDate childEntityCreatedDate = childEntity as IHaveCreatedDate;
+                    if (childEntityCreatedDate != null)
+                    {
+                        if (childEntityCreatedDate.EntityCreatedDate.Year == 1)
+                            childEntityCreatedDate.EntityCreatedDate = DateTime.Now;
+                    }
+
                     IOriginalGuidEntityKey masterEntityOriginalKey = masterEntity as IOriginalGuidEntityKey;
                     if (masterEntityOriginalKey == null)
                         childEntity.ParentEntityKey = masterEntity.GUID;
@@ -55,18 +61,6 @@ namespace BaseModel.ViewModel.Loader
                         childEntity.ParentEntityKey = masterEntityOriginalKey.OriginalEntityKey;
                 }
 
-            }
-
-            return true;
-        }
-
-        protected virtual bool onBeforeEntitySavedIsContinue(TChildEntity childEntity)
-        {
-            IHaveCreatedDate childEntityCreatedDate = childEntity as IHaveCreatedDate;
-            if (childEntityCreatedDate != null)
-            {
-                if(childEntityCreatedDate.EntityCreatedDate.Year == 1)
-                    childEntityCreatedDate.EntityCreatedDate = DateTime.Now;
             }
 
             return true;

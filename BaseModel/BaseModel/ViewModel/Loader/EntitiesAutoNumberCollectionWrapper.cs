@@ -34,21 +34,19 @@ namespace BaseModel.ViewModel.Loader
         protected override void AssignCallBacksAndRaisePropertyChange(IEnumerable<TMainProjectionEntity> entities)
         {
             //MainViewModel.IsContinueNewRowFromViewCallBack += IsContinueNewRowFromViewCallBack;
-            MainViewModel.OnBeforeEntitySavedIsContinueCallBack = onBeforeEntitySavedIsContinue;
-            MainViewModel.OnAfterEntitiesDeletedCallBack = OnAfterEntitiesDeletedCallBack;
+            MainViewModel.OnAfterProjectionsDeletedCallBack = OnAfterProjectionDeletedCallBack;
             MainViewModel.SetParentViewModel(this);
             base.AssignCallBacksAndRaisePropertyChange(entities);
         }
 
-        protected virtual bool onBeforeEntitySavedIsContinue(TMainProjectionEntity projection)
+        public override void UnifiedNewRowInitializationFromView(TMainProjectionEntity projection)
         {
-            if(projection.EntityNumber == string.Empty || projection.EntityNumber == null)
+            if (projection.EntityNumber == string.Empty || projection.EntityNumber == null)
             {
                 IEnumerable<TMainProjectionEntity> entitiesInOrder = MainViewModel.Entities.Where(x => x.EntityGroup == projection.EntityGroup).OrderBy(x => x.EntityNumber);
                 if (entitiesInOrder.Count() == 0)
                 {
                     projection.EntityNumber = StringFormatUtils.AppendStringWithEnumerator(string.Empty, 0, DefaultNumericFieldLength());
-                    return true;
                 }
 
                 TMainProjectionEntity largestNumberEntity = entitiesInOrder.Last();
@@ -60,9 +58,9 @@ namespace BaseModel.ViewModel.Loader
                 projection.EntityNumber = StringFormatUtils.AppendStringWithEnumerator(string.Empty, newRowNumber, DefaultNumericFieldLength());
             }
 
-            return true;
+            base.UnifiedNewRowInitializationFromView(projection);
         }
-
+        
         protected bool IsContinueNewRowFromViewCallBack(RowEventArgs e, TMainProjectionEntity projection)
         {
             IEnumerable<TMainProjectionEntity> entitiesInOrder = MainViewModel.Entities.Where(x => x.EntityGroup == projection.EntityGroup).OrderBy(x => x.EntityNumber);
@@ -110,17 +108,20 @@ namespace BaseModel.ViewModel.Loader
 
         public void Duplicate()
         {
-            if (!_isProcessingMultiple)
-                MainViewModel.EntitiesUndoRedoManager.PauseActionId();
+            //Handled in bulk save
+            //if (!_isProcessingMultiple)
+            //    MainViewModel.EntitiesUndoRedoManager.PauseActionId();
 
             List<TMainProjectionEntity> newEntities = getNewDuplicateEntities(1, false, MainViewModel.Entities, MainViewModel.SelectedEntities);
             MainViewModel.BulkSave(newEntities);
-            //Add undo must happen after save so that variation can pick it up
-            foreach (TMainProjectionEntity newEntity in newEntities)
-                MainViewModel.EntitiesUndoRedoManager.AddUndo(newEntity, null, null, null, EntityMessageType.Added);
 
-            if (!_isProcessingMultiple)
-                MainViewModel.EntitiesUndoRedoManager.UnpauseActionId();
+            //Handled in bulk save
+            //foreach (TMainProjectionEntity newEntity in newEntities)
+            //    MainViewModel.EntitiesUndoRedoManager.AddUndo(newEntity, null, null, null, EntityMessageType.Added);
+
+            //Handled in bulk save
+            //if (!_isProcessingMultiple)
+            //    MainViewModel.EntitiesUndoRedoManager.UnpauseActionId();
         }
 
 
@@ -140,7 +141,9 @@ namespace BaseModel.ViewModel.Loader
                     newProjection.GUID = Guid.Empty;
 
                     newProjection.EntityNumber = newProjection.EntityNumber = StringFormatUtils.GetNewRegisterNumber(MainViewModel.Entities, unsavedEntities, largestNumberString, MainViewModel.SelectedEntities);
-                    MainViewModel.EntitiesUndoRedoManager.AddUndo(newProjection, null, null, null, EntityMessageType.Added);
+                    
+                    //handled in bulk save
+                    //MainViewModel.EntitiesUndoRedoManager.AddUndo(newProjection, null, null, null, EntityMessageType.Added);
                     unsavedEntities.Add(newProjection);
                 }
             }
@@ -148,7 +151,7 @@ namespace BaseModel.ViewModel.Loader
             return unsavedEntities;
         }
 
-        private void OnAfterEntitiesDeletedCallBack(IEnumerable<TMainEntity> entities)
+        private void OnAfterProjectionDeletedCallBack(IEnumerable<TMainProjectionEntity> entities)
         {
             List<TMainProjectionEntity> changedEntities = new List<TMainProjectionEntity>();
             IEnumerable<TMainProjectionEntity> entitiesInOrder = MainViewModel.Entities.OrderBy(x => x.EntityNumber);
@@ -189,7 +192,8 @@ namespace BaseModel.ViewModel.Loader
 
         public void InsertMultiple(BarEditItem barEdit)
         {
-            MainViewModel.EntitiesUndoRedoManager.PauseActionId();
+            //Handled in bulk save
+            //MainViewModel.EntitiesUndoRedoManager.PauseActionId();
             _isProcessingMultiple = true;
             var timesToInsert = 0;
             List<TMainProjectionEntity> newEntities = new List<TMainProjectionEntity>();
@@ -203,7 +207,9 @@ namespace BaseModel.ViewModel.Loader
 
             MainViewModel.BulkSave(newEntities);
             _isProcessingMultiple = false;
-            MainViewModel.EntitiesUndoRedoManager.UnpauseActionId();
+
+            //Handled in Bulk Save
+            //MainViewModel.EntitiesUndoRedoManager.UnpauseActionId();
         }
 
         List<TMainProjectionEntity> getNewEntities(int timestoInsert)
@@ -217,7 +223,9 @@ namespace BaseModel.ViewModel.Loader
                     DataUtils.ShallowCopy(newProjection, selectedEntity);
                     newProjection.GUID = Guid.Empty;
                     newProjection.EntityNumber = StringFormatUtils.GetNewRegisterNumber(MainViewModel.Entities, unsavedEntities, selectedEntity.EntityNumber, MainViewModel.SelectedEntities, selectedEntity.EntityGroup);
-                    MainViewModel.EntitiesUndoRedoManager.AddUndo(newProjection, null, null, null, EntityMessageType.Added);
+
+                    //Handled in Bulk Save
+                    //MainViewModel.EntitiesUndoRedoManager.AddUndo(newProjection, null, null, null, EntityMessageType.Added);
                     unsavedEntities.Add(newProjection);
                 }
             }

@@ -54,30 +54,9 @@ namespace BaseModel.ViewModel.Base
         public Action OnSelectedEntitiesChangedCallBack;
 
         /// <summary>
-        /// Additional initialization parameter apart from SetParentAssociationCallBack from CollectionViewModelBase when RowEventArgs is needed
-        /// e.g. Retrieving master row from child to set parent association
-        /// </summary>
-        public Func<RowEventArgs, TProjection, bool> OnBeforeViewNewRowSavedIsContinueCallBack;
-
-        ///// <summary>
-        ///// Additional validation for cell
-        ///// </summary>
-        //public Action<GridCellValidationEventArgs> AdditionalValidateCellCallBack;
-
-        /// <summary>
         /// Additional validation for row
         /// </summary>
         public Func<TProjection, string> UnifiedValidateRow { get; set; }
-
-        /// <summary>
-        /// Allows only specific rows be to deleted
-        /// </summary>
-        public Func<IEnumerable<TProjection>, bool> CanBulkDeleteCallBack;
-
-        /// <summary>
-        /// Used to populate lookup cell values, so that when a value is change in a cell another cell of combobox type can be filtered based on the changes
-        /// </summary>
-        public Action<TProjection> UnifiedNewRowInitializationCallBack;
 
         /// <summary>
         /// External call back used by copy paste, fill, new and existing row cell value changing to determine which other cells to affect
@@ -93,11 +72,6 @@ namespace BaseModel.ViewModel.Base
         /// External call back used by copy paste, fill, new and existing row cell value changing to determine whether value is valid
         /// </summary>
         public Func<TProjection, string, object, bool, string> UnifiedValueValidationCallback;
-
-        /// <summary>
-        /// External call back used to format error messages
-        /// </summary>
-        public Action<IEnumerable<ErrorMessage>> FormatErrorMessagesCallBack;
         #endregion
 
         /// <summary>
@@ -106,21 +80,8 @@ namespace BaseModel.ViewModel.Base
         /// </summary>
         /// <param name="unitOfWorkFactory">A factory used to create a unit of work instance.</param>
         /// <param name="getRepositoryFunc">A function that returns a repository representing entities of the given type.</param>
-        /// <param name="projection">A LINQ function used to customize a query for entities. The parameter, for example, can be used for sorting data and/or for projecting data to a custom type that does not match the repository entity type.</param>
-        /// <param name="newEntityInitializer">An optional parameter that provides a function to initialize a new entity. This parameter is used in the detail collection view models when creating a single object view model for a new entity.</param>
-        /// <param name="canCreateNewEntity">A function that is called before an attempt to create a new entity is made. This parameter is used together with the newEntityInitializer parameter.</param>
-        /// <param name="ignoreSelectEntityMessage">An optional parameter that used to specify that the selected entity should not be managed by PeekCollectionViewModel.</param>
-        protected CollectionViewModel(
-            IUnitOfWorkFactory<TUnitOfWork> unitOfWorkFactory,
-            Func<TUnitOfWork, IRepository<TEntity, TPrimaryKey>> getRepositoryFunc,
-            Func<IRepositoryQuery<TEntity>, IQueryable<TProjection>> projection,
-            Action<TEntity> newEntityInitializer = null,
-            Func<bool> canCreateNewEntity = null,
-            bool ignoreSelectEntityMessage = false
-        )
-            : base(
-                unitOfWorkFactory, getRepositoryFunc, projection, newEntityInitializer, canCreateNewEntity,
-                ignoreSelectEntityMessage)
+        protected CollectionViewModel(IUnitOfWorkFactory<TUnitOfWork> unitOfWorkFactory, Func<TUnitOfWork, IRepository<TEntity, TPrimaryKey>> getRepositoryFunc, Func<IRepositoryQuery<TEntity>, IQueryable<TProjection>> projection)
+            : base(unitOfWorkFactory, getRepositoryFunc, projection)
         {
             InitZoom();
             SelectedEntities = new ObservableCollection<TProjection>();
@@ -181,10 +142,7 @@ namespace BaseModel.ViewModel.Base
             Func<IRepositoryQuery<TEntity>, IQueryable<TProjection>> projection)
         {
             return
-                ViewModelSource.Create(
-                    () =>
-                        new CollectionViewModel<TEntity, TProjection, TPrimaryKey, TUnitOfWork>(unitOfWorkFactory,
-                            getRepositoryFunc, projection, null, null, false));
+                ViewModelSource.Create(() => new CollectionViewModel<TEntity, TProjection, TPrimaryKey, TUnitOfWork>(unitOfWorkFactory, getRepositoryFunc, projection));
         }
 
         #region Selected Entities
@@ -266,7 +224,7 @@ namespace BaseModel.ViewModel.Base
             BulkSave(bulkAddProperties.Select(x => x.ChangedEntity));
 
             //use ignore refresh here because it'll be refreshed in basebulksave
-            BaseBulkDelete(bulkDeleteProperties.Select(x => x.ChangedEntity));
+            BulkDelete(bulkDeleteProperties.Select(x => x.ChangedEntity));
 
             isBackgroundEdit = false;
         }
@@ -298,7 +256,7 @@ namespace BaseModel.ViewModel.Base
             BulkSave(bulkSaveProperties.Select(x => x.ChangedEntity));
 
             //use ignore refresh here because it'll be refreshed in basebulksave
-            BaseBulkDelete(bulkDeleteProperties.Select(x => x.ChangedEntity));
+            BulkDelete(bulkDeleteProperties.Select(x => x.ChangedEntity));
             
             isBackgroundEdit = false;
         }
@@ -679,25 +637,25 @@ namespace BaseModel.ViewModel.Base
         {
             if (e.RowHandle == DataControlBase.NewItemRowHandle)
             {
-                EntitiesUndoRedoManager.PauseActionId();
-
                 var projection = (TProjection)e.Row;
 
                 ICanUpdate updateProjection = projection as ICanUpdate;
                 if (updateProjection != null)
                     updateProjection.NewEntityFromView = true;
 
-                if (OnBeforeViewNewRowSavedIsContinueCallBack != null)
-                    if (!OnBeforeViewNewRowSavedIsContinueCallBack(e, projection))
+                UnifiedNewRowInitialisationFromView?.Invoke(projection);
+                if (OnBeforeNewRowSavedIsContinueFromViewCallBack != null)
+                    if (!OnBeforeNewRowSavedIsContinueFromViewCallBack(e, projection))
                         return;
 
                 List<TProjection> newlyAddedProjections = new List<TProjection>();
                 newlyAddedProjections.Add(projection);
+
                 Save(projection);
 
-                //add undo must be after so that Guid is populated
-                EntitiesUndoRedoManager.AddUndo(projection, null, null, null, EntityMessageType.Added);
-                EntitiesUndoRedoManager.UnpauseActionId();
+                //handled in save operation
+                //EntitiesUndoRedoManager.AddUndo(projection, null, null, null, EntityMessageType.Added);
+                //EntitiesUndoRedoManager.UnpauseActionId();
             }
         }
 
@@ -757,7 +715,6 @@ namespace BaseModel.ViewModel.Base
             if (!e.Handled)
             {
                 var projection = (TProjection)e.Row;
-                UnifiedNewRowInitializationCallBack?.Invoke(projection);
                 UnifiedValueChangedCallback?.Invoke(e.Column.FieldName, e.OldValue, e.Value, projection, true);
             }
         }
@@ -776,13 +733,6 @@ namespace BaseModel.ViewModel.Base
 
             Save(projection);
         }
-
-        protected override void OnBeforeEntitySaved(TEntity entity)
-        {
-            InstantiateEntity(entity);
-            base.OnBeforeEntitySaved(entity);
-        }
-
 
         /// <summary>
         /// Validate any row within the binded datagrid
@@ -841,7 +791,7 @@ namespace BaseModel.ViewModel.Base
         public virtual void DeleteCellContent(GridControl gridControl)
         {
             string[] RowData = new string[] { string.Empty };
-            CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, ErrorMessagesDialogService, UnifiedValueValidationCallback, FuncManualCellPastingIsContinue, FuncManualRowPastingIsContinue, UnifiedValueChangingCallback, UnifiedValueChangedCallback, UnifiedNewRowInitializationCallBack, FormatErrorMessagesCallBack);
+            CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, ErrorMessagesDialogService, UnifiedValueValidationCallback, FuncManualCellPastingIsContinue, FuncManualRowPastingIsContinue, UnifiedValueChangingCallback, UnifiedValueChangedCallback, UnifiedNewRowInitialisationFromView, FormatErrorMessagesCallBack);
             List<TProjection> pasteProjections;
 
             List<ErrorMessage> errorMessages = new List<ErrorMessage>();
@@ -856,14 +806,16 @@ namespace BaseModel.ViewModel.Base
                 {
                     //For copy paste don't have to refresh the entire list, just call ICanUpdate.Update() on entity
                     BulkSave(pasteProjections, true);
-                    //BulkSave(pasteProjections);
                 }
 
                 if (errorMessages.Count > 0)
                 {
                     FormatErrorMessagesCallBack?.Invoke(errorMessages);
-                    DialogCollectionViewModel<ErrorMessage> viewModel = DialogCollectionViewModel<ErrorMessage>.Create(errorMessages, "The following data cannot be deleted");
-                    ErrorMessagesDialogService.ShowDialog(MessageButton.OKCancel, string.Empty, "ListErrorMessages", viewModel);
+                    if (ErrorMessagesDialogService != null)
+                    {
+                        DialogCollectionViewModel<ErrorMessage> viewModel = DialogCollectionViewModel<ErrorMessage>.Create(errorMessages, "The following data cannot be deleted");
+                        ErrorMessagesDialogService.ShowDialog(MessageButton.OKCancel, string.Empty, "ListErrorMessages", viewModel);
+                    }
                 }
             }
         }
@@ -1052,8 +1004,7 @@ namespace BaseModel.ViewModel.Base
         /// <param name="projectionEntity">Entities to delete.</param>
         public virtual bool CanBulkDelete()
         {
-            return Entities != null && Entities.Count > 0 && !IsLoading && SelectedEntities != null && SelectedEntities.Count > 0 && 
-                   (CanBulkDeleteCallBack == null || CanBulkDeleteCallBack(selectedentities));
+            return Entities != null && Entities.Count > 0 && !IsLoading && SelectedEntities != null && SelectedEntities.Count > 0;
         }
 
         /// <summary>
@@ -1077,7 +1028,7 @@ namespace BaseModel.ViewModel.Base
                 return;
 
             EntitiesUndoRedoManager.PauseActionId();
-            BaseBulkDelete(selectedentities);
+            BulkDelete(selectedentities);
             EntitiesUndoRedoManager.UnpauseActionId();
         }
 
@@ -1090,28 +1041,12 @@ namespace BaseModel.ViewModel.Base
         {
             SendKeys.SendWait("^v");
         }
-
-        public bool IsInBulkOperation { get; set; }
-        /// <summary>
-        /// Deletes a given entity from the repository and saves changes if confirmed by the user.
-        /// Since CollectionViewModelBase is a POCO view model, an the instance of this class will also expose the DeleteCommand property that can be used as a binding source in views.
-        /// </summary>
-        /// <param name="projectionEntity">An entity to edit.</param>
-        public void BulkSave(IEnumerable<TProjection> entities, bool doNotRefresh = true)
-        {
-            BaseBulkSave(entities, doNotRefresh);
-        }
         #endregion
 
         #region Bulk Edit
         protected IDialogService BulkColumnEditDialogService
         {
             get { return this.GetRequiredService<IDialogService>("BulkColumnEditService"); }
-        }
-
-        protected IDialogService ErrorMessagesDialogService
-        {
-            get { return this.GetRequiredService<IDialogService>("ErrorMessagesDialogService"); }
         }
 
         public bool CanBulkColumnEdit(object button)
@@ -1365,9 +1300,6 @@ namespace BaseModel.ViewModel.Base
         /// <param name="e"></param>
         public virtual void PastingFromClipboard(PastingFromClipboardEventArgs e)
         {
-            if (DisablePasting)
-                return;
-
             bool shouldSkip = false;
             var gridControl = (GridControl)e.Source;
             TableView tableView = gridControl.View as TableView;
@@ -1384,7 +1316,7 @@ namespace BaseModel.ViewModel.Base
             if(!shouldSkip)
             {
                 PasteListener?.Invoke(PasteStatus.Start);
-                CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, ErrorMessagesDialogService, UnifiedValueValidationCallback, FuncManualCellPastingIsContinue, FuncManualRowPastingIsContinue, UnifiedValueChangingCallback, UnifiedValueChangedCallback, UnifiedNewRowInitializationCallBack, FormatErrorMessagesCallBack);
+                CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, ErrorMessagesDialogService, UnifiedValueValidationCallback, FuncManualCellPastingIsContinue, FuncManualRowPastingIsContinue, UnifiedValueChangingCallback, UnifiedValueChangedCallback, UnifiedNewRowInitialisationFromView, FormatErrorMessagesCallBack);
 
                 bool dontSplit = false;
                 if ((Keyboard.Modifiers | ModifierKeys.Shift) == Keyboard.Modifiers)
@@ -1424,25 +1356,29 @@ namespace BaseModel.ViewModel.Base
 
                     if (pasteProjections.Count > 0)
                     {
-                        if (!IsPasteCellLevel)
-                        {
-                            EntitiesUndoRedoManager.PauseActionId();
-                            pasteProjections.ForEach(x => EntitiesUndoRedoManager.AddUndo(x, null, null, null, EntityMessageType.Added));
-                            EntitiesUndoRedoManager.UnpauseActionId();
-                        }
+                        //handled in BulkSave
+                        //if (!IsPasteCellLevel)
+                        //{
+                        //    EntitiesUndoRedoManager.PauseActionId();
+                        //    pasteProjections.ForEach(x => EntitiesUndoRedoManager.AddUndo(x, null, null, null, EntityMessageType.Added));
+                        //    EntitiesUndoRedoManager.UnpauseActionId();
+                        //}
 
                         //For copy paste don't have to refresh the entire list, just call ICanUpdate.Update() on entity
                         BulkSave(pasteProjections, IsPasteCellLevel);
 
                         if(!IsPasteCellLevel && !DisablePasteRowLevel)
-                            OnAfterNewRowAdded?.Invoke(pasteProjections);
+                            OnAfterNewRowAddedCallBack?.Invoke(pasteProjections);
                     }
 
                     if (errorMessages.Count > 0)
                     {
                         FormatErrorMessagesCallBack?.Invoke(errorMessages);
-                        DialogCollectionViewModel<ErrorMessage> viewModel = DialogCollectionViewModel<ErrorMessage>.Create(errorMessages, "The following data cannot be pasted");
-                        ErrorMessagesDialogService.ShowDialog(MessageButton.OKCancel, string.Empty, "ListErrorMessages", viewModel);
+                        if (ErrorMessagesDialogService != null)
+                        {
+                            DialogCollectionViewModel<ErrorMessage> viewModel = DialogCollectionViewModel<ErrorMessage>.Create(errorMessages, "The following data cannot be pasted");
+                            ErrorMessagesDialogService.ShowDialog(MessageButton.OKCancel, string.Empty, "ListErrorMessages", viewModel);
+                        }
                     }
                 }
 
@@ -1457,9 +1393,6 @@ namespace BaseModel.ViewModel.Base
         /// <param name="e"></param>
         public virtual void PastingFromClipboardTreeList(PastingFromClipboardEventArgs e)
         {
-            if (DisablePasting)
-                return;
-
             PasteListener?.Invoke(PasteStatus.Start);
             CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, ErrorMessagesDialogService, UnifiedValueValidationCallback, null, null, null, null, null, FormatErrorMessagesCallBack);
             bool dontSplit = false;
@@ -1488,9 +1421,10 @@ namespace BaseModel.ViewModel.Base
 
             if (pasteProjections.Count > 0)
             {
-                EntitiesUndoRedoManager.PauseActionId();
-                pasteProjections.ForEach(x => EntitiesUndoRedoManager.AddUndo(x, null, null, null, EntityMessageType.Added));
-                EntitiesUndoRedoManager.UnpauseActionId();
+                //Handled in BulkSave
+                //EntitiesUndoRedoManager.PauseActionId();
+                //pasteProjections.ForEach(x => EntitiesUndoRedoManager.AddUndo(x, null, null, null, EntityMessageType.Added));
+                //EntitiesUndoRedoManager.UnpauseActionId();
 
                 BulkSave(pasteProjections);
                 e.Handled = true;
@@ -1499,8 +1433,12 @@ namespace BaseModel.ViewModel.Base
             if (errorMessages.Count > 0)
             {
                 FormatErrorMessagesCallBack?.Invoke(errorMessages);
-                DialogCollectionViewModel<ErrorMessage> viewModel = DialogCollectionViewModel<ErrorMessage>.Create(errorMessages, "The following data cannot be pasted");
-                ErrorMessagesDialogService.ShowDialog(MessageButton.OKCancel, string.Empty, "ListErrorMessages", viewModel);
+
+                if(ErrorMessagesDialogService != null)
+                {
+                    DialogCollectionViewModel<ErrorMessage> viewModel = DialogCollectionViewModel<ErrorMessage>.Create(errorMessages, "The following data cannot be pasted");
+                    ErrorMessagesDialogService.ShowDialog(MessageButton.OKCancel, string.Empty, "ListErrorMessages", viewModel);
+                }
             }
 
             PasteListener?.Invoke(PasteStatus.Stop);

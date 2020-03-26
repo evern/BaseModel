@@ -59,8 +59,7 @@ namespace BaseModel.ViewModel.Loader
             selectedEntitiesChangedDispatchTimer = new DispatcherTimer();
             selectedEntitiesChangedDispatchTimer.Interval = new TimeSpan(0, 0, 0, 0, 1);
             focusNewlyAddedProjectionTimer = new DispatcherTimer();
-            focusNewlyAddedProjectionTimer.Interval = new TimeSpan(0, 0, 0, 0, 250);
-            focusNewlyAddedProjectionTimer.Tick += FocusNewlyAddedProjectionTimer_Tick;
+            focusNewlyAddedProjectionTimer.Interval = new TimeSpan(0, 0, 0, 0, 1);
 
             refreshBackgroundWorker = new BackgroundWorker();
             refreshBackgroundWorker.DoWork += refreshBackgroundWorker_DoWork;
@@ -175,8 +174,8 @@ namespace BaseModel.ViewModel.Loader
                         specifyMainViewModelProjection, null, this.AlwaysSkipMessage);
 
             MainViewModel = mainEntityLoaderDescription.CreateMainCollectionViewModel();
-            MainViewModel.OnAfterSavedSendMessage = this.OnAfterSavedSendMessage;
-            MainViewModel.OnAfterDeletedSendMessage = this.OnAfterDeletedSendMessage;
+            MainViewModel.OnAfterSavedSendMessageCallBack = this.OnAfterSavedSendMessage;
+            MainViewModel.OnAfterDeletedSendMessageCallBack = this.OnAfterDeletedSendMessage;
             mainEntityLoaderDescription.LoadMainCollectionViewModel();
         }
 
@@ -217,16 +216,23 @@ namespace BaseModel.ViewModel.Loader
                 return;
             }
 
-            MainViewModel.OnAfterNewRowAdded = this.OnAfterNewRowAdded;
+            MainViewModel.OnAfterNewRowAddedCallBack = this.OnAfterNewRowAdded;
             MainViewModel.SelectedEntities = this.DisplaySelectedEntities;
             MainViewModel.UnifiedValueChangingCallback = this.UnifiedCellValueChanging;
             MainViewModel.UnifiedValueChangedCallback = this.UnifiedCellValueChanged;
-            MainViewModel.UnifiedNewRowInitializationCallBack = this.UnifiedNewRowInitialization;
+            MainViewModel.UnifiedNewRowInitialisationFromView = this.UnifiedNewRowInitializationFromView;
             MainViewModel.UnifiedValueValidationCallback = this.UnifiedValueValidation;
             MainViewModel.UnifiedValidateRow = this.UnifiedRowValidation;
-            MainViewModel.AfterBulkOperationRefreshCallBack = this.FullRefreshWithoutClearingUndoRedo;
+            MainViewModel.FullRefreshWithoutClearingUndoRedoCallBack = this.FullRefreshWithoutClearingUndoRedo;
             MainViewModel.ApplyProjectionPropertiesToEntityCallBack = ApplyProjectionPropertiesAndCreatedDateToEntity;
             MainViewModel.FormatErrorMessagesCallBack = FormatErrorMessages;
+
+            //database behaviours
+            MainViewModel.OnBeforeProjectionSaveIsContinueCallBack = OnBeforeProjectionSaveIsContinue;
+            MainViewModel.OnBeforeProjectionDeleteIsContinueCallBack = OnBeforeProjectionDeleteIsContinue;
+            MainViewModel.OnAfterProjectionSavedCallBack = OnAfterProjectionSave;
+            MainViewModel.OnBeforeProjectionsDeleteCallBack = OnBeforeProjectionsDelete;
+            MainViewModel.OnAfterProjectionsDeletedCallBack = OnAfterProjectionsDeleted;
             BackgroundRefresh();
 
             if(!delayPostLoadedTimer)
@@ -393,18 +399,10 @@ namespace BaseModel.ViewModel.Loader
             {
                 if (messageType == EntityMessageType.Deleted && currentCompulsoryEntitiesLoader.GetEntitiesCount() == 0)
                 {
-                    //potential to set a global where compulsory entity doesn't exists message
-                    //MessageBoxService.ShowMessage(string.Format(CommonResources.Notify_View_Removed,
-                    //    StringFormatUtils.GetEntityNameByType(changedType)));
-
-                    //take this out for now, to make program leaner
-                    //mainThreadDispatcher.BeginInvoke(new Action(() => FullRefresh()));
                     return;
                 }
                 else if (messageType == EntityMessageType.Added && compulsoryLoaders.All(x => x.GetEntitiesCount() > 0))
                 {
-                    //potential to set a global where compulsory entity restored mechanism
-                    //MessageBoxService.ShowMessage(changedType.ToString() + " restored");
                     mainThreadDispatcher.BeginInvoke(new Action(() => ReloadEntitiesCollection()));
                     return;
                 }
@@ -451,6 +449,8 @@ namespace BaseModel.ViewModel.Loader
 
                 newlyAddedProjections.AddRange(newItems);
                 //Uncomment this to allow grid to focus on new row
+                focusNewlyAddedProjectionTimer.Tick -= FocusNewlyAddedProjectionTimer_Tick;
+                focusNewlyAddedProjectionTimer.Tick += FocusNewlyAddedProjectionTimer_Tick;
                 focusNewlyAddedProjectionTimer.Start();
             }
         }
@@ -555,12 +555,6 @@ namespace BaseModel.ViewModel.Loader
                 return MainViewModel.Entities;
             }
         }
-
-        public Action<TMainProjectionEntity> OnDisplaySelectedEntityChangedCallBack;
-        public virtual void OnDisplaySelectedEntityChanged(TMainProjectionEntity entity)
-        {
-            OnDisplaySelectedEntityChangedCallBack?.Invoke(entity);
-        }
         #endregion
 
         #region Refresh
@@ -585,12 +579,8 @@ namespace BaseModel.ViewModel.Loader
             if (MainViewModel == null)
                 return;
 
-
             //need to force load or else addition/deletion won't be refreshed
             MainViewModel.LoadEntities(true, BackgroundRefresh);
-            //MainViewModel.RefreshWithoutClearingUndoManager();
-            //BackgroundRefresh();
-            //GridControlService.SetExpansionState(groupExpansionState);
         }
 
         private void onAfterBulkChangeRefresh()
@@ -892,6 +882,35 @@ namespace BaseModel.ViewModel.Loader
         }
         #endregion
 
+        #region Database behaviour
+        protected virtual OperationInterceptMode OnBeforeProjectionSaveIsContinue(TMainProjectionEntity projection, out bool isNew)
+        {
+            isNew = false;
+            return OperationInterceptMode.Continue;
+        }
+
+        protected virtual OperationInterceptMode OnBeforeProjectionDeleteIsContinue(TMainProjectionEntity projection, out List<ErrorMessage> errorMessages)
+        {
+            errorMessages = new List<ErrorMessage>();
+            return OperationInterceptMode.Continue;
+        }
+
+        protected virtual void OnBeforeProjectionsDelete(IEnumerable<TMainProjectionEntity> projections)
+        {
+
+        }
+
+        protected virtual void OnAfterProjectionsDeleted(IEnumerable<TMainProjectionEntity> projections)
+        {
+
+        }
+
+        protected virtual void OnAfterProjectionSave(TMainProjectionEntity projection, TMainEntity entity, bool isNew)
+        {
+
+        }
+        #endregion
+
         #region View Behavior
         /// <summary>
         /// Resolve problem in the view group value repeats itself
@@ -950,7 +969,7 @@ namespace BaseModel.ViewModel.Loader
         /// Used to populate cell lookup properties in projection so when value is changed from a cell another combobox type cell values can be filtered
         /// </summary>
         /// <param name="projection">New projection</param>
-        public virtual void UnifiedNewRowInitialization(TMainProjectionEntity projection)
+        public virtual void UnifiedNewRowInitializationFromView(TMainProjectionEntity projection)
         {
 
         }
@@ -967,7 +986,6 @@ namespace BaseModel.ViewModel.Loader
         {
 
         }
-
 
         /// <summary>
         /// Routine used by copy paste, fill, new and existing row cell value changed to determine which other cells to affect or commit to database different from MainViewModel context

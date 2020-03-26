@@ -413,11 +413,9 @@ namespace BaseModel.ViewModel.Base
             return getRepositoryFunc(CreateUnitOfWork());
         }
 
-        public TUnitOfWork UnitOfWork { get; private set; }
         protected TUnitOfWork CreateUnitOfWork()
         {
-            UnitOfWork = unitOfWorkFactory.CreateUnitOfWork();
-            return UnitOfWork;
+            return unitOfWorkFactory.CreateUnitOfWork();
         }
 
         protected virtual IEntitiesChangeTracker CreateEntitiesChangeTracker()

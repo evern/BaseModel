@@ -70,8 +70,8 @@ namespace BaseModel.ViewModel.Loader
             collectionViewModel.OnEntitiesLoadedCallBack = OnEntitiesFirstLoaded;
             collectionViewModel.OnAfterEntitiesChangedCallBack = collectionViewModelChangedCallBack;
             collectionViewModel.OnBeforeEntitiesChangedCallBack = collectionViewModelBeforeChangedCallBack;
-            collectionViewModel.OnAfterDeletedSendMessage = owner.OnAfterDeletedSendMessage;
-            collectionViewModel.OnAfterSavedSendMessage = owner.OnAfterSavedSendMessage;
+            collectionViewModel.OnAfterDeletedSendMessageCallBack = owner.OnAfterDeletedSendMessage;
+            collectionViewModel.OnAfterSavedSendMessageCallBack = owner.OnAfterSavedSendMessage;
             collectionViewModel.AlwaysSkipMessage = this.AlwaysSkipMessage;
             collectionViewModel.CurrentHWID = owner.CurrentHWID;
             collectionViewModel.Entities.ToList();
@@ -87,8 +87,8 @@ namespace BaseModel.ViewModel.Loader
             collectionViewModel.OnEntitiesLoadedCallBack = OnEntitiesFirstLoaded;
             collectionViewModel.OnAfterEntitiesChangedCallBack = collectionViewModelChangedCallBack;
             collectionViewModel.OnBeforeEntitiesChangedCallBack = collectionViewModelBeforeChangedCallBack;
-            collectionViewModel.OnAfterDeletedSendMessage = owner.OnAfterDeletedSendMessage;
-            collectionViewModel.OnAfterSavedSendMessage = owner.OnAfterSavedSendMessage;
+            collectionViewModel.OnAfterDeletedSendMessageCallBack = owner.OnAfterDeletedSendMessage;
+            collectionViewModel.OnAfterSavedSendMessageCallBack = owner.OnAfterSavedSendMessage;
             collectionViewModel.AlwaysSkipMessage = this.AlwaysSkipMessage;
             collectionViewModel.CurrentHWID = owner.CurrentHWID;
             return collectionViewModel;

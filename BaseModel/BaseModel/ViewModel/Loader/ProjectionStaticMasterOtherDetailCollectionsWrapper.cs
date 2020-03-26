@@ -33,10 +33,8 @@ namespace BaseModel.ViewModel.Loader
 
         protected override void AssignCallBacksAndRaisePropertyChange(IEnumerable<TStaticEntity> entities)
         {
-            MainEntitiesViewModel.OnBeforeEntitySavedIsContinueCallBack = onMainBeforeSavedIsContinue;
-            MainEntitiesViewModel.OnBeforeViewNewRowSavedIsContinueCallBack = newMainRowAddUndoAndSave;
-            ChildEntitiesViewModel.OnBeforeEntitySavedIsContinueCallBack = onChildrenBeforeSavedIsContinue;
-            ChildEntitiesViewModel.OnBeforeViewNewRowSavedIsContinueCallBack = newChildrenRowAddUndoAndSave;
+            MainEntitiesViewModel.OnBeforeNewRowSavedIsContinueFromViewCallBack = newMainRowAddUndoAndSave;
+            ChildEntitiesViewModel.OnBeforeNewRowSavedIsContinueFromViewCallBack = newChildrenRowAddUndoAndSave;
             MainViewModel.SetParentViewModel(this);
             base.AssignCallBacksAndRaisePropertyChange(entities);
         }
@@ -54,6 +52,13 @@ namespace BaseModel.ViewModel.Loader
                 var masterEntity = (TStaticEntity)masterGrid.GetRow(masterRowHandle);
                 if (MainOnBeforeParentAssigned(masterEntity, mainEntity))
                 {
+                    IHaveCreatedDate mainEntityCreatedDate = mainEntity as IHaveCreatedDate;
+                    if (mainEntityCreatedDate != null)
+                    {
+                        if (mainEntityCreatedDate.EntityCreatedDate.Year == 1)
+                            mainEntityCreatedDate.EntityCreatedDate = DateTime.Now;
+                    }
+
                     IOriginalGuidEntityKey masterEntityOriginalKey = masterEntity as IOriginalGuidEntityKey;
                     if (masterEntityOriginalKey == null)
                         mainEntity.ParentEntityKey = masterEntity.GUID;
@@ -77,6 +82,13 @@ namespace BaseModel.ViewModel.Loader
                 var masterEntity = (TMainEntity)masterGrid.GetRow(masterRowHandle);
                 if (ChildOnBeforeParentAssigned(masterEntity, childEntity))
                 {
+                    IHaveCreatedDate childEntityCreatedDate = childEntity as IHaveCreatedDate;
+                    if (childEntityCreatedDate != null)
+                    {
+                        if (childEntityCreatedDate.EntityCreatedDate.Year == 1)
+                            childEntityCreatedDate.EntityCreatedDate = DateTime.Now;
+                    }
+
                     IOriginalGuidEntityKey masterEntityOriginalKey = masterEntity as IOriginalGuidEntityKey;
                     if (masterEntityOriginalKey == null)
                         childEntity.ParentEntityKey = masterEntity.GUID;
@@ -84,30 +96,6 @@ namespace BaseModel.ViewModel.Loader
                         childEntity.ParentEntityKey = masterEntityOriginalKey.OriginalEntityKey;
                 }
 
-            }
-
-            return true;
-        }
-
-        protected virtual bool onMainBeforeSavedIsContinue(TMainEntity mainEntity)
-        {
-            IHaveCreatedDate mainEntityCreatedDate = mainEntity as IHaveCreatedDate;
-            if (mainEntityCreatedDate != null)
-            {
-                if (mainEntityCreatedDate.EntityCreatedDate.Year == 1)
-                    mainEntityCreatedDate.EntityCreatedDate = DateTime.Now;
-            }
-
-            return true;
-        }
-
-        protected virtual bool onChildrenBeforeSavedIsContinue(TChildEntity childEntity)
-        {
-            IHaveCreatedDate childEntityCreatedDate = childEntity as IHaveCreatedDate;
-            if (childEntityCreatedDate != null)
-            {
-                if(childEntityCreatedDate.EntityCreatedDate.Year == 1)
-                    childEntityCreatedDate.EntityCreatedDate = DateTime.Now;
             }
 
             return true;

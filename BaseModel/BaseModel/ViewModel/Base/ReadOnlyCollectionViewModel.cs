@@ -28,16 +28,9 @@ namespace BaseModel.ViewModel.Base
         /// <param name="unitOfWorkFactory">A factory used to create a unit of work instance.</param>
         /// <param name="getRepositoryFunc">A function that returns a repository representing entities of the given type.</param>
         /// <param name="projection">An optional parameter that provides a LINQ function used to customize a query for entities. The parameter, for example, can be used for sorting data.</param>
-        public static ReadOnlyCollectionViewModel<TEntity, TUnitOfWork> CreateReadOnlyCollectionViewModel(
-            IUnitOfWorkFactory<TUnitOfWork> unitOfWorkFactory,
-            Func<TUnitOfWork, IReadOnlyRepository<TEntity>> getRepositoryFunc,
-            Func<IRepositoryQuery<TEntity>, IQueryable<TEntity>> projection = null)
+        public static ReadOnlyCollectionViewModel<TEntity, TUnitOfWork> CreateReadOnlyCollectionViewModel(IUnitOfWorkFactory<TUnitOfWork> unitOfWorkFactory, Func<TUnitOfWork, IReadOnlyRepository<TEntity>> getRepositoryFunc, Func<IRepositoryQuery<TEntity>, IQueryable<TEntity>> projection)
         {
-            return
-                ViewModelSource.Create(
-                    () =>
-                        new ReadOnlyCollectionViewModel<TEntity, TUnitOfWork>(unitOfWorkFactory, getRepositoryFunc,
-                            projection));
+            return ViewModelSource.Create(() => new ReadOnlyCollectionViewModel<TEntity, TUnitOfWork>(unitOfWorkFactory, getRepositoryFunc, projection));
         }
 
         /// <summary>
@@ -47,10 +40,7 @@ namespace BaseModel.ViewModel.Base
         /// <param name="unitOfWorkFactory">A factory used to create a unit of work instance.</param>
         /// <param name="getRepositoryFunc">A function that returns a repository representing entities of the given type.</param>
         /// <param name="projection">An optional parameter that provides a LINQ function used to customize a query for entities. The parameter, for example, can be used for sorting data.</param>
-        protected ReadOnlyCollectionViewModel(
-            IUnitOfWorkFactory<TUnitOfWork> unitOfWorkFactory,
-            Func<TUnitOfWork, IReadOnlyRepository<TEntity>> getRepositoryFunc,
-            Func<IRepositoryQuery<TEntity>, IQueryable<TEntity>> projection = null)
+        protected ReadOnlyCollectionViewModel(IUnitOfWorkFactory<TUnitOfWork> unitOfWorkFactory, Func<TUnitOfWork, IReadOnlyRepository<TEntity>> getRepositoryFunc, Func<IRepositoryQuery<TEntity>, IQueryable<TEntity>> projection)
             : base(unitOfWorkFactory, getRepositoryFunc, projection)
         {
         }
@@ -130,15 +120,6 @@ namespace BaseModel.ViewModel.Base
             Func<IRepositoryQuery<TEntity>, IQueryable<TProjection>> projection
         ) : base(unitOfWorkFactory, getRepositoryFunc, projection)
         {
-            //BaseModel Modification Start
-            //Messenger.Default.Register<CloseAllMessage>(this, m =>
-            //{
-            //    if (m.ShouldProcess(this))
-            //    {
-            //        SaveLayout();
-            //    }
-            //});
-            //BaseModel Modification End
         }
 
         /// <summary>

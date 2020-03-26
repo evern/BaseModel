@@ -1,10 +1,12 @@
 ﻿using BaseModel.DataModel;
 using BaseModel.Misc;
 using BaseModel.View;
+using BaseModel.ViewModel.Dialogs;
 using BaseModel.ViewModel.Document;
 using BaseModel.ViewModel.UndoRedo;
 using DevExpress.Mvvm;
 using DevExpress.Mvvm.POCO;
+using DevExpress.Xpf.Grid;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -27,9 +29,6 @@ namespace BaseModel.ViewModel.Base
         where TProjection : class
         where TUnitOfWork : IUnitOfWork
     {
-        private readonly Func<bool> canCreateNewEntity;
-        private readonly Action<TEntity> newEntityInitializer;
-
         #region Call Backs
         /// <summary>
         /// Map projection entity properties to main entity properties
@@ -37,19 +36,21 @@ namespace BaseModel.ViewModel.Base
         public Action<TProjection, TEntity> ApplyProjectionPropertiesToEntityCallBack;
 
         /// <summary>
-        /// Apply additional entity property before saving, e.g. Set project guid for an area
+        /// Used to populate lookup cell values, that is required immediately for new item row comboboxes to work when it's collection is binded to rowdata
         /// </summary>
-        public Func<TProjection, bool> OnBeforeEntitySavedIsContinueCallBack;
+        public Action<TProjection> UnifiedNewRowInitialisationFromView;
 
         /// <summary>
-        /// Validate if entity should be saved
+        /// Additional initialization parameter apart from SetParentAssociationCallBack from CollectionViewModelBase when RowEventArgs is needed
+        /// e.g. Retrieving master row from child to set parent association
         /// </summary>
-        public Func<TProjection, bool, bool> IsContinueSaveCallBack;
+        public Func<RowEventArgs, TProjection, bool> OnBeforeNewRowSavedIsContinueFromViewCallBack;
 
         /// <summary>
-        /// Validate if entity should be deleted
+        /// Apply additional entity property before saving, or intercept entire save operation, when it's intercepted, undo and focus new rows need to be manually handled
         /// </summary>
-        public Func<TProjection, DeleteInterceptMode> OnBeforeEntityDeletedIsContinueCallBack;
+        public delegate OperationInterceptMode EntitySaveDelegate(TProjection projection, out bool isNew);
+        public EntitySaveDelegate OnBeforeProjectionSaveIsContinueCallBack;
 
         /// <summary>
         /// Save projection associated entity, e.g. save user address to another table when user is saved
@@ -57,17 +58,18 @@ namespace BaseModel.ViewModel.Base
         /// Only called when main entity is successfully saved
         /// Any associating changes to the collection must be placed here so undo/redo will be in effect
         /// </summary>
-        public Action<TProjection, TEntity, bool> OnAfterEntitySavedCallBack;
+        public Action<TProjection, TEntity, bool> OnAfterProjectionSavedCallBack;
 
         /// <summary>
-        /// Process the collection before entities deletion, e.g. deletion of children entities
+        /// For detail validation on whether deletion can continue
         /// </summary>
-        public Func<IEnumerable<TProjection>, bool> OnBeforeEntitiesDeleteIsContinueCallBack;
+        public delegate OperationInterceptMode EntityDeleteDelegate(TProjection projection, out List<ErrorMessage> errorMessages);
+        public EntityDeleteDelegate OnBeforeProjectionDeleteIsContinueCallBack;
 
         /// <summary>
-        /// Process the collection after entities are deleted, e.g. renumbering/renaming remaining entities
+        /// Process the collection before projections are deleted, e.g. renumbering/renaming remaining entities
         /// </summary>
-        public Action<IEnumerable<TEntity>> OnAfterEntitiesDeletedCallBack;
+        public Action<IEnumerable<TProjection>> OnBeforeProjectionsDeleteCallBack;
 
         /// <summary>
         /// Process the collection after projections are deleted, e.g. renumbering/renaming remaining entities
@@ -77,17 +79,32 @@ namespace BaseModel.ViewModel.Base
         /// <summary>
         /// Used for sending SignalR messages after deletion
         /// </summary>
-        public Action<string, string, string, string> OnAfterDeletedSendMessage;
+        public Action<string, string, string, string> OnAfterDeletedSendMessageCallBack;
 
         /// <summary>
         /// Used for sending SignalR messages after saving
         /// </summary>
-        public Action<string, string, string, string> OnAfterSavedSendMessage;
+        public Action<string, string, string, string> OnAfterSavedSendMessageCallBack;
 
         /// <summary>
         /// Used for focusing on new row when they are added
         /// </summary>
-        public Action<IEnumerable<TProjection>> OnAfterNewRowAdded { get; set; }
+        public Action<IEnumerable<TProjection>> OnAfterNewRowAddedCallBack { get; set; }
+
+        /// <summary>
+        /// For refreshing without clearing undo/redo
+        /// </summary>
+        public Action FullRefreshWithoutClearingUndoRedoCallBack;
+
+        /// <summary>
+        /// External call back used to format error messages
+        /// </summary>
+        public Action<IEnumerable<ErrorMessage>> FormatErrorMessagesCallBack;
+
+        protected IDialogService ErrorMessagesDialogService
+        {
+            get { return this.GetRequiredService<IDialogService>("ErrorMessagesDialogService"); }
+        }
         #endregion
 
         /// <summary>
@@ -96,25 +113,9 @@ namespace BaseModel.ViewModel.Base
         /// <param name="unitOfWorkFactory">A factory used to create a unit of work instance.</param>
         /// <param name="getRepositoryFunc">A function that returns a repository representing entities of the given type.</param>
         /// <param name="projection">A LINQ function used to customize a query for entities. The parameter, for example, can be used for sorting data and/or for projecting data to a custom type that does not match the repository entity type.</param>
-        /// <param name="newEntityInitializer">A function to initialize a new entity. This parameter is used in the detail collection view models when creating a single object view model for a new entity.</param>
-        /// <param name="canCreateNewEntity">A function that is called before an attempt to create a new entity is made. This parameter is used together with the newEntityInitializer parameter.</param>
-        /// <param name="ignoreSelectEntityMessage">A parameter used to specify whether the selected entity should be managed by PeekCollectionViewModel.</param>
-        protected CollectionViewModelBase(
-            IUnitOfWorkFactory<TUnitOfWork> unitOfWorkFactory,
-            Func<TUnitOfWork, IRepository<TEntity, TPrimaryKey>> getRepositoryFunc,
-            Func<IRepositoryQuery<TEntity>, IQueryable<TProjection>> projection,
-            Action<TEntity> newEntityInitializer,
-            Func<bool> canCreateNewEntity,
-            bool ignoreSelectEntityMessage
-        )
+        protected CollectionViewModelBase(IUnitOfWorkFactory<TUnitOfWork> unitOfWorkFactory, Func<TUnitOfWork, IRepository<TEntity, TPrimaryKey>> getRepositoryFunc, Func<IRepositoryQuery<TEntity>, IQueryable<TProjection>> projection)
             : base(unitOfWorkFactory, getRepositoryFunc, projection)
         {
-            RepositoryExtensions.VerifyProjection(CreateRepository(), projection);
-            this.newEntityInitializer = newEntityInitializer;
-            this.canCreateNewEntity = canCreateNewEntity;
-            this.ignoreSelectEntityMessage = ignoreSelectEntityMessage;
-            if (!this.IsInDesignMode())
-                RegisterSelectEntityMessage();
         }
 
         private void UpdateCommands()
@@ -138,9 +139,6 @@ namespace BaseModel.ViewModel.Base
         protected virtual void ApplyProjectionPropertiesToEntity(TProjection projectionEntity, TEntity entity)
         {
             ApplyProjectionPropertiesToEntityCallBack?.Invoke(projectionEntity, entity);
-            //else
-            //    throw new NotImplementedException(
-            //        "Override this method in the collection view model class and apply projection properties to the entity so that it can be correctly saved by unit of work.");
         }
 
         protected override IEntitiesChangeTracker CreateEntitiesChangeTracker()
@@ -164,19 +162,10 @@ namespace BaseModel.ViewModel.Base
             return ChangeTrackerWithKey.FindLocalProjectionByKey(projectionKey);
         }
 
-        protected virtual void OnBeforeEntityDeleted(TPrimaryKey primaryKey, TEntity entity)
-        {
-        }
-
-        protected virtual void OnBeforeEntitySaved(TEntity entity)
-        {
-
-        }
-
         protected virtual void OnEntityDeleted(TPrimaryKey primaryKey, TEntity entity, bool willPerformBulkRefresh = false)
         {
             Messenger.Default.Send(new EntityMessage<TEntity, TPrimaryKey>(primaryKey, this.Key, EntityMessageType.Deleted, this, CurrentHWID, willPerformBulkRefresh));
-            OnAfterDeletedSendMessage?.Invoke(typeof(TEntity).ToString(), primaryKey.ToString(), EntityMessageType.Deleted.ToString(), ToString());
+            OnAfterDeletedSendMessageCallBack?.Invoke(typeof(TEntity).ToString(), primaryKey.ToString(), EntityMessageType.Deleted.ToString(), ToString());
         }
 
         protected virtual void SendMessage(TPrimaryKey primaryKey, TProjection projectionEntity, TEntity entity,
@@ -187,21 +176,13 @@ namespace BaseModel.ViewModel.Base
             try
             {
                 Messenger.Default.Send(new EntityMessage<TEntity, TPrimaryKey>(primaryKey, this.Key, isNewEntity ? EntityMessageType.Added : EntityMessageType.Changed, this, CurrentHWID, willPerformBulkRefresh));
-                OnAfterSavedSendMessage?.Invoke(typeof(TEntity).ToString(), primaryKey.ToString(),
+                OnAfterSavedSendMessageCallBack?.Invoke(typeof(TEntity).ToString(), primaryKey.ToString(),
                 isNewEntity ? EntityMessageType.Added.ToString() : EntityMessageType.Changed.ToString(), ToString());
             }
             catch(Exception e)
             {
                 string s = e.ToString();
             }
-        }
-
-        protected override void OnIsLoadingChanged()
-        {
-            base.OnIsLoadingChanged();
-            UpdateCommands();
-            if (!IsLoading)
-                RequestSelectedEntity();
         }
 
         protected override void OnSelectedEntityChanged()
@@ -247,196 +228,81 @@ namespace BaseModel.ViewModel.Base
             get { return typeof(TEntity).Name + "CollectionView"; }
         }
 
-        public virtual void BaseBulkDelete(IEnumerable<TProjection> projectionEntities)
+        public virtual void BulkDelete(IEnumerable<TProjection> projections)
         {
-            var projectionEntitiesWithTag = new List<KeyValuePair<int, TProjection>>();
-            var entitiesWithTag = new List<KeyValuePair<int, TEntity>>();
-            var primaryKeysWithTag = new List<KeyValuePair<int, TPrimaryKey>>();
+            List<BulkProcessModel<TProjection, TEntity>> bulkProcessModels = new List<BulkProcessModel<TProjection, TEntity>>();
+            bulkProcessModels.AddRange(projections.Select(x => new BulkProcessModel<TProjection, TEntity>() { Projection = x }));
 
-            var findOrAddNewEntities = new List<TEntity>();
-            var projectionEntitiesList = projectionEntities.ToList();
-            if (OnBeforeEntitiesDeleteIsContinueCallBack != null && !OnBeforeEntitiesDeleteIsContinueCallBack(projectionEntities))
-                return;
-
-            PauseEntitiesUndoRedoManager();
-            for (var i = 0; i < projectionEntitiesList.Count; i++)
-            {
-                if (OnBeforeEntityDeletedIsContinueCallBack != null)
-                {
-                    AddUndoBeforeEntityDeleted(projectionEntitiesList[i]);
-                    DeleteInterceptMode interceptMode = OnBeforeEntityDeletedIsContinueCallBack(projectionEntitiesList[i]);
-                    if (interceptMode == DeleteInterceptMode.Skip)
-                        continue;
-                    else if (interceptMode == DeleteInterceptMode.DiscontinueAll)
-                    {
-                        UnpauseEntitiesUndoRedoManager();
-                        return;
-                    }
-                }
-
-                Entities.Remove(projectionEntitiesList[i]);
-                projectionEntitiesWithTag.Add(new KeyValuePair<int, TProjection>(i, projectionEntitiesList[i]));
-            }
-
-            UnpauseEntitiesUndoRedoManager();
             try
             {
-                if(projectionEntitiesWithTag.Count > Int32.Parse(CommonResources.BulkOperationLoadingScreenMinCount))
+                if (projections.Count() > Int32.Parse(CommonResources.BulkOperationLoadingScreenMinCount))
                 {
-                    LoadingScreenManager.ShowLoadingScreen(projectionEntitiesWithTag.Count);
+                    LoadingScreenManager.ShowLoadingScreen(projections.Count());
                     LoadingScreenManager.SetMessage("Deleting...");
                 }
 
-                foreach (var projectionEntityWithTag in projectionEntitiesWithTag)
+                PauseEntitiesUndoRedoManager();
+                OnBeforeProjectionsDeleteCallBack?.Invoke(projections);
+                List<ErrorMessage> errorMessages = new List<ErrorMessage>();
+                foreach (BulkProcessModel<TProjection, TEntity> bulkProcessModel in bulkProcessModels)
                 {
-                    var primaryKey = Repository.GetProjectionPrimaryKey(projectionEntityWithTag.Value);
+                    if (OnBeforeProjectionDeleteIsContinueCallBack != null)
+                    {
+                        AddUndoBeforeEntityDeleted(bulkProcessModel.Projection);
+                        List<ErrorMessage> currentProjectionErrorMessages;
+                        OperationInterceptMode interceptMode = OnBeforeProjectionDeleteIsContinueCallBack(bulkProcessModel.Projection, out currentProjectionErrorMessages);
+                        if (interceptMode == OperationInterceptMode.Skip)
+                            continue;
+                        else if (interceptMode == OperationInterceptMode.SkipAll)
+                        {
+                            UnpauseEntitiesUndoRedoManager();
+                            return;
+                        }
+
+                        if(currentProjectionErrorMessages.Count > 0)
+                        {
+                            errorMessages.AddRange(currentProjectionErrorMessages);
+                            continue;
+                        }
+
+                        if (!IsPersistentView)
+                            Entities.Remove(bulkProcessModel.Projection);
+                    }
+
+                    var primaryKey = Repository.GetProjectionPrimaryKey(bulkProcessModel.Projection);
                     var entity = Repository.Find(primaryKey);
                     if (entity != null)
                     {
-                        entitiesWithTag.Add(new KeyValuePair<int, TEntity>(projectionEntityWithTag.Key, entity));
-                        primaryKeysWithTag.Add(new KeyValuePair<int, TPrimaryKey>(projectionEntityWithTag.Key,
-                            primaryKey));
-                        OnBeforeEntityDeleted(primaryKey, entity);
+                        bulkProcessModel.Entity = entity;
                         Repository.Remove(entity);
+                        
+                        OnEntityDeleted(primaryKey, entity);
                     }
 
                     LoadingScreenManager.Progress();
                 }
+                UnpauseEntitiesUndoRedoManager();
 
                 Repository.UnitOfWork.SaveChanges();
+                OnAfterProjectionsDeletedCallBack?.Invoke(bulkProcessModels.Select(x => x.Projection));
 
-                foreach (var entityWithTag in entitiesWithTag)
+                if (errorMessages.Count > 0)
                 {
-                    var findPrimaryKey = primaryKeysWithTag.First(x => x.Key == entityWithTag.Key).Value;
-                    OnEntityDeleted(findPrimaryKey, entityWithTag.Value);
+                    FormatErrorMessagesCallBack?.Invoke(errorMessages);
+
+                    if (ErrorMessagesDialogService != null)
+                    {
+                        DialogCollectionViewModel<ErrorMessage> viewModel = DialogCollectionViewModel<ErrorMessage>.Create(errorMessages, "The following data cannot be pasted");
+                        ErrorMessagesDialogService.ShowDialog(MessageButton.OKCancel, string.Empty, "ListErrorMessages", viewModel);
+                    }
                 }
-
-                var entitiesDeleted = entitiesWithTag.Select(x => x.Value).ToList();
-                OnAfterEntitiesDeletedCallBack?.Invoke(entitiesDeleted);
-
-                var projectionsDeleted = projectionEntitiesWithTag.Select(x => x.Value).ToList();
-                OnAfterProjectionsDeletedCallBack?.Invoke(projectionsDeleted);
             }
             catch (DbException e)
             {
                 MessageBoxService.ShowMessage(e.ErrorMessage, e.ErrorCaption, MessageButton.OK, MessageIcon.Error);
             }
-
-            //view doesn't respond with deletion, must be through messages
-            //if(!ignoreRefresh)
-            //    AfterBulkOperationRefreshCallBack?.Invoke();
         }
-
-        public Action AfterBulkOperationRefreshCallBack;
-        protected virtual void BaseBulkSave(IEnumerable<TProjection> projectionEntities, bool doNotRefresh = false)
-        {
-            var projectionEntitiesWithTag = new List<KeyValuePair<int, TProjection>>();
-            var entitiesWithTag = new List<KeyValuePair<int, TEntity>>();
-            var isNewEntityWithTag = new List<KeyValuePair<int, bool>>();
-
-            var findOrAddNewEntities = new List<TEntity>();
-            var projectionEntitiesList = projectionEntities.ToList();
-            for (var i = 0; i < projectionEntitiesList.Count; i++)
-                projectionEntitiesWithTag.Add(new KeyValuePair<int, TProjection>(i, projectionEntitiesList[i]));
-
-            if (projectionEntitiesWithTag.Count > Int32.Parse(CommonResources.BulkOperationLoadingScreenMinCount))
-            {
-                LoadingScreenManager.ShowLoadingScreen(projectionEntitiesWithTag.Count);
-                LoadingScreenManager.SetMessage("Saving...");
-            }
-
-            bool isContinueSave = true;
-            bool haveNewEntity = false;
-            bool doBulkRefresh = false;
-
-            //when the total count of refreshes exceeds a certain threshold, it's faster to perform bulk refresh
-            if (projectionEntities.Count() > Int32.Parse(CommonResources.BulkOperationBulkRefreshMinCount))
-                doBulkRefresh = true;
-
-            PauseEntitiesUndoRedoManager();
-            foreach (var projectionEntityWithTag in projectionEntitiesWithTag)
-            {
-                bool isNewEntity = false;
-                if (OnBeforeEntitySavedIsContinueCallBack != null)
-                    isContinueSave = OnBeforeEntitySavedIsContinueCallBack(projectionEntityWithTag.Value);
-
-                if (!isContinueSave)
-                {
-                    LoadingScreenManager.Progress();
-                    continue;
-                }
-
-                AddUndoBeforeEntityAdded(projectionEntityWithTag.Value);
-                var findOrAddNewEntity = Repository.FindExistingOrAddNewEntity(projectionEntityWithTag.Value,
-                    (p, e) => { ApplyProjectionPropertiesToEntity(p, e); }, out isNewEntity);
-
-                if (IsContinueSaveCallBack != null)
-                    if (!IsContinueSaveCallBack(projectionEntityWithTag.Value, isNewEntity))
-                        continue;
-
-                if (isNewEntity)
-                    haveNewEntity = true;
-
-                ApplyCreatedDateToEntity(findOrAddNewEntity);
-                entitiesWithTag.Add(new KeyValuePair<int, TEntity>(projectionEntityWithTag.Key, findOrAddNewEntity));
-                isNewEntityWithTag.Add(new KeyValuePair<int, bool>(projectionEntityWithTag.Key, isNewEntity));
-                OnBeforeEntitySaved(findOrAddNewEntity);
-                LoadingScreenManager.Progress();
-            }
-
-            UnpauseEntitiesUndoRedoManager();
-            List<TProjection> newlyAddedEntities = new List<TProjection>();
-
-            foreach (var entityWithTag in entitiesWithTag)
-            {
-                var isNewEntity = isNewEntityWithTag.First(x => x.Key == entityWithTag.Key).Value;
-                if (isNewEntity)
-                    newlyAddedEntities.Add(projectionEntitiesWithTag.First(x => x.Key == entityWithTag.Key).Value);
-            }
-
-            if (!isContinueSave)
-                return;
-
-            try
-            {
-                Repository.UnitOfWork.SaveChanges();
-                foreach (var entityWithTag in entitiesWithTag)
-                {
-                    var primaryKey = Repository.GetPrimaryKey(entityWithTag.Value);
-                    var projectionEntity = projectionEntitiesWithTag.First(x => x.Key == entityWithTag.Key).Value;
-                    var isNewEntity = isNewEntityWithTag.First(x => x.Key == entityWithTag.Key).Value;
-
-                    if(isNewEntity)
-                        Repository.SetProjectionPrimaryKey(projectionEntity, primaryKey);
-
-                    //Need to put here because any updates associated with the entity need to be committed before sending message
-                    OnAfterEntitySavedCallBack?.Invoke(projectionEntity, entityWithTag.Value, isNewEntity);
-
-                    if(AfterBulkOperationRefreshCallBack == null || !doBulkRefresh)
-                    {
-                        if(!AlwaysSkipMessage)
-                            SendMessage(primaryKey, projectionEntity, entityWithTag.Value, isNewEntity, doBulkRefresh);
-                    }
-
-                    if(!haveNewEntity && doNotRefresh)
-                    {
-                        ICanUpdate updatableEntity = projectionEntity as ICanUpdate;
-                        if (updatableEntity != null)
-                            updatableEntity.Update();
-                    }
-                }
-
-                OnAfterNewRowAdded?.Invoke(newlyAddedEntities);
-            }
-            catch (DbException e)
-            {
-                MessageBoxService.ShowMessage(e.ErrorMessage, e.ErrorCaption, MessageButton.OK, MessageIcon.Error);
-            }
-
-            if ((doBulkRefresh && !doNotRefresh) && AfterBulkOperationRefreshCallBack != null)
-                AfterBulkOperationRefreshCallBack.Invoke();
-        }
-
+        
         protected void ApplyCreatedDateToEntity(object entity)
         {
             if (entity != null)
@@ -451,7 +317,7 @@ namespace BaseModel.ViewModel.Base
             }
         }
 
-        public void SimpleSaveAll()
+        public void SaveChangesDirectly()
         {
             Repository.UnitOfWork.SaveChanges();
         }
@@ -515,43 +381,12 @@ namespace BaseModel.ViewModel.Base
         /// Deletes a given entity from the repository and saves changes if confirmed by the user.
         /// Since CollectionViewModelBase is a POCO view model, an the instance of this class will also expose the DeleteCommand property that can be used as a binding source in views.
         /// </summary>
-        /// <param name="projectionEntity">An entity to edit.</param>
-        public virtual void Delete(TProjection projectionEntity)
+        /// <param name="projection">An entity to edit.</param>
+        public virtual void Delete(TProjection projection)
         {
-            //BaseModel Customization Start
-            //if (MessageBoxService.ShowMessage(string.Format(CommonResources.Confirmation_Delete, EntityDisplayName), CommonResources.Confirmation_Caption, MessageButton.YesNo) != MessageResult.Yes)
-            //    return;
-            //BaseModel Customization End
-            try
-            {
-                //BaseModel Customization Start
-                AddUndoBeforeEntityDeleted(projectionEntity);
-
-                if (OnBeforeEntityDeletedIsContinueCallBack != null)
-                {
-                    DeleteInterceptMode interceptMode = OnBeforeEntityDeletedIsContinueCallBack(projectionEntity);
-                    if (interceptMode != DeleteInterceptMode.Continue)
-                        return;
-                }
-                if (!IsPersistentView)
-                    //BaseModel Customization End
-                    Entities.Remove(projectionEntity);
-
-                var primaryKey = Repository.GetProjectionPrimaryKey(projectionEntity);
-                var entity = Repository.Find(primaryKey);
-                if (entity != null)
-                {
-                    OnBeforeEntityDeleted(primaryKey, entity);
-                    Repository.Remove(entity);
-                    Repository.UnitOfWork.SaveChanges();
-                    OnEntityDeleted(primaryKey, entity);
-                }
-            }
-            catch (DbException e)
-            {
-                Refresh();
-                MessageBoxService.ShowMessage(e.ErrorMessage, e.ErrorCaption, MessageButton.OK, MessageIcon.Error);
-            }
+            List<TProjection> projections = new List<TProjection>();
+            projections.Add(projection);
+            BulkDelete(projections);
         }
 
         /// <summary>
@@ -586,71 +421,121 @@ namespace BaseModel.ViewModel.Base
             return ChangeTrackerWithKey.FindActualProjectionByExpression(predicate);
         }
 
-        public virtual TEntity InstantiateEntity(TEntity entity)
-        {
-            newEntityInitializer?.Invoke(entity);
-            return entity;
-        }
-
-        /// <summary>
-        /// Creates and shows a document that contains a single object view model for new entity.
-        /// Since CollectionViewModelBase is a POCO view model, an the instance of this class will also expose the NewCommand property that can be used as a binding source in views.
-        /// </summary>
-        public virtual void New()
-        {
-            if (canCreateNewEntity != null && !canCreateNewEntity())
-                return;
-            DocumentManagerService.ShowNewEntityDocument(this, newEntityInitializer);
-        }
-
         /// <summary>
         /// Saves the given entity.
         /// Since CollectionViewModelBase is a POCO view model, the instance of this class will also expose the SaveCommand property that can be used as a binding source in views.
         /// </summary>
-        /// <param name="projectionEntity">An entity to save.</param>
+        /// <param name="projection">An entity to save.</param>
         [Display(AutoGenerateField = false)]
-        public virtual void Save(TProjection projectionEntity)
+        public virtual void Save(TProjection projection)
         {
-            bool isNewEntity;
-            if (OnBeforeEntitySavedIsContinueCallBack != null)
-                if (!OnBeforeEntitySavedIsContinueCallBack(projectionEntity))
-                    return;
+            List<TProjection> projections = new List<TProjection>();
+            projections.Add(projection);
+            BulkSave(projections);
+        }
 
-            var entity = Repository.FindExistingOrAddNewEntity(projectionEntity,
-                (p, e) => { ApplyProjectionPropertiesToEntity(p, e); }, out isNewEntity);
+        /// <summary>
+        /// Deletes a given entity from the repository and saves changes if confirmed by the user.
+        /// Since CollectionViewModelBase is a POCO view model, an the instance of this class will also expose the DeleteCommand property that can be used as a binding source in views.
+        /// </summary>
+        /// <param name="projectionEntity">An entity to edit.</param>
+        public void BulkSave(IEnumerable<TProjection> projections, bool doNotRefresh = true)
+        {
+            List<BulkProcessModel<TProjection, TEntity>> bulkProcessModels = new List<BulkProcessModel<TProjection, TEntity>>();
+            bulkProcessModels.AddRange(projections.Select(x => new BulkProcessModel<TProjection, TEntity>() { Projection = x }));
 
-            if (IsContinueSaveCallBack != null)
-                if (!IsContinueSaveCallBack(projectionEntity, isNewEntity))
-                    return;
+            if (bulkProcessModels.Count > Int32.Parse(CommonResources.BulkOperationLoadingScreenMinCount))
+            {
+                LoadingScreenManager.ShowLoadingScreen(bulkProcessModels.Count);
+                LoadingScreenManager.SetMessage("Saving...");
+            }
+
+            bool isContinueSave = true;
+            bool haveNewEntity = false;
+            bool doBulkRefresh = false;
+
+            //when the total count of refreshes exceeds a certain threshold, it's faster to perform bulk refresh, but this will cause grid entries order to be rearranged
+            if (projections.Count() > Int32.Parse(CommonResources.BulkOperationBulkRefreshMinCount))
+                doBulkRefresh = true;
+
+            PauseEntitiesUndoRedoManager();
+            List<TProjection> newlyAddedProjections = new List<TProjection>();
+            foreach (var bulkProcessModel in bulkProcessModels)
+            {
+                bool isNewEntity = false;
+                if (OnBeforeProjectionSaveIsContinueCallBack != null)
+                {
+                    OperationInterceptMode operationInterceptMode = OnBeforeProjectionSaveIsContinueCallBack.Invoke(bulkProcessModel.Projection, out isNewEntity);
+                    if (operationInterceptMode != OperationInterceptMode.Continue)
+                    {
+                        LoadingScreenManager.Progress();
+                        if (isNewEntity)
+                            AddUndoBeforeEntityAdded(bulkProcessModel.Projection);
+
+                        if (operationInterceptMode == OperationInterceptMode.Skip)
+                            continue;
+                        else
+                        {
+                            LoadingScreenManager.CloseLoadingScreen();
+                            return;
+                        }
+                    }
+                }
+
+                var findOrAddNewEntity = Repository.FindExistingOrAddNewEntity(bulkProcessModel.Projection,
+                    (p, e) => { ApplyProjectionPropertiesToEntity(p, e); }, out isNewEntity);
+
+                if (isNewEntity)
+                {
+                    AddUndoBeforeEntityAdded(bulkProcessModel.Projection);
+                    haveNewEntity = true;
+                }
+
+                bulkProcessModel.Entity = findOrAddNewEntity;
+                bulkProcessModel.IsNewEntity = isNewEntity;
+                if (isNewEntity)
+                    newlyAddedProjections.Add(bulkProcessModel.Projection);
+
+                LoadingScreenManager.Progress();
+            }
+
+            UnpauseEntitiesUndoRedoManager();
+            if (!isContinueSave)
+                return;
 
             try
             {
-                OnBeforeEntitySaved(entity);
-
-                ApplyCreatedDateToEntity(entity);
-                ApplyCreatedDateToEntity(projectionEntity);
                 Repository.UnitOfWork.SaveChanges();
-                var primaryKey = Repository.GetPrimaryKey(entity);
-                Repository.SetProjectionPrimaryKey(projectionEntity, primaryKey);
-                //Need to put here because any updates associated with the entity need to be committed before sending message
-                OnAfterEntitySavedCallBack?.Invoke(projectionEntity, entity, isNewEntity);
-                //ICanUpdate canUpdateEntity = projectionEntity as ICanUpdate;
-                //if (canUpdateEntity != null)
-                //    canUpdateEntity.Update();
-                if(!AlwaysSkipMessage)
-                    SendMessage(primaryKey, projectionEntity, entity, isNewEntity);
-
-                if(isNewEntity)
+                foreach (var bulkProcessModel in bulkProcessModels)
                 {
-                    List<TProjection> newlyAddedEntities = new List<TProjection>();
-                    newlyAddedEntities.Add(projectionEntity);
-                    OnAfterNewRowAdded?.Invoke(newlyAddedEntities);
+                    var primaryKey = Repository.GetPrimaryKey(bulkProcessModel.Entity);
+
+                    if (bulkProcessModel.IsNewEntity)
+                        Repository.SetProjectionPrimaryKey(bulkProcessModel.Projection, primaryKey);
+
+                    //Need to put here because any updates associated with the entity need to be committed before sending message
+                    OnAfterProjectionSavedCallBack?.Invoke(bulkProcessModel.Projection, bulkProcessModel.Entity, bulkProcessModel.IsNewEntity);
+
+                    if (!doBulkRefresh && !AlwaysSkipMessage)
+                        SendMessage(primaryKey, bulkProcessModel.Projection, bulkProcessModel.Entity, bulkProcessModel.IsNewEntity, doBulkRefresh);
+
+                    if (!haveNewEntity && doNotRefresh)
+                    {
+                        ICanUpdate updatableEntity = bulkProcessModel.Entity as ICanUpdate;
+                        if (updatableEntity != null)
+                            updatableEntity.Update();
+                    }
                 }
+
+                OnAfterNewRowAddedCallBack?.Invoke(newlyAddedProjections);
             }
             catch (DbException e)
             {
                 MessageBoxService.ShowMessage(e.ErrorMessage, e.ErrorCaption, MessageButton.OK, MessageIcon.Error);
             }
+
+            if ((doBulkRefresh && !doNotRefresh) && FullRefreshWithoutClearingUndoRedoCallBack != null)
+                FullRefreshWithoutClearingUndoRedoCallBack.Invoke();
         }
 
         /// <summary>
@@ -689,20 +574,6 @@ namespace BaseModel.ViewModel.Base
         {
         }
 
-        private readonly bool ignoreSelectEntityMessage;
-
-        private void RegisterSelectEntityMessage()
-        {
-            if (!ignoreSelectEntityMessage)
-                Messenger.Default.Register<SelectEntityMessage>(this, x => OnSelectEntityMessage(x));
-        }
-
-        private void RequestSelectedEntity()
-        {
-            if (!ignoreSelectEntityMessage)
-                Messenger.Default.Send(new SelectedEntityRequest());
-        }
-
         private void OnSelectEntityMessage(SelectEntityMessage message)
         {
             if (!IsLoaded)
@@ -715,7 +586,6 @@ namespace BaseModel.ViewModel.Base
             }
             SelectedEntity = projectionEntity;
         }
-
         #endregion
 
         #region ISupportLogicalLayout
@@ -756,26 +626,6 @@ namespace BaseModel.ViewModel.Base
         {
 
         }
-
-        /// <summary>
-        /// Custom method deviating from devexpress scaffolding to expose repository create function.
-        /// </summary>
-        /// <returns>A new entity</returns>
-        protected virtual TEntity CreateEntity()
-        {
-            var entity = Repository.Create();
-            entity = InstantiateEntity(entity);
-
-            return entity;
-        }
-
-        protected virtual TEntity CreateNewEntity(TProjection projectionEntity)
-        {
-            var entity = Repository.Create();
-            //ApplyProjectionPropertiesToEntity(projectionEntity, entity);
-            return entity;
-        }
-
         #endregion
     }
 }

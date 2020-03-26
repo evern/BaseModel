@@ -319,6 +319,7 @@
     <Compile Include="DataModel\IRepository.cs" />
     <Compile Include="DataModel\IUnitOfWork.cs" />
     <Compile Include="DataModel\UnitOfWorkBase.cs" />
+    <Compile Include="Misc\BulkProcessModel.cs" />
     <Compile Include="Misc\CheckListColumnFilterInfoEx.cs" />
     <Compile Include="Misc\CommonResources.Designer.cs">
       <AutoGen>True</AutoGen>

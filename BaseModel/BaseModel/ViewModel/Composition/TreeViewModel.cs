@@ -26,7 +26,6 @@ namespace BaseModel.ViewModel.Composition
         public delegate string UnifiedValueValidationDelegate(TMainProjectionEntity projection, string field_name, object new_value, bool isPaste);
         public event UnifiedValueValidationDelegate OnValueValidationEvent;
         public delegate bool OnBeforeEntitySavedDelegate(TMainProjectionEntity projection);
-        public event OnBeforeEntitySavedDelegate OnBeforeEntitySavedEvent;
         /// <summary>
         /// Creates a new instance of TreeViewModel as a POCO view model.
         /// </summary>
@@ -55,12 +54,6 @@ namespace BaseModel.ViewModel.Composition
 
         protected override void resolveParameters(object parameter)
         {
-        }
-
-        protected override bool onBeforeEntitySavedIsContinue(TMainProjectionEntity entity)
-        {
-            OnBeforeEntitySavedEvent?.Invoke(entity);
-            return base.onBeforeEntitySavedIsContinue(entity);
         }
 
         protected override Func<IRepositoryQuery<TMainEntity>, IQueryable<TMainProjectionEntity>> specifyMainViewModelProjection()

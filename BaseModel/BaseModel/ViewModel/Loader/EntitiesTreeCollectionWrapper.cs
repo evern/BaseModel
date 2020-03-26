@@ -52,9 +52,6 @@ namespace BaseModel.ViewModel.Loader
         #region Call Backs
         protected override void AssignCallBacksAndRaisePropertyChange(IEnumerable<TMainProjectionEntity> entities)
         {
-            MainViewModel.OnBeforeEntitySavedIsContinueCallBack = onBeforeEntitySavedIsContinue;
-            MainViewModel.OnAfterProjectionsDeletedCallBack = projectionsAfterDeleted;
-            MainViewModel.OnBeforeEntitiesDeleteIsContinueCallBack = projectionsBeforeDeletion;
             MainViewModel.SetParentViewModel(this);
             base.AssignCallBacksAndRaisePropertyChange(entities);
         }
@@ -64,43 +61,36 @@ namespace BaseModel.ViewModel.Loader
             MainViewModel.BulkDelete();
         }
 
-        protected virtual bool onBeforeEntitySavedIsContinue(TMainProjectionEntity entity)
-        {
-            return true;
-        }
-
         //Remove children before parent deletion
-        private bool projectionsBeforeDeletion(IEnumerable<TMainProjectionEntity> entities)
+        protected override void OnBeforeProjectionsDelete(IEnumerable<TMainProjectionEntity> projections)
         {
             //Undo manager is paused in bulk deletion and will be unpaused in bulk deletion too
-            var childrenEntities = new List<TMainProjectionEntity>();
-            foreach (var entity in entities)
+            var childrenProjections = new List<TMainProjectionEntity>();
+            foreach (var projection in projections)
             {
-                var childrenEntitiesInTotal = RecurseFindChildren(entity, MainViewModel.Entities);
+                var childrenEntitiesInTotal = RecurseFindChildren(projection, MainViewModel.Entities);
                 var childrenEntitiesNotInDeletionCollection = new List<TMainProjectionEntity>();
                 foreach (var childrenEntityInTotal in childrenEntitiesInTotal)
-                    if (!entities.Any(x => x.GUID == childrenEntityInTotal.GUID))
+                    if (!projections.Any(x => x.GUID == childrenEntityInTotal.GUID))
                         childrenEntitiesNotInDeletionCollection.Add(childrenEntityInTotal);
 
-                childrenEntities = childrenEntities.Concat(childrenEntitiesNotInDeletionCollection).ToList();
+                childrenProjections = childrenProjections.Concat(childrenEntitiesNotInDeletionCollection).ToList();
             }
 
             uniqueParent_Guids = new List<Guid?>();
             //can't use bulk delete here due to stack overflow
-            foreach (var childrenEntity in childrenEntities)
+            foreach (var childrenProjection in childrenProjections)
             {
-                if (!uniqueParent_Guids.Any(x => x == childrenEntity.ParentEntityKey))
-                    uniqueParent_Guids.Add(childrenEntity.ParentEntityKey);
+                if (!uniqueParent_Guids.Any(x => x == childrenProjection.ParentEntityKey))
+                    uniqueParent_Guids.Add(childrenProjection.ParentEntityKey);
 
-                MainViewModel.EntitiesUndoRedoManager.AddUndo(childrenEntity, null, null, null,
+                MainViewModel.EntitiesUndoRedoManager.AddUndo(childrenProjection, null, null, null,
                     EntityMessageType.Deleted);
-                MainViewModel.Delete(childrenEntity);
+                MainViewModel.Delete(childrenProjection);
             }
-
-            return true;
         }
 
-        private void projectionsAfterDeleted(IEnumerable<TMainProjectionEntity> entities)
+        protected override void OnAfterProjectionsDeleted(IEnumerable<TMainProjectionEntity> entities)
         {
             //Undo manager is paused in bulk deletion and will be unpaused in bulk deletion too
             //uniqueParent_Guids is initialized in EntitiesBeforeDeletion
@@ -318,8 +308,10 @@ namespace BaseModel.ViewModel.Loader
             newRow.SortOrder = unalignedSortOrder;
             newRow.ParentEntityKey = guid_parent;
             newRow.IsExpanded = true;
-            MainViewModel.EntitiesUndoRedoManager.PauseActionId(); //Save will unpause this
-            MainViewModel.EntitiesUndoRedoManager.AddUndo(newRow, null, null, null, EntityMessageType.Added);
+
+            //Handled in Bulk Save
+            //MainViewModel.EntitiesUndoRedoManager.PauseActionId(); //Save will unpause this
+            //MainViewModel.EntitiesUndoRedoManager.AddUndo(newRow, null, null, null, EntityMessageType.Added);
             MainViewModel.Save(newRow);
             ReorderAndSave(guid_parent);
         }
