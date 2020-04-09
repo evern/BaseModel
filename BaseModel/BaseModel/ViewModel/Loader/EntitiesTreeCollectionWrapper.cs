@@ -56,11 +56,6 @@ namespace BaseModel.ViewModel.Loader
             base.AssignCallBacksAndRaisePropertyChange(entities);
         }
 
-        public virtual void BulkDelete()
-        {
-            MainViewModel.BulkDelete();
-        }
-
         //Remove children before parent deletion
         protected override void OnBeforeProjectionsDelete(IEnumerable<TMainProjectionEntity> projections)
         {
@@ -120,7 +115,7 @@ namespace BaseModel.ViewModel.Loader
             foreach (var guid_parent in guid_parents)
                 childEntities = childEntities.Concat(ReorderAndSave(guid_parent, true)).ToList();
 
-            MainViewModel.BulkSave(childEntities);
+            MainViewModel.BaseBulkSave(childEntities);
             GridControlService?.RefreshData();
             TreeGridControlService?.RefreshData();
         }
@@ -180,7 +175,7 @@ namespace BaseModel.ViewModel.Loader
 
             if (!dontSave)
             {
-                MainViewModel.BulkSave(childProjections);
+                MainViewModel.BaseBulkSave(childProjections);
                 TreeGridControlService?.RefreshData();
             }
 
@@ -270,9 +265,19 @@ namespace BaseModel.ViewModel.Loader
             }
         }
 
+        public bool CanAddRowBefore()
+        {
+            return !IsLoading;
+        }
+
         public void AddRowBefore()
         {
             AddRow(false);
+        }
+
+        public bool CanAddRowAfter()
+        {
+            return !IsLoading;
         }
 
         public void AddRowAfter()
@@ -293,14 +298,14 @@ namespace BaseModel.ViewModel.Loader
             var unalignedSortOrder = 0;
             Guid? guid_parent = null;
 
-            if (DisplaySelectedEntity != null)
+            if (SelectedEntity != null)
             {
                 if (isAfter)
-                    unalignedSortOrder = DisplaySelectedEntity.SortOrder + 1;
+                    unalignedSortOrder = SelectedEntity.SortOrder + 1;
                 else
-                    unalignedSortOrder = DisplaySelectedEntity.SortOrder - 1;
+                    unalignedSortOrder = SelectedEntity.SortOrder - 1;
 
-                guid_parent = DisplaySelectedEntity.ParentEntityKey;
+                guid_parent = SelectedEntity.ParentEntityKey;
             }
 
             var newRow = new TMainProjectionEntity();

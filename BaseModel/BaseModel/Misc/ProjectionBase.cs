@@ -7,8 +7,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace BaseModel.Misc
 {
-    public abstract class ProjectionBase<TEntity> : BindableBase, IProjection<TEntity>, IHaveEntity<TEntity>, ICanUpdate
-        where TEntity : class, IGuidEntityKey, new()
+    public abstract class ProjectionBase<TEntity> : BindableBase, IProjection<TEntity>, IHaveEntity<TEntity>, ICanUpdate, IHaveCreatedDate
+        where TEntity : class, IGuidEntityKey, IHaveCreatedDate, new()
     {
         public TEntity Entity { get; set; }
 
@@ -30,6 +30,7 @@ namespace BaseModel.Misc
         }
 
         public bool NewEntityFromView { get; set; }
+        public DateTime EntityCreatedDate { get => Entity.EntityCreatedDate; set => Entity.EntityCreatedDate = value; }
 
         public virtual void Update()
         {
@@ -43,7 +44,7 @@ namespace BaseModel.Misc
     }
 
     public abstract class ProjectionMasterDetailBase<TEntity, TProjection> : ProjectionBase<TEntity>, IProjectionMasterDetail<TEntity, TProjection>
-        where TEntity : class, IGuidEntityKey, new()
+        where TEntity : class, IGuidEntityKey, IHaveCreatedDate, new()
         where TProjection : class, IGuidEntityKey, new()
     {
         protected virtual ObservableCollection<TProjection> detailEntities { get; set; }
@@ -67,7 +68,7 @@ namespace BaseModel.Misc
     }
 
     public abstract class ProjectionMasterOtherDetailBase<TEntity, TChild, TProjection> : ProjectionBase<TEntity>, IProjectionMasterOtherDetail<TEntity, TChild>
-    where TEntity : class, IGuidEntityKey, new()
+    where TEntity : class, IGuidEntityKey, IHaveCreatedDate, new()
     where TChild : class, IGuidEntityKey, IGuidParentEntityKey, new()
     where TProjection : class, IGuidEntityKey, new()
     {

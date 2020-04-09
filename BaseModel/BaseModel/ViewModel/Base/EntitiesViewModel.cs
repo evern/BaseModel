@@ -65,6 +65,7 @@ namespace BaseModel.ViewModel.Base
         }
 
         public Guid Key { get; set; }
+        public TUnitOfWork UnitOfWork { get; private set; }
         protected class EntitiesChangeTracker<TPrimaryKey> : IEntitiesChangeTracker
         {
             private readonly EntitiesViewModelBase<TEntity, TProjection, TUnitOfWork> owner;
@@ -415,7 +416,8 @@ namespace BaseModel.ViewModel.Base
 
         protected TUnitOfWork CreateUnitOfWork()
         {
-            return unitOfWorkFactory.CreateUnitOfWork();
+            UnitOfWork = unitOfWorkFactory.CreateUnitOfWork();
+            return UnitOfWork;
         }
 
         protected virtual IEntitiesChangeTracker CreateEntitiesChangeTracker()

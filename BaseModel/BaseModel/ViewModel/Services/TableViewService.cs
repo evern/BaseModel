@@ -179,10 +179,19 @@ namespace BaseModel.ViewModel.Services
                 return;
 
             GridControl gridControl = (GridControl)TableView.Parent;
-            TableView.BestFitMaxRowCount = 10;
+            TableView.BestFitMaxRowCount = 20;
             gridControl.BeginDataUpdate();
-            foreach(var column in gridControl.Columns)
+            foreach (var column in gridControl.Columns)
             {
+                //for excelsmart filters to work
+                var comboBoxEditSettings = column.EditSettings as ComboBoxEditSettings;
+                if (comboBoxEditSettings != null)
+                {
+                    column.ColumnFilterMode = ColumnFilterMode.DisplayText;
+                    comboBoxEditSettings.IncrementalFiltering = true;
+                    comboBoxEditSettings.ValidateOnTextInput = true;
+                }
+
                 if (!column.Visible)
                     continue;
 
@@ -190,6 +199,10 @@ namespace BaseModel.ViewModel.Services
                     continue;
 
                 column.BestFitMode = DevExpress.Xpf.Core.BestFitMode.VisibleRows;
+                double defaultMaxWidth = column.MaxWidth;
+                double defaultMinWidth = column.MinWidth;
+                column.MaxWidth = 250;
+                column.MinWidth = 50;
                 var textEditSetting = column.EditSettings as TextEditSettings;
                 if (textEditSetting == null || textEditSetting.TextWrapping == TextWrapping.NoWrap)
                 {
@@ -202,7 +215,11 @@ namespace BaseModel.ViewModel.Services
 
                     }
                 }
+
+                column.MaxWidth = defaultMaxWidth;
+                column.MinWidth = defaultMinWidth;
             }
+
             gridControl.EndDataUpdate();
             //TableView.BestFitColumns();
         }

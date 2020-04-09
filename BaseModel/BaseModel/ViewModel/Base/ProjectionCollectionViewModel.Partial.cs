@@ -27,6 +27,7 @@ using System.Windows.Media;
 using System.Windows.Input;
 using DevExpress.Xpf.Editors.Filtering;
 using System.Windows.Forms;
+using System.ComponentModel;
 
 namespace BaseModel.ViewModel.Base
 {
@@ -47,11 +48,17 @@ namespace BaseModel.ViewModel.Base
         where TUnitOfWork : IUnitOfWork
     {
         #region Call Backs
+        public bool DisableEntitiesPauseUnpause;
+
         /// <summary>
-        /// Fires when selected entities is changed
-        /// Used by dashboard to generate chart
+        /// Disable immediate posting for checkboxes
         /// </summary>
-        public Action OnSelectedEntitiesChangedCallBack;
+        public bool DisableImmediatePosting;
+
+        /// <summary>
+        /// Before invoking save method from event
+        /// </summary>
+        public Func<CellValueChangedEventArgs, TProjection, bool> OnBeforeRowSaveIsContinue { get; set; }
 
         /// <summary>
         /// Additional validation for row
@@ -72,8 +79,17 @@ namespace BaseModel.ViewModel.Base
         /// External call back used by copy paste, fill, new and existing row cell value changing to determine whether value is valid
         /// </summary>
         public Func<TProjection, string, object, bool, string> UnifiedValueValidationCallback;
-        #endregion
 
+        /// <summary>
+        /// used to indicate whether cell value is changing to perform validation, as validation needs to be differentiated between cell value changes and general grid control validation
+        /// </summary>
+        public string CellValueChangingFieldName { get; private set; }
+
+        /// <summary>
+        /// Indicate whether value is changing from events i.e. paste and fill
+        /// </summary>
+        public bool IsChangingValueFromBackgroundEvents { get; set; }
+        #endregion
         /// <summary>
         /// Initializes a new instance of the CollectionViewModel class.
         /// This constructor is declared protected to avoid an undesired instantiation of the CollectionViewModel type without the POCO proxy factory.
@@ -84,14 +100,12 @@ namespace BaseModel.ViewModel.Base
             : base(unitOfWorkFactory, getRepositoryFunc, projection)
         {
             InitZoom();
-            SelectedEntities = new ObservableCollection<TProjection>();
-            SelectedEntities.CollectionChanged += SelectedEntities_CollectionChanged;
         }
 
         #region Interceptors
         protected override void AddUndoBeforeEntityAdded(TProjection projection)
         {
-            if (!EntitiesUndoRedoManager.IsInUndoRedoOperation())
+            if(!IsPersistentView)
                 EntitiesUndoRedoManager.AddUndo(projection, null, null, null, EntityMessageType.Added);
 
             base.AddUndoBeforeEntityAdded(projection);
@@ -99,33 +113,33 @@ namespace BaseModel.ViewModel.Base
 
         protected override void AddUndoBeforeEntityDeleted(TProjection projection)
         {
-            if (!EntitiesUndoRedoManager.IsInUndoRedoOperation())
-                EntitiesUndoRedoManager.AddUndo(projection, null, null, null, EntityMessageType.Deleted);
+            EntitiesUndoRedoManager.AddUndo(projection, null, null, null, EntityMessageType.Deleted);
             base.AddUndoBeforeEntityDeleted(projection);
         }
 
         protected override void PauseEntitiesUndoRedoManager()
         {
-            if (!EntitiesUndoRedoManager.IsInUndoRedoOperation())
+            if(!DisableEntitiesPauseUnpause)
+            {
                 EntitiesUndoRedoManager.PauseActionId();
-
-            base.PauseEntitiesUndoRedoManager();
+                base.PauseEntitiesUndoRedoManager();
+            }
         }
 
         protected override void UnpauseEntitiesUndoRedoManager()
         {
-            if (!EntitiesUndoRedoManager.IsInUndoRedoOperation())
+            if (!DisableEntitiesPauseUnpause)
+            {
                 EntitiesUndoRedoManager.UnpauseActionId();
+                base.UnpauseEntitiesUndoRedoManager();
+            }
+        }
 
-            base.UnpauseEntitiesUndoRedoManager();
+        protected override bool IsInUndoRedoOperation()
+        {
+            return EntitiesUndoRedoManager.IsInUndoRedoOperation;
         }
         #endregion
-
-        protected virtual void SelectedEntities_CollectionChanged(object sender,
-            System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
-        {
-            OnSelectedEntitiesChangedCallBack?.Invoke();
-        }
 
         /// <summary>
         /// Creates a new instance of CollectionViewModel as a POCO view model.
@@ -145,20 +159,6 @@ namespace BaseModel.ViewModel.Base
                 ViewModelSource.Create(() => new CollectionViewModel<TEntity, TProjection, TPrimaryKey, TUnitOfWork>(unitOfWorkFactory, getRepositoryFunc, projection));
         }
 
-        #region Selected Entities
-        /// <summary>
-        /// The selected entities.
-        /// Since CollectionViewModel is a POCO view model, this property will raise INotifyPropertyChanged.PropertyEvent when modified so it can be used as a binding source in views.
-        /// </summary>
-        private ObservableCollection<TProjection> selectedentities { get; set; }
-
-        public ObservableCollection<TProjection> SelectedEntities
-        {
-            get { return selectedentities; }
-            set { selectedentities = value; }
-        }
-        #endregion
-
         #region ISupportUndoRedo
 
         /// <summary>
@@ -176,7 +176,6 @@ namespace BaseModel.ViewModel.Base
                 return entitiesundoredomanager;
             }
         }
-
 
         /// <summary>
         /// Function to undo the entity changes
@@ -204,7 +203,7 @@ namespace BaseModel.ViewModel.Base
         /// <param name="entityProperty">Entity passed over from EntitiesUndoRedo</param>
         public virtual void BulkPropertyUndo(IEnumerable<UndoRedoEntityInfo<TProjection>> entityProperties)
         {
-            isBackgroundEdit = true;
+            IsChangingValueFromBackgroundEvents = true;
             IEnumerable<UndoRedoEntityInfo<TProjection>> bulkSaveProperties = entityProperties.Where(x => x.MessageType == EntityMessageType.Changed);
             IEnumerable<UndoRedoEntityInfo<TProjection>> bulkDeleteProperties = entityProperties.Where(x => x.MessageType == EntityMessageType.Added);
             IEnumerable<UndoRedoEntityInfo<TProjection>> bulkAddProperties = entityProperties.Where(x => x.MessageType == EntityMessageType.Deleted);
@@ -212,21 +211,21 @@ namespace BaseModel.ViewModel.Base
             //change property before deleting, because if property is saved after it's deleted the entity will be restored
             foreach (UndoRedoEntityInfo<TProjection> entityProperty in bulkSaveProperties)
             {
-                UnifiedValueChangingCallback?.Invoke(entityProperty.PropertyName, entityProperty.OldValue, entityProperty.NewValue, entityProperty.ChangedEntity, false);
+                UnifiedValueChangingCallback?.Invoke(entityProperty.PropertyName, entityProperty.NewValue, entityProperty.OldValue, entityProperty.ChangedEntity, false);
                 DataUtils.SetNestedValue(entityProperty.PropertyName, entityProperty.ChangedEntity, entityProperty.OldValue);
-                UnifiedValueChangedCallback?.Invoke(entityProperty.PropertyName, entityProperty.OldValue, entityProperty.NewValue, entityProperty.ChangedEntity, false);
+                UnifiedValueChangedCallback?.Invoke(entityProperty.PropertyName, entityProperty.NewValue, entityProperty.OldValue, entityProperty.ChangedEntity, false);
 
                 ICanUpdate canUpdateEntity = entityProperty as ICanUpdate;
                 canUpdateEntity?.Update();
             }
 
-            BulkSave(bulkSaveProperties.Select(x => x.ChangedEntity));
-            BulkSave(bulkAddProperties.Select(x => x.ChangedEntity));
+            BaseBulkSave(bulkSaveProperties.Select(x => x.ChangedEntity));
+            BaseBulkSave(bulkAddProperties.Select(x => x.ChangedEntity));
 
             //use ignore refresh here because it'll be refreshed in basebulksave
-            BulkDelete(bulkDeleteProperties.Select(x => x.ChangedEntity));
+            BaseBulkDelete(bulkDeleteProperties.Select(x => x.ChangedEntity));
 
-            isBackgroundEdit = false;
+            IsChangingValueFromBackgroundEvents = false;
         }
 
         /// <summary>
@@ -236,7 +235,7 @@ namespace BaseModel.ViewModel.Base
         /// <param name="entityProperty">Entity passed over from EntitiesUndoRedo</param>
         public virtual void BulkPropertyRedo(IEnumerable<UndoRedoEntityInfo<TProjection>> entityProperties)
         {
-            isBackgroundEdit = true;
+            IsChangingValueFromBackgroundEvents = true;
             IEnumerable<UndoRedoEntityInfo<TProjection>> bulkSaveProperties = entityProperties.Where(x => x.MessageType == EntityMessageType.Changed);
             IEnumerable<UndoRedoEntityInfo<TProjection>> bulkAddProperties = entityProperties.Where(x => x.MessageType == EntityMessageType.Added);
             IEnumerable<UndoRedoEntityInfo<TProjection>> bulkDeleteProperties = entityProperties.Where(x => x.MessageType == EntityMessageType.Deleted);
@@ -252,13 +251,13 @@ namespace BaseModel.ViewModel.Base
                 canUpdateEntity?.Update();
             }
 
-            BulkSave(bulkAddProperties.Select(x => x.ChangedEntity));
-            BulkSave(bulkSaveProperties.Select(x => x.ChangedEntity));
+            BaseBulkSave(bulkAddProperties.Select(x => x.ChangedEntity));
+            BaseBulkSave(bulkSaveProperties.Select(x => x.ChangedEntity));
 
             //use ignore refresh here because it'll be refreshed in basebulksave
-            BulkDelete(bulkDeleteProperties.Select(x => x.ChangedEntity));
-            
-            isBackgroundEdit = false;
+            BaseBulkDelete(bulkDeleteProperties.Select(x => x.ChangedEntity));
+
+            IsChangingValueFromBackgroundEvents = false;
         }
 
         /// <summary>
@@ -279,8 +278,16 @@ namespace BaseModel.ViewModel.Base
             }
         }
 
+        public bool CanFullRefresh()
+        {
+            return !IsLoading;
+        }
+
         public void FullRefresh()
         {
+            if (!CanFullRefresh())
+                return;
+
             this.Refresh();
         }
 
@@ -290,7 +297,7 @@ namespace BaseModel.ViewModel.Base
         /// </summary>
         public bool CanUndo()
         {
-            return EntitiesUndoRedoManager.CanUndo();
+            return !IsLoading && EntitiesUndoRedoManager.CanUndo();
         }
 
         /// <summary>
@@ -299,7 +306,7 @@ namespace BaseModel.ViewModel.Base
         /// </summary>
         public bool CanRedo()
         {
-            return EntitiesUndoRedoManager.CanRedo();
+            return !IsLoading && EntitiesUndoRedoManager.CanRedo();
         }
 
         /// <summary>
@@ -308,6 +315,9 @@ namespace BaseModel.ViewModel.Base
         /// </summary>
         public void Undo()
         {
+            if (!CanUndo())
+                return;
+
             EntitiesUndoRedoManager.Undo();
         }
 
@@ -317,9 +327,21 @@ namespace BaseModel.ViewModel.Base
         /// </summary>
         public void Redo()
         {
+            if (!CanRedo())
+                return;
+
             EntitiesUndoRedoManager.Redo();
         }
 
+        public void PreviewKeyDown(System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key == System.Windows.Input.Key.Enter)
+            {
+                TableView tableView = e.Source as TableView;
+                if(tableView != null)
+                    tableView.PostEditor();
+            }
+        }
         #endregion
 
         #region Data Operations
@@ -509,7 +531,7 @@ namespace BaseModel.ViewModel.Base
                             }
 
                             string propertyStringFormat = constraintIssue.Key.Replace("GUID_", string.Empty);
-                            propertyStringFormat = StringFormatUtils.DisplayCamelCaseString(propertyStringFormat);
+                            //propertyStringFormat = StringFormatUtils.DisplayCamelCaseString(propertyStringFormat);
                             constraintErrorMessage += "[" + propertyStringFormat + "] = " + constraintIssue.Value + ", ";
                         }
 
@@ -563,7 +585,6 @@ namespace BaseModel.ViewModel.Base
         #endregion
 
         #region Views
-
         public Func<EditorEventArgs, bool> BeforeShownEditor;
 
         #region Grid Zooming
@@ -633,7 +654,7 @@ namespace BaseModel.ViewModel.Base
         /// Remembers an entity added for undoing
         /// Since CollectionViewModelBase is a POCO view model, an the instance of this class will also expose the AddUndoCommand property that can be used as a binding source in views.
         /// </summary>
-        public virtual void NewRowAddUndoAndSave(RowEventArgs e)
+        public virtual void NewRowSave(RowEventArgs e)
         {
             if (e.RowHandle == DataControlBase.NewItemRowHandle)
             {
@@ -659,36 +680,6 @@ namespace BaseModel.ViewModel.Base
             }
         }
 
-        public Func<CellValueChangedEventArgs, TProjection, bool> OnBeforeExistingRowAddUndoAndSaveIsContinue { get; set; }
-
-        /// <summary>
-        /// Remembers an entity property old value for undoing
-        /// Since CollectionViewModelBase is a POCO view model, an the instance of this class will also expose the AddUndoCommand property that can be used as a binding source in views.
-        /// </summary>
-        public virtual void ExistingRowAddUndoAndSave(CellValueChangedEventArgs e)
-        {
-            var projection = (TProjection)e.Row;
-            if (e.RowHandle != DataControlBase.NewItemRowHandle)
-            {
-                if(OnBeforeExistingRowAddUndoAndSaveIsContinue != null)
-                    if(!OnBeforeExistingRowAddUndoAndSaveIsContinue(e, projection))
-                    {
-                        return;
-                    }
-
-                EntitiesUndoRedoManager.PauseActionId();
-                EntitiesUndoRedoManager.AddUndo(projection, e.Column.FieldName, e.OldValue, e.Value, EntityMessageType.Changed);
-                EntitiesUndoRedoManager.UnpauseActionId();
-
-                isBackgroundEdit = true;
-                Save(projection);
-                isBackgroundEdit = false;
-            }
-            ////allow for new row initialization here
-            //else
-            //    UnifiedValueChangingCallback?.Invoke(e.Column.FieldName, e.OldValue, e.Value, projection, true);
-        }
-
         /// <summary>
         /// Influence column(s) when changes happens in other column
         /// </summary>
@@ -699,10 +690,40 @@ namespace BaseModel.ViewModel.Base
 
             if (!e.Handled)
             {
+                CellValueChangingFieldName = e.Column.FieldName;
                 var projection = (TProjection)e.Row;
-                UnifiedValueChangingCallback?.Invoke(e.Column.FieldName, e.OldValue, e.Value, projection, true);
+                UnifiedValueChangingCallback?.Invoke(e.Column.FieldName, e.OldValue, e.Value, projection, e.RowHandle == GridControl.NewItemRowHandle);
+
+                if (!DisableImmediatePosting && e.RowHandle != GridControl.NewItemRowHandle)
+                    CellValueChangedImmediatePost(e);
             }
         }
+
+        protected virtual void CellValueChangedImmediatePost(CellValueChangedEventArgs e)
+        {
+            TableView tableView = e.Source as TableView;
+            //only post editor if editing row is not new row or else new row will be committed immediately
+            if (tableView != null && e.RowHandle != GridControl.NewItemRowHandle)
+            {
+                if (tableView.ActiveEditor != null)
+                {
+                    Type activeEditorType = tableView.ActiveEditor.GetType();
+                    if (activeEditorType == typeof(ComboBoxEdit) || activeEditorType == typeof(CheckEdit))
+                    {
+                        previousImmediatePostFieldname = string.Empty;
+                        previousImmediatePostOldValue = null;
+                        previousImmediatePostNewValue = null;
+                        //will be unpaused in CellValueChanged
+                        PauseEntitiesUndoRedoManager();
+                        tableView.PostEditor();
+                    }
+                }
+            }
+        }
+
+        private string previousImmediatePostFieldname = string.Empty;
+        private object previousImmediatePostOldValue = null;
+        private object previousImmediatePostNewValue = null;
 
         /// <summary>
         /// Influence column(s) when changes happens in other column or to commit to database different from MainViewModel's datacontext
@@ -712,10 +733,74 @@ namespace BaseModel.ViewModel.Base
             if (e.RowHandle == GridControl.AutoFilterRowHandle)
                 return;
 
+            TableView tableView = e.Source as TableView;
+            Type activeEditorType = tableView.ActiveEditor.GetType();
+            if (activeEditorType == typeof(ComboBoxEdit) || activeEditorType == typeof(CheckEdit))
+            {
+                if (e.Column.FieldName == previousImmediatePostFieldname)
+                {
+                    //because immediate post already committed the changes, and this gets called when user exits the editor
+                    if (e.Value == null && e.OldValue == null)
+                        return;
+
+                    if ((e.Value != null && e.OldValue != null) && e.Value.ToString() == e.OldValue.ToString())
+                        return;
+
+                    if (previousImmediatePostOldValue != null)
+                    {
+                        if (e.Value != null && e.Value.ToString() == previousImmediatePostNewValue.ToString())
+                        {
+                            if (e.OldValue != null && e.OldValue.ToString() == previousImmediatePostOldValue.ToString())
+                            {
+                                previousImmediatePostOldValue = null;
+                                previousImmediatePostNewValue = null;
+                                return;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (e.Value == null || e.OldValue == null)
+                        {
+                            previousImmediatePostNewValue = null;
+                            return;
+                        }
+
+                        if (previousImmediatePostNewValue != null && e.Value.ToString() == previousImmediatePostNewValue.ToString())
+                        {
+                            previousImmediatePostNewValue = null;
+                            return;
+                        }
+                    }
+                }
+
+                previousImmediatePostFieldname = e.Column.FieldName;
+                previousImmediatePostOldValue = e.OldValue;
+                previousImmediatePostNewValue = e.Value;
+            }
+
             if (!e.Handled)
             {
+                CellValueChangingFieldName = null;
                 var projection = (TProjection)e.Row;
-                UnifiedValueChangedCallback?.Invoke(e.Column.FieldName, e.OldValue, e.Value, projection, true);
+                PauseEntitiesUndoRedoManager();
+                if (e.RowHandle != DataControlBase.NewItemRowHandle)
+                {
+                    if (OnBeforeRowSaveIsContinue != null)
+                        if (!OnBeforeRowSaveIsContinue(e, projection))
+                        {
+                            return;
+                        }
+
+                    EntitiesUndoRedoManager.AddUndo(projection, e.Column.FieldName, e.OldValue, e.Value, EntityMessageType.Changed);
+                    UnifiedValueChangedCallback?.Invoke(e.Column.FieldName, e.OldValue, e.Value, projection, e.RowHandle == GridControl.NewItemRowHandle);
+                    Save(projection); //undoredomanager will be unpaused within
+                }
+                else
+                {
+                    UnifiedValueChangedCallback?.Invoke(e.Column.FieldName, e.OldValue, e.Value, projection, e.RowHandle == GridControl.NewItemRowHandle);
+                    UnpauseEntitiesUndoRedoManager();
+                }
             }
         }
 
@@ -723,14 +808,9 @@ namespace BaseModel.ViewModel.Base
         /// Remembers an entity property old value for undoing
         /// Since CollectionViewModelBase is a POCO view model, an the instance of this class will also expose the AddUndoCommand property that can be used as a binding source in views.
         /// </summary>
-        public virtual void TreelistExistingRowAddUndoAndSave(TreeListCellValueChangedEventArgs e)
+        public virtual void TreelistExistingRowSave(TreeListCellValueChangedEventArgs e)
         {
             var projection = (TProjection)e.Row;
-
-            EntitiesUndoRedoManager.PauseActionId();
-            EntitiesUndoRedoManager.AddUndo(projection, e.Column.FieldName, e.OldValue, e.Value, EntityMessageType.Changed);
-            EntitiesUndoRedoManager.UnpauseActionId();
-
             Save(projection);
         }
 
@@ -750,7 +830,7 @@ namespace BaseModel.ViewModel.Base
                 e.ErrorContent = errorMessage;
             }
 
-            if(UnifiedValueValidationCallback != null)
+            if(!IsLoading && UnifiedValueValidationCallback != null)
             {
                 string error_message = UnifiedValueValidationCallback((TProjection)e.Row, e.Column.FieldName, e.Value, false);
                 if (error_message != null && error_message != string.Empty)
@@ -790,6 +870,7 @@ namespace BaseModel.ViewModel.Base
         #region Cell Content Deletion
         public virtual void DeleteCellContent(GridControl gridControl)
         {
+            IsChangingValueFromBackgroundEvents = true;
             string[] RowData = new string[] { string.Empty };
             CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, ErrorMessagesDialogService, UnifiedValueValidationCallback, FuncManualCellPastingIsContinue, FuncManualRowPastingIsContinue, UnifiedValueChangingCallback, UnifiedValueChangedCallback, UnifiedNewRowInitialisationFromView, FormatErrorMessagesCallBack);
             List<TProjection> pasteProjections;
@@ -805,7 +886,7 @@ namespace BaseModel.ViewModel.Base
                 if (pasteProjections.Count > 0)
                 {
                     //For copy paste don't have to refresh the entire list, just call ICanUpdate.Update() on entity
-                    BulkSave(pasteProjections, true);
+                    BaseBulkSave(pasteProjections, true);
                 }
 
                 if (errorMessages.Count > 0)
@@ -818,6 +899,7 @@ namespace BaseModel.ViewModel.Base
                     }
                 }
             }
+            IsChangingValueFromBackgroundEvents = false;
         }
         #endregion
 
@@ -852,7 +934,7 @@ namespace BaseModel.ViewModel.Base
         
         public void Fill(object button, bool isUp)
         {
-            isBackgroundEdit = true;
+            IsChangingValueFromBackgroundEvents = true;
             GridMenuInfo info = GridPopupMenuBase.GetGridMenuInfo((DependencyObject)button) as GridMenuInfo;
             object valueToFill;
             object nextValueInSequence;
@@ -868,7 +950,7 @@ namespace BaseModel.ViewModel.Base
                 nextValueInSequence = DataUtils.GetNestedValue(info.Column.FieldName, SelectedEntities[1]);
             }
 
-            EntitiesUndoRedoManager.PauseActionId();
+            PauseEntitiesUndoRedoManager();
             var bulkSaveEntities = new List<TProjection>();
 
             long? enumerationDifferences = null;
@@ -935,10 +1017,10 @@ namespace BaseModel.ViewModel.Base
                 }
             }
 
-            BulkSave(bulkSaveEntities, true);
+            BaseBulkSave(bulkSaveEntities, true);
             OnFillDownCompletedCallBack?.Invoke();
-            EntitiesUndoRedoManager.UnpauseActionId();
-            isBackgroundEdit = false;
+            UnpauseEntitiesUndoRedoManager();
+            IsChangingValueFromBackgroundEvents = false;
         }
         
         private void setEntityProperty(TProjection editEntity, GridMenuInfo info, object valueToFill, int? numericIndex, long? enumerator, int numericFieldLength)
@@ -948,18 +1030,6 @@ namespace BaseModel.ViewModel.Base
                 string valueToFillStringOnly = valueToFill.ToString().Substring(0, valueToFill.ToString().Length - numericFieldLength);
 
                 valueToFill = StringFormatUtils.AppendStringWithEnumerator(valueToFillStringOnly, (long)enumerator, numericFieldLength);
-                //int actualReplacementPos;
-                //if (enumeratorString.Length <= numericFieldLength)
-                //    actualReplacementPos = valueToFillStringOnly.Length - enumeratorString.Length;
-                //else
-                //    actualReplacementPos = numericIndex.Value;
-
-                //if (actualReplacementPos > 0)
-                //{
-                //    valueToFillString = valueToFillString.Substring(0, actualReplacementPos);
-                //    valueToFillString = valueToFillString + enumerator.Value.ToString();
-                //    valueToFill = valueToFillString;
-                //}
             }
 
             if (ValidateFillDownCallBack != null &&
@@ -981,7 +1051,6 @@ namespace BaseModel.ViewModel.Base
         }
 
         public bool AllowEdit = true;
-
         public override void Edit(TProjection projectionEntity)
         {
             if (AllowEdit)
@@ -1016,7 +1085,6 @@ namespace BaseModel.ViewModel.Base
         {
             return Entities != null && Entities.Count > 0 && !IsLoading;
         }
-
         /// <summary>
         /// Deletes a collection of entities from the repository.
         /// Since CollectionViewModelBase is a POCO view model, an the instance of this class will also expose the DeleteCommand property that can be used as a binding source in views.
@@ -1027,19 +1095,9 @@ namespace BaseModel.ViewModel.Base
             if (MessageBoxService.ShowMessage("Are you sure you want to delete " + selectedentities.Count + " selected entries?", "Confirmation", MessageButton.OKCancel) == MessageResult.Cancel)
                 return;
 
-            EntitiesUndoRedoManager.PauseActionId();
-            BulkDelete(selectedentities);
-            EntitiesUndoRedoManager.UnpauseActionId();
-        }
-
-        public void KeyboardCopy()
-        {
-            SendKeys.SendWait("^c");
-        }
-
-        public void KeyboardPaste()
-        {
-            SendKeys.SendWait("^v");
+            PauseEntitiesUndoRedoManager();
+            BaseBulkDelete(selectedentities);
+            UnpauseEntitiesUndoRedoManager();
         }
         #endregion
 
@@ -1100,7 +1158,6 @@ namespace BaseModel.ViewModel.Base
         }
 
         //Denotes that edit operation comes from the background so onBeforeEntitySaved will not perform default actions
-        public bool isBackgroundEdit = false;
         public Func<List<KeyValuePair<ColumnBase, string>>, TProjection, bool, bool> FuncManualRowPastingIsContinue;
         public Func<TProjection, ColumnBase, string, List<UndoRedoArg<TProjection>>, bool> FuncManualCellPastingIsContinue;
         public Action<IEnumerable<string>> RawPasteOverride;
@@ -1112,8 +1169,8 @@ namespace BaseModel.ViewModel.Base
             object newValue = null;
             var SaveEntities = new List<TProjection>();
             var operation = Arithmetic.None;
-            isBackgroundEdit = true;
-            EntitiesUndoRedoManager.PauseActionId();
+            IsChangingValueFromBackgroundEvents = true;
+            PauseEntitiesUndoRedoManager();
             try
             {
                 bool commence_bulk_edit = false;
@@ -1260,20 +1317,19 @@ namespace BaseModel.ViewModel.Base
                             SaveEntities.Add(selectedProjection);
                     }
 
-                BulkSave(SaveEntities);
+                BaseBulkSave(SaveEntities);
             }
             catch
             {
             }
 
-            EntitiesUndoRedoManager.UnpauseActionId();
-            isBackgroundEdit = false;
+            UnpauseEntitiesUndoRedoManager();
+            IsChangingValueFromBackgroundEvents = false;
         }
         #endregion
 
         #region Data Operations
         public Func<TProjection, bool> OnBeforePasteWithValidation;
-        public Action<PasteStatus> PasteListener;
         public bool DisablePasting { get; set; }
         public bool DisablePasteRowLevel { get; set; }
 
@@ -1300,6 +1356,7 @@ namespace BaseModel.ViewModel.Base
         /// <param name="e"></param>
         public virtual void PastingFromClipboard(PastingFromClipboardEventArgs e)
         {
+            IsChangingValueFromBackgroundEvents = true;
             bool shouldSkip = false;
             var gridControl = (GridControl)e.Source;
             TableView tableView = gridControl.View as TableView;
@@ -1315,7 +1372,6 @@ namespace BaseModel.ViewModel.Base
             List<int> selectedRowHandles = gridControl.GetSelectedRowHandles().ToList();
             if(!shouldSkip)
             {
-                PasteListener?.Invoke(PasteStatus.Start);
                 CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, ErrorMessagesDialogService, UnifiedValueValidationCallback, FuncManualCellPastingIsContinue, FuncManualRowPastingIsContinue, UnifiedValueChangingCallback, UnifiedValueChangedCallback, UnifiedNewRowInitialisationFromView, FormatErrorMessagesCallBack);
 
                 bool dontSplit = false;
@@ -1365,10 +1421,10 @@ namespace BaseModel.ViewModel.Base
                         //}
 
                         //For copy paste don't have to refresh the entire list, just call ICanUpdate.Update() on entity
-                        BulkSave(pasteProjections, IsPasteCellLevel);
+                        BaseBulkSave(pasteProjections, IsPasteCellLevel);
 
-                        if(!IsPasteCellLevel && !DisablePasteRowLevel)
-                            OnAfterNewRowAddedCallBack?.Invoke(pasteProjections);
+                        if (!IsPasteCellLevel && !DisablePasteRowLevel)
+                            OnAfterNewProjectionsAdded(pasteProjections);
                     }
 
                     if (errorMessages.Count > 0)
@@ -1383,8 +1439,9 @@ namespace BaseModel.ViewModel.Base
                 }
 
                 e.Handled = true;
-                PasteListener?.Invoke(PasteStatus.Stop);
             }
+
+            IsChangingValueFromBackgroundEvents = false;
         }
 
         /// <summary>
@@ -1393,7 +1450,7 @@ namespace BaseModel.ViewModel.Base
         /// <param name="e"></param>
         public virtual void PastingFromClipboardTreeList(PastingFromClipboardEventArgs e)
         {
-            PasteListener?.Invoke(PasteStatus.Start);
+            IsChangingValueFromBackgroundEvents = true;
             CopyPasteHelper<TProjection> copyPasteHelper = new CopyPasteHelper<TProjection>(IsValidEntity, OnBeforePasteWithValidation, ErrorMessagesDialogService, UnifiedValueValidationCallback, null, null, null, null, null, FormatErrorMessagesCallBack);
             bool dontSplit = false;
             if ((Keyboard.Modifiers | ModifierKeys.Shift) == Keyboard.Modifiers)
@@ -1426,7 +1483,7 @@ namespace BaseModel.ViewModel.Base
                 //pasteProjections.ForEach(x => EntitiesUndoRedoManager.AddUndo(x, null, null, null, EntityMessageType.Added));
                 //EntitiesUndoRedoManager.UnpauseActionId();
 
-                BulkSave(pasteProjections);
+                BaseBulkSave(pasteProjections);
                 e.Handled = true;
             }
 
@@ -1441,7 +1498,7 @@ namespace BaseModel.ViewModel.Base
                 }
             }
 
-            PasteListener?.Invoke(PasteStatus.Stop);
+            IsChangingValueFromBackgroundEvents = false;
         }
         #endregion
 

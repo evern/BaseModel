@@ -68,17 +68,17 @@ namespace BaseModel.ViewModel.Loader
         #endregion
 
         private List<Guid> RestoreExpandedGuids = new List<Guid>();
-        ObservableCollection<TMainProjectionEntity> displayEntities;
-        public override ObservableCollection<TMainProjectionEntity> DisplayEntities
+        ObservableCollection<TMainProjectionEntity> entities;
+        public override ObservableCollection<TMainProjectionEntity> Entities
         {
             get
             {
                 if (MainViewModel == null)
                     return null;
 
-                if (displayEntities == null)
+                if (entities == null)
                 {
-                    displayEntities = new ObservableCollection<TMainProjectionEntity>();
+                    entities = new ObservableCollection<TMainProjectionEntity>();
                     var parentEntities = MainViewModel.Entities;
                     var childEntities = child_entities;
                     foreach (var parentEntity in parentEntities)
@@ -88,28 +88,28 @@ namespace BaseModel.ViewModel.Loader
                         DataUtils.ShallowCopy(parentEntityPOCO.Entity, parentEntity.Entity);
 
                         parentEntityPOCO.IsExpanded = RestoreExpandedGuids.Any(x => x == parentEntity.GUID);
-                        displayEntities.Add(parentEntityPOCO);
+                        entities.Add(parentEntityPOCO);
                     }
 
                     //foreach added parent
-                    foreach (var displayEntity in displayEntities)
+                    foreach (var entity in entities)
                     {
-                        IOriginalGuidEntityKey displayEntityWithOriginalKey = displayEntity as IOriginalGuidEntityKey;
+                        IOriginalGuidEntityKey displayEntityWithOriginalKey = entity as IOriginalGuidEntityKey;
 
                         IEnumerable<TChildEntity> currentChildEntities;
                         if (displayEntityWithOriginalKey == null)
-                            currentChildEntities = childEntities.Where(y => y.ParentEntityKey == displayEntity.GUID);
+                            currentChildEntities = childEntities.Where(y => y.ParentEntityKey == entity.GUID);
                         else
                             currentChildEntities = childEntities.Where(y => y.ParentEntityKey == displayEntityWithOriginalKey.OriginalEntityKey);
 
                         foreach (var currentChildEntity in currentChildEntities)
                         {
-                            displayEntity.DetailEntities.Add(currentChildEntity);
+                            entity.DetailEntities.Add(currentChildEntity);
                         }
                     }
                 }
 
-                return displayEntities;
+                return entities;
             }
         }
 
@@ -120,13 +120,13 @@ namespace BaseModel.ViewModel.Loader
         #region View Refresh
         public override void OnAfterAuxiliaryEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender, bool isBulkRefresh)
         {
-            mainThreadDispatcher.BeginInvoke(new Action(() => refreshDisplayEntities()));
+            mainThreadDispatcher.BeginInvoke(new Action(() => refreshEntities()));
         }
 
-        private void refreshDisplayEntities()
+        private void refreshEntities()
         {
-            displayEntities = null;
-            this.RaisePropertyChanged(x => x.DisplayEntities);
+            entities = null;
+            this.RaisePropertyChanged(x => x.Entities);
             onAfterRefresh();
         }
 
@@ -135,8 +135,8 @@ namespace BaseModel.ViewModel.Loader
         //public Action<TMainProjectionEntity> SetIsRowExpanded;
         protected override void onAfterRefresh()
         {
-            if(DisplayEntities != null)
-                foreach (var entity in DisplayEntities)
+            if(Entities != null)
+                foreach (var entity in Entities)
                 {
                     GridControlService.SetRowExpandedByColumnValue(expand_key_field_name, entity);
                 }

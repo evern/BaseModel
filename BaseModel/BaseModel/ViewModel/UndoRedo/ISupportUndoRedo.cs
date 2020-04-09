@@ -22,17 +22,6 @@ namespace BaseModel.ViewModel.UndoRedo
         /// <param name="entityProperty">Undoing action, entity and/or specific property</param>
         void PropertyRedo(UndoRedoEntityInfo<TEntity> entityProperty);
 
-        /// <summary>
-        /// Add existing row property changes to EntitiesUndoRedoManager and save changes to database
-        /// </summary>
-        /// <param name="e">CellValueChanged event</param>
-        void ExistingRowAddUndoAndSave(CellValueChangedEventArgs e);
-
-        /// <summary>
-        /// Add new row property changes to EntitiesUndoRedoManager and save changes to database
-        /// </summary>
-        /// <param name="e">CellValueChRowUpdatedanged event</param>
-        void NewRowAddUndoAndSave(RowEventArgs e);
 
         /// <summary>
         /// Used with POCO view model to expose method as UndoCommand

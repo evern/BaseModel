@@ -17,13 +17,31 @@ namespace BaseModel.ViewModel.Base
         where TUnitOfWork : IUnitOfWork
     {
         /// <summary>
+        /// Creates a new instance of CollectionViewModel as a POCO view model.
+        /// </summary>
+        /// <param name="unitOfWorkFactory">A factory used to create a unit of work instance.</param>
+        /// <param name="getRepositoryFunc">A function that returns a repository representing entities of the given type.</param>
+        /// <param name="projection">An optional parameter that provides a LINQ function used to customize a query for entities. The parameter, for example, can be used for sorting data.</param>
+        /// <param name="newEntityInitializer">An optional parameter that provides a function to initialize a new entity. This parameter is used in the detail collection view models when creating a single object view model for a new entity.</param>
+        /// <param name="canCreateNewEntity">A function that is called before an attempt to create a new entity is made. This parameter is used together with the newEntityInitializer parameter.</param>
+        /// <param name="ignoreSelectEntityMessage">An optional parameter that used to specify that the selected entity should not be managed by PeekCollectionViewModel.</param>
+        public new static CollectionViewModel<TEntity, TPrimaryKey, TUnitOfWork> CreateCollectionViewModel(
+            IUnitOfWorkFactory<TUnitOfWork> unitOfWorkFactory,
+            Func<TUnitOfWork, IRepository<TEntity, TPrimaryKey>> getRepositoryFunc,
+            Func<IRepositoryQuery<TEntity>, IQueryable<TEntity>> projection = null)
+        {
+            return
+                ViewModelSource.Create(() => new CollectionViewModel<TEntity, TPrimaryKey, TUnitOfWork>(unitOfWorkFactory, getRepositoryFunc, projection));
+        }
+
+        /// <summary>
         /// Initializes a new instance of the CollectionViewModel class.
         /// This constructor is declared protected to avoid an undesired instantiation of the CollectionViewModel type without the POCO proxy factory.
         /// </summary>
         /// <param name="unitOfWorkFactory">A factory used to create a unit of work instance.</param>
         /// <param name="getRepositoryFunc">A function that returns a repository representing entities of the given type.</param>
         /// <param name="projection">An optional parameter that provides a LINQ function used to customize a query for entities. The parameter, for example, can be used for sorting data.</param>
-        protected CollectionViewModel(IUnitOfWorkFactory<TUnitOfWork> unitOfWorkFactory, Func<TUnitOfWork, IRepository<TEntity, TPrimaryKey>> getRepositoryFunc, Func<IRepositoryQuery<TEntity>, IQueryable<TEntity>> projection)
+        protected CollectionViewModel(IUnitOfWorkFactory<TUnitOfWork> unitOfWorkFactory, Func<TUnitOfWork, IRepository<TEntity, TPrimaryKey>> getRepositoryFunc, Func<IRepositoryQuery<TEntity>, IQueryable<TEntity>> projection = null)
             : base(unitOfWorkFactory, getRepositoryFunc, projection)
         {
         }

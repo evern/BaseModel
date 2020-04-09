@@ -5,11 +5,11 @@
                     xmlns:misc="clr-namespace:BaseModel.Misc">
     <Style x:Key="NestedGridControlTemplate" TargetType="{x:Type dxg:GridControl}">
         <Setter Property="ShowLoadingPanel" Value="{Binding IsLoading}" />
-        <Setter Property="ItemsSource" Value="{Binding DisplayEntities}" />
+        <Setter Property="ItemsSource" Value="{Binding Entities}" />
         <Setter Property="ClipboardCopyMode" Value="ExcludeHeader" />
         <Setter Property="SelectionMode" Value="Row" />
-        <Setter Property="CurrentItem" Value="{Binding DisplaySelectedEntity, Mode=TwoWay}" />
-        <Setter Property="SelectedItems" Value="{Binding DisplaySelectedEntities, Mode=TwoWay}" />
+        <Setter Property="CurrentItem" Value="{Binding SelectedEntity, Mode=TwoWay}" />
+        <Setter Property="SelectedItems" Value="{Binding SelectedEntities, Mode=TwoWay}" />
         <Setter Property="ShowBorder" Value="False" />
         <Setter Property="AutoExpandAllGroups" Value="False" />
     </Style>
@@ -19,10 +19,10 @@
                 <DataTemplate>
                     <ItemsControl>
                         <dxmvvm:EventToCommand PassEventArgsToCommand="True"
-                                               Command="{Binding MainViewModel.ExistingRowAddUndoAndSaveCommand}"
+                                               Command="{Binding MainViewModel.CellValueChangedCommand}"
                                                EventName="CellValueChanged" />
                         <dxmvvm:EventToCommand PassEventArgsToCommand="True"
-                                               Command="{Binding MainViewModel.NewRowAddUndoAndSaveCommand}"
+                                               Command="{Binding MainViewModel.NewRowSaveCommand}"
                                                EventName="RowUpdated" />
                         <dxmvvm:EventToCommand PassEventArgsToCommand="True"
                                                Command="{Binding MainViewModel.ValidateCellCommand}"
@@ -37,9 +37,6 @@
                                                Command="{Binding MainViewModel.ShownEditorCommand}"
                                                EventName="ShownEditor" />
                         <dxmvvm:EventToCommand Command="{Binding CellValueChangingCommand}" PassEventArgsToCommand="True" EventName="CellValueChanging" />
-                        <!--<dxmvvm:KeyToCommand KeyGesture="Delete" Command="{Binding BulkDeleteCommand}"  />-->
-                        <dxmvvm:KeyToCommand KeyGesture="CTRL+Z" Command="{Binding MainViewModel.UndoCommand}" />
-                        <dxmvvm:KeyToCommand KeyGesture="CTRL+Y" Command="{Binding MainViewModel.RedoCommand}" />
                     </ItemsControl>
                 </DataTemplate>
             </Setter.Value>
@@ -56,11 +53,11 @@
     </Style>
     <Style x:Key="NestedMasterDetailGridControlTemplate" TargetType="{x:Type dxg:GridControl}">
         <Setter Property="ShowLoadingPanel" Value="{Binding IsLoading}" />
-        <Setter Property="ItemsSource" Value="{Binding DisplayEntities}" />
+        <Setter Property="ItemsSource" Value="{Binding Entities}" />
         <Setter Property="ClipboardCopyMode" Value="ExcludeHeader" />
         <Setter Property="SelectionMode" Value="Row" />
-        <Setter Property="CurrentItem" Value="{Binding DisplaySelectedEntity, Mode=TwoWay}" />
-        <Setter Property="SelectedItems" Value="{Binding DisplaySelectedEntities, Mode=TwoWay}" />
+        <Setter Property="CurrentItem" Value="{Binding SelectedEntity, Mode=TwoWay}" />
+        <Setter Property="SelectedItems" Value="{Binding SelectedEntities, Mode=TwoWay}" />
         <Setter Property="ShowBorder" Value="False" />
         <Setter Property="AutoExpandAllGroups" Value="False" />
         <Setter Property="ShowAllTableValuesInCheckedFilterPopup" Value="False" />
@@ -69,8 +66,8 @@
         <Setter Property="ShowLoadingPanel" Value="{Binding IsLoading}" />
         <Setter Property="ClipboardCopyMode" Value="ExcludeHeader" />
         <Setter Property="SelectionMode" Value="Row" />
-        <Setter Property="CurrentItem" Value="{Binding DisplaySelectedEntity, Mode=TwoWay}" />
-        <Setter Property="SelectedItems" Value="{Binding DisplaySelectedEntities, Mode=TwoWay}" />
+        <Setter Property="CurrentItem" Value="{Binding SelectedEntity, Mode=TwoWay}" />
+        <Setter Property="SelectedItems" Value="{Binding SelectedEntities, Mode=TwoWay}" />
         <Setter Property="ShowBorder" Value="False" />
         <Setter Property="AutoExpandAllGroups" Value="False" />
         <Setter Property="ShowAllTableValuesInCheckedFilterPopup" Value="False" />

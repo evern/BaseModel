@@ -400,7 +400,6 @@ namespace BaseModel.Data.Helpers
                 TableView gridTableView = gridTView as TableView;
                 TreeListView gridTreeListView = gridTView as TreeListView;
 
-                LoadingScreenManager.ShowLoadingScreen(RowData.Count());
                 PasteResult result = PasteResult.Success;
                 foreach (var Row in RowData)
                 {
@@ -423,7 +422,6 @@ namespace BaseModel.Data.Helpers
                         columnData.Add(new KeyValuePair<ColumnBase, string>(copyColumn, ColumnStrings[i]));
                     }
 
-                    LoadingScreenManager.Progress();
                     if (funcManualRowPastingIsContinue != null)
                     {
                         if (!funcManualRowPastingIsContinue.Invoke(columnData, projection, Row == RowData.Last()))
@@ -455,8 +453,6 @@ namespace BaseModel.Data.Helpers
                         errorMessages.Add(new ErrorMessage("Row error", errorMessage, constraintIssues));
                     }
                 }
-
-                LoadingScreenManager.CloseLoadingScreen();
             }
 
             return validatedProjections;

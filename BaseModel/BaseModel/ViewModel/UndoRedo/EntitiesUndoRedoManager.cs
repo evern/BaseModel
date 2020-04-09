@@ -13,7 +13,7 @@ namespace BaseModel.ViewModel.UndoRedo
         readonly Action<UndoRedoEntityInfo<TEntity>> FuncRedo;
         readonly Action<IEnumerable<UndoRedoEntityInfo<TEntity>>> BulkFuncUndo;
         readonly Action<IEnumerable<UndoRedoEntityInfo<TEntity>>> BulkFuncRedo;
-
+        public List<string> ExceptionFieldNames = new List<string>();
         public EntitiesUndoRedoManager(Action<UndoRedoEntityInfo<TEntity>> funcUndo,
             Action<UndoRedoEntityInfo<TEntity>> funcRedo)
         {
@@ -65,8 +65,32 @@ namespace BaseModel.ViewModel.UndoRedo
         public void AddUndo(TEntity changedEntity, string propertyName, object oldValue, object newValue,
             EntityMessageType messageType)
         {
-            UndoList.Add(new UndoRedoEntityInfo<TEntity>(changedEntity, propertyName, oldValue, newValue, ActionId, messageType));
-            RedoList.Clear();
+            //view will invoke add undo, put a check to make sure that it's not redoing before adding
+            if(!_isUndoing)
+            {
+                if(!ExceptionFieldNames.Any(x => x == propertyName))
+                {
+                    if (oldValue == null && newValue == null)
+                        return;
+
+                    if ((oldValue != null && newValue != null) && oldValue.ToString() == newValue.ToString())
+                        return;
+
+                    //sometimes undo gets invoked multiple times by view events, check that it doesn't exists already before adding
+                    IEnumerable<UndoRedoEntityInfo<TEntity>> similarUndoRedoProperties = UndoList.Where(x => (x.ActionId == ActionId - 1 || x.ActionId == ActionId) && x.ChangedEntity == changedEntity && x.PropertyName == propertyName && x.MessageType == messageType);
+                    UndoRedoEntityInfo<TEntity> similarUndoRedoProperty = null;
+                    if (newValue == null)
+                        similarUndoRedoProperty = similarUndoRedoProperties.Where(x => x.OldValue != null).FirstOrDefault(x => x.OldValue.ToString() == oldValue.ToString() && x.NewValue == null);
+                    else
+                        similarUndoRedoProperty = similarUndoRedoProperties.Where(x => x.OldValue != null).FirstOrDefault(x => x.OldValue.ToString() == oldValue.ToString() && x.NewValue.ToString() == newValue.ToString());
+
+                    if (similarUndoRedoProperty != null)
+                        return;
+
+                    UndoList.Add(new UndoRedoEntityInfo<TEntity>(changedEntity, propertyName, oldValue, newValue, ActionId, messageType));
+                    RedoList.Clear();
+                }
+            }
         }
 
         public void AddRedo(TEntity changedEntity, string propertyName, object oldValue, object newValue,
@@ -80,7 +104,7 @@ namespace BaseModel.ViewModel.UndoRedo
         /// </summary>
         public void Undo()
         {
-            _IsInUndoRedoOperation = true;
+            _isUndoing = true;
 
             List<UndoRedoEntityInfo<TEntity>> bulkUndoList = new List<UndoRedoEntityInfo<TEntity>>();
             if (UndoList.Count > 0)
@@ -116,7 +140,7 @@ namespace BaseModel.ViewModel.UndoRedo
 
             BulkFuncUndo?.Invoke(bulkUndoList);
 
-            _IsInUndoRedoOperation = false;
+            _isUndoing = false;
         }
 
         /// <summary>
@@ -129,7 +153,7 @@ namespace BaseModel.ViewModel.UndoRedo
         /// </remarks>
         public void Redo()
         {
-            _IsInUndoRedoOperation = true;
+            _isRedoing = true;
 
             List<UndoRedoEntityInfo<TEntity>> bulkRedoList = new List<UndoRedoEntityInfo<TEntity>>();
             if (RedoList.Count > 0)
@@ -161,8 +185,9 @@ namespace BaseModel.ViewModel.UndoRedo
                             bulkRedoList.Add(item);
                         }
 
-                        // Add the last redo item into undo list
-                        AddUndo(item.ChangedEntity, item.PropertyName, item.OldValue, item.NewValue, item.MessageType);
+                        // Add the last redo item into undo list, add it directly because AddUndo checks for whether it is redoing
+                        UndoList.Add(new UndoRedoEntityInfo<TEntity>(item.ChangedEntity, item.PropertyName, item.OldValue, item.NewValue, ActionId, item.MessageType));
+
                         // Now reset the redo list.
                         UpdateRedoList(redoList);
                     }
@@ -171,7 +196,7 @@ namespace BaseModel.ViewModel.UndoRedo
                 BulkFuncRedo?.Invoke(bulkRedoList);
             }
 
-            _IsInUndoRedoOperation = false;
+            _isRedoing = false;
         }
 
         #endregion
@@ -228,8 +253,10 @@ namespace BaseModel.ViewModel.UndoRedo
         private int _ActionId = 0;
         //allows action id to be paused from increment for bulk operation
         private bool _PauseActionId;
-        //remember not to increment actionId when undo manager is in undo/redo operation
-        private bool _IsInUndoRedoOperation;
+        //describes undo redo manager undo state
+        private bool _isUndoing;
+        //describes undo redo manager redo state
+        private bool _isRedoing;
 
         /// <summary>
         /// Allows action id to be incremented everytime is is retrieved
@@ -238,7 +265,7 @@ namespace BaseModel.ViewModel.UndoRedo
         {
             get
             {
-                if (_IsInUndoRedoOperation)
+                if (IsInUndoRedoOperation)
                 {
                     return _ActionId;
                 }
@@ -266,6 +293,9 @@ namespace BaseModel.ViewModel.UndoRedo
         /// </summary>
         public void PauseActionId()
         {
+            if (IsInUndoRedoOperation)
+                return;
+
             if (!_PauseActionId) //sometimes pause can be called multiple times
                 _ActionId += 1;
 
@@ -290,11 +320,7 @@ namespace BaseModel.ViewModel.UndoRedo
             return _PauseActionId;
         }
 
-        public bool IsInUndoRedoOperation()
-        {
-            return _IsInUndoRedoOperation;
-        }
-
+        public bool IsInUndoRedoOperation => _isUndoing || _isRedoing;
         #endregion
     }
 }

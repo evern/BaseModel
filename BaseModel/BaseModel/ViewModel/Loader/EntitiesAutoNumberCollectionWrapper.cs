@@ -83,7 +83,7 @@ namespace BaseModel.ViewModel.Loader
 
         public bool CanDuplicate()
         {
-            if (MainViewModel == null || DisplaySelectedEntities == null)
+            if (MainViewModel == null || SelectedEntities == null)
                 return false;
 
             return true;
@@ -101,7 +101,7 @@ namespace BaseModel.ViewModel.Loader
                 newEntities.AddRange(currentEnumerationSaveEntities);
             }
 
-            MainViewModel.BulkSave(newEntities);
+            MainViewModel.BaseBulkSave(newEntities);
             _isProcessingMultiple = false;
             MainViewModel.EntitiesUndoRedoManager.UnpauseActionId();
         }
@@ -113,7 +113,7 @@ namespace BaseModel.ViewModel.Loader
             //    MainViewModel.EntitiesUndoRedoManager.PauseActionId();
 
             List<TMainProjectionEntity> newEntities = getNewDuplicateEntities(1, false, MainViewModel.Entities, MainViewModel.SelectedEntities);
-            MainViewModel.BulkSave(newEntities);
+            MainViewModel.BaseBulkSave(newEntities);
 
             //Handled in bulk save
             //foreach (TMainProjectionEntity newEntity in newEntities)
@@ -174,7 +174,7 @@ namespace BaseModel.ViewModel.Loader
                 enumerateNumber += 1;
             }
 
-            MainViewModel.BulkSave(changedEntities);
+            MainViewModel.BaseBulkSave(changedEntities);
         }
 
         private bool _isProcessingMultiple;
@@ -185,7 +185,7 @@ namespace BaseModel.ViewModel.Loader
 
             List<TMainProjectionEntity> newEntities = getNewEntities(1);
             newEntities = concatenateNewEntitiesWithExistingRenameEntities(newEntities);
-            MainViewModel.BulkSave(newEntities);
+            MainViewModel.BaseBulkSave(newEntities);
             if (!_isProcessingMultiple)
                 MainViewModel.EntitiesUndoRedoManager.UnpauseActionId();
         }
@@ -205,7 +205,7 @@ namespace BaseModel.ViewModel.Loader
 
             newEntities = concatenateNewEntitiesWithExistingRenameEntities(newEntities);
 
-            MainViewModel.BulkSave(newEntities);
+            MainViewModel.BaseBulkSave(newEntities);
             _isProcessingMultiple = false;
 
             //Handled in Bulk Save

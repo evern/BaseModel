@@ -200,7 +200,7 @@ namespace BaseModel.ViewModel.Composition
                     bulkSaveAttachmentPermissions.Add(attachmentPermission);
             }
 
-            AttachmentPermissionsViewModel.BulkSave(bulkSaveAttachmentPermissions);
+            AttachmentPermissionsViewModel.BaseBulkSave(bulkSaveAttachmentPermissions);
             RefreshPermissions();
         }
 
@@ -217,7 +217,7 @@ namespace BaseModel.ViewModel.Composition
                     bulkDeleteAttachmentPermissions.Add(attachmentPermission);
             }
 
-            AttachmentPermissionsViewModel.BulkDelete(bulkDeleteAttachmentPermissions);
+            AttachmentPermissionsViewModel.BaseBulkDelete(bulkDeleteAttachmentPermissions);
             RefreshPermissions();
         }
     }

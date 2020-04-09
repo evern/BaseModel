@@ -244,23 +244,20 @@ namespace BaseModel.DataModel
             Action<TProjection, TEntity> applyProjectionPropertiesToEntity, out bool isNewEntity) where TEntity : class
         {
             isNewEntity = false;
-            bool projection = IsProjection<TEntity, TProjection>(projectionEntity);
-            //BaseModel Modification Start
             var projectionPrimaryKey = repository.GetProjectionPrimaryKey(projectionEntity);
-            var isGuidEmpty = projectionPrimaryKey.GetType() == typeof(Guid) && projectionPrimaryKey.ToString() == Guid.Empty.ToString();
-            //BaseModel Modification End
-            TEntity entity = null;
-            if (!isGuidEmpty)
-            {
-                entity = repository.Find(projectionPrimaryKey);
-            }
 
-            if (entity == null || isGuidEmpty)
+            //empty guid must be excluded when finding because during bulk save operation there might be another entity with empty guid already added and waiting to be saved
+            bool isGuidEmpty = projectionPrimaryKey.GetType() == typeof(Guid) && projectionPrimaryKey.ToString() == Guid.Empty.ToString();
+            TEntity entity = null;
+            if(!isGuidEmpty)
+                entity = repository.Find(projectionPrimaryKey);
+
+            if (entity == null)
             {
                 isNewEntity = true;
                 entity = repository.Create();
 
-                if (!projection)
+                if (!IsProjection<TEntity, TProjection>(projectionEntity))
                     DataUtils.ShallowCopy(entity, projectionEntity);
             }
 

@@ -26,6 +26,8 @@ using System.Threading.Tasks;
 using System.Reflection;
 using DevExpress.Xpf.Editors.Settings;
 using DevExpress.Xpf.Grid.LookUp;
+using System.Windows.Forms;
+using DevExpress.Xpf.Grid.TreeList;
 
 namespace BaseModel.ViewModel.Loader
 {
@@ -39,34 +41,30 @@ namespace BaseModel.ViewModel.Loader
         protected EntitiesLoaderDescriptionCollection loaderCollection = null;
         protected EntitiesLoaderDescription<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey, TMainEntityUnitOfWork> mainEntityLoaderDescription;
 
+        /// <summary>
+        /// when grid rows loaded will be handled
+        /// </summary>
+        protected bool isHandleLoadedGridRows;
         public bool IsReadOnly { get; set; }
         protected virtual string readOnlyMessage => string.Empty;
         public CollectionViewModel<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey, TMainEntityUnitOfWork> MainViewModel { get; set; }
         public bool SuppressNotification { get; set; }
         public bool AlwaysSkipMessage { get; set; }
         public string CurrentHWID { get; set; }
+        protected bool stopSubsequentEntitiesLoading;
         //allows view state to interact with OnMainViewModelRefreshed
         protected object onMessageSender;
-        protected Dispatcher mainThreadDispatcher = Application.Current.Dispatcher;
-        private DispatcherTimer selectedEntitiesChangedDispatchTimer;
+        protected Dispatcher mainThreadDispatcher = System.Windows.Application.Current.Dispatcher;
         //so that bulk refresh don't get called multiple times within a short duration
-        DispatcherTimer refreshDispatcherTimer;
-        DispatcherTimer raisePropertyChangeDispatcherTimer;
-        protected Timer postLoadedDispatcherTimer;
-        DispatcherTimer focusNewlyAddedProjectionTimer = new DispatcherTimer();
+        private DispatcherTimer viewRefreshDispatcherTimer;
+        private BackgroundWorker viewRefreshBackgroundWorker;
+        private DispatcherTimer viewRaisePropertyChangeDispatcherTimer;
+        private System.Timers.Timer entitiesLoadedTimer;
         public CollectionViewModelsWrapper()
         {
-            selectedEntitiesChangedDispatchTimer = new DispatcherTimer();
-            selectedEntitiesChangedDispatchTimer.Interval = new TimeSpan(0, 0, 0, 0, 1);
-            focusNewlyAddedProjectionTimer = new DispatcherTimer();
-            focusNewlyAddedProjectionTimer.Interval = new TimeSpan(0, 0, 0, 0, 1);
-
-            refreshBackgroundWorker = new BackgroundWorker();
-            refreshBackgroundWorker.DoWork += refreshBackgroundWorker_DoWork;
-            refreshBackgroundWorker.WorkerSupportsCancellation = true;
-
-            DisplaySelectedEntities = new ObservableCollection<TMainProjectionEntity>();
-            DisplaySelectedEntities.CollectionChanged += DisplaySelectedEntities_CollectionChanged;
+            viewRefreshBackgroundWorker = new BackgroundWorker();
+            viewRefreshBackgroundWorker.DoWork += refreshBackgroundWorker_DoWork;
+            viewRefreshBackgroundWorker.WorkerSupportsCancellation = true;
 
             CurrentHWID = string.Empty;
         }
@@ -108,6 +106,9 @@ namespace BaseModel.ViewModel.Loader
         /// </summary>
         private void loadSubsequentEntitiesCollection()
         {
+            if (stopSubsequentEntitiesLoading)
+                return;
+
             if (loaderCollection == null)
                 return;
 
@@ -151,6 +152,7 @@ namespace BaseModel.ViewModel.Loader
 
         protected void initializeAndLoad()
         {
+            stopSubsequentEntitiesLoading = false;
             MainViewModel = null;
             //CleanUpEntitiesLoader();
             loaderCollection = new EntitiesLoaderDescriptionCollection(this);
@@ -163,19 +165,29 @@ namespace BaseModel.ViewModel.Loader
 
         protected abstract void onAuxiliaryEntitiesCollectionLoaded();
 
-        protected void CreateMainViewModel(
-            IUnitOfWorkFactory<TMainEntityUnitOfWork> unitOfWorkFactory,
-            Func<TMainEntityUnitOfWork, IRepository<TMainEntity, TMainEntityPrimaryKey>> getRepositoryFunc)
+        protected void CreateMainViewModel(IUnitOfWorkFactory<TMainEntityUnitOfWork> unitOfWorkFactory, Func<TMainEntityUnitOfWork, IRepository<TMainEntity, TMainEntityPrimaryKey>> getRepositoryFunc)
         {
-            mainEntityLoaderDescription =
-                new EntitiesLoaderDescription
-                    <TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey, TMainEntityUnitOfWork>(this, 0,
-                        unitOfWorkFactory, getRepositoryFunc, OnMainViewModelLoaded, OnBeforeEntitiesChanged, OnAfterAuxiliaryEntitiesChanged, 
-                        specifyMainViewModelProjection, null, this.AlwaysSkipMessage);
-
+            mainEntityLoaderDescription = new EntitiesLoaderDescription<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey, TMainEntityUnitOfWork>(this, 0, unitOfWorkFactory, getRepositoryFunc, OnMainViewModelLoaded, OnBeforeEntitiesChanged, OnAfterAuxiliaryEntitiesChanged, specifyMainViewModelProjection, null, this.AlwaysSkipMessage);
             MainViewModel = mainEntityLoaderDescription.CreateMainCollectionViewModel();
             MainViewModel.OnAfterSavedSendMessageCallBack = this.OnAfterSavedSendMessage;
             MainViewModel.OnAfterDeletedSendMessageCallBack = this.OnAfterDeletedSendMessage;
+            MainViewModel.SelectedEntities = this.SelectedEntities;
+            MainViewModel.UnifiedValueChangingCallback = this.UnifiedCellValueChanging;
+            MainViewModel.UnifiedValueChangedCallback = this.UnifiedCellValueChanged;
+            MainViewModel.UnifiedNewRowInitialisationFromView = this.UnifiedNewRowInitializationFromView;
+            MainViewModel.UnifiedValueValidationCallback = this.UnifiedValueValidation;
+            MainViewModel.UnifiedValidateRow = this.UnifiedRowValidation;
+            MainViewModel.FullRefreshWithoutClearingUndoRedoCallBack = this.FullRefreshWithoutClearingUndoRedo;
+            MainViewModel.OnBeforeApplyingProjectionPropertiesToEntityIsContinueCallBack = OnBeforeApplyingProjectionPropertiesToEntityIsContinue;
+            MainViewModel.FormatErrorMessagesCallBack = FormatErrorMessages;
+            MainViewModel.OnSelectedEntitiesChangedCallBack = OnSelectedEntitiesChanged;
+
+            //database behaviours
+            MainViewModel.OnBeforeProjectionSaveIsContinueCallBack = OnBeforeProjectionSaveIsContinue;
+            MainViewModel.OnBeforeProjectionDeleteIsContinueCallBack = OnBeforeProjectionDeleteIsContinue;
+            MainViewModel.OnAfterProjectionSavedCallBack = OnAfterProjectionSave;
+            MainViewModel.OnBeforeProjectionsDeleteCallBack = OnBeforeProjectionsDelete;
+            MainViewModel.OnAfterProjectionsDeletedCallBack = OnAfterProjectionsDeleted;
             mainEntityLoaderDescription.LoadMainCollectionViewModel();
         }
 
@@ -192,18 +204,18 @@ namespace BaseModel.ViewModel.Loader
             if (MainViewModel == null)
                 return false;
 
-            refreshDispatcherTimer = new DispatcherTimer();
-            refreshDispatcherTimer.Interval = new TimeSpan(0, 0, 0, 3);
-            raisePropertyChangeDispatcherTimer = new DispatcherTimer();
-            raisePropertyChangeDispatcherTimer.Interval = new TimeSpan(0, 0, 0, 3);
+            viewRefreshDispatcherTimer = new DispatcherTimer();
+            viewRefreshDispatcherTimer.Interval = new TimeSpan(0, 0, 0, 3);
+            viewRaisePropertyChangeDispatcherTimer = new DispatcherTimer();
+            viewRaisePropertyChangeDispatcherTimer.Interval = new TimeSpan(0, 0, 0, 3);
 
             AssignCallBacksAndRaisePropertyChange(entities);
             return true;
         }
 
-        protected bool delayPostLoadedTimer;
         protected virtual void AssignCallBacksAndRaisePropertyChange(IEnumerable<TMainProjectionEntity> entities)
         {
+            MainViewModel.SetParentViewModel(this);
             if (!OnEntitiesLoadedCallBackManualDispose && OnEntitiesLoadedCallBack != null)
             {
                 OnEntitiesLoadedCallBack?.Invoke(entities, OnEntitiesLoadedCallBackRelateParam == null ? null : OnEntitiesLoadedCallBackRelateParam());
@@ -211,49 +223,33 @@ namespace BaseModel.ViewModel.Loader
                 OnEntitiesLoadedCallBackRelateParam = null;
 
                 //Self destruct after entities has been returned
-
                 CleanUpEntitiesLoader();
                 return;
             }
 
-            MainViewModel.OnAfterNewRowAddedCallBack = this.OnAfterNewRowAdded;
-            MainViewModel.SelectedEntities = this.DisplaySelectedEntities;
-            MainViewModel.UnifiedValueChangingCallback = this.UnifiedCellValueChanging;
-            MainViewModel.UnifiedValueChangedCallback = this.UnifiedCellValueChanged;
-            MainViewModel.UnifiedNewRowInitialisationFromView = this.UnifiedNewRowInitializationFromView;
-            MainViewModel.UnifiedValueValidationCallback = this.UnifiedValueValidation;
-            MainViewModel.UnifiedValidateRow = this.UnifiedRowValidation;
-            MainViewModel.FullRefreshWithoutClearingUndoRedoCallBack = this.FullRefreshWithoutClearingUndoRedo;
-            MainViewModel.ApplyProjectionPropertiesToEntityCallBack = ApplyProjectionPropertiesAndCreatedDateToEntity;
-            MainViewModel.FormatErrorMessagesCallBack = FormatErrorMessages;
-
-            //database behaviours
-            MainViewModel.OnBeforeProjectionSaveIsContinueCallBack = OnBeforeProjectionSaveIsContinue;
-            MainViewModel.OnBeforeProjectionDeleteIsContinueCallBack = OnBeforeProjectionDeleteIsContinue;
-            MainViewModel.OnAfterProjectionSavedCallBack = OnAfterProjectionSave;
-            MainViewModel.OnBeforeProjectionsDeleteCallBack = OnBeforeProjectionsDelete;
-            MainViewModel.OnAfterProjectionsDeletedCallBack = OnAfterProjectionsDeleted;
             BackgroundRefresh();
-
-            if(!delayPostLoadedTimer)
+            if(!isHandleLoadedGridRows)
             {
-                postLoadedDispatcherTimer = new Timer();
-                postLoadedDispatcherTimer.Interval = 1500;
-                postLoadedDispatcherTimer.Elapsed += post_loaded_dispatcher_timer_tick;
-                postLoadedDispatcherTimer.Start();
+                onGridRowsLoaded();
             }
         }
 
-        protected void post_loaded_dispatcher_timer_tick(object sender, EventArgs e)
+        protected void onGridRowsLoaded()
         {
-            postLoadedDispatcherTimer.Stop();
+            entitiesLoadedTimer = new System.Timers.Timer();
+            entitiesLoadedTimer.Interval = 1000;
+            entitiesLoadedTimer.Elapsed += entitiesLoadedTimer_Elapsed;
+            entitiesLoadedTimer.Start();
+        }
+
+        protected void entitiesLoadedTimer_Elapsed(object sender, EventArgs e)
+        {
+            entitiesLoadedTimer.Stop();
             if(OnEntitiesLoadedCallBackManualDispose && OnEntitiesLoadedCallBack != null)
             {
                 OnEntitiesLoadedCallBack?.Invoke(MainViewModel.Entities, OnEntitiesLoadedCallBackRelateParam == null ? null : OnEntitiesLoadedCallBackRelateParam());
                 OnEntitiesLoadedCallBack = null;
                 OnEntitiesLoadedCallBackRelateParam = null;
-                
-                //CleanUpEntitiesLoader();
                 return;
             }
 
@@ -262,6 +258,7 @@ namespace BaseModel.ViewModel.Loader
 
         protected bool forceApplyBestFit = false;
         protected bool doNotApplyBestFit = false;
+        bool isLayoutLoaded = false;
         protected virtual void OnAfterAssignedCallbackAndRaisePropertyChanged()
         {
             if (GridControlService != null)
@@ -271,44 +268,29 @@ namespace BaseModel.ViewModel.Loader
                 GridControlService.CombineMasterDetailSearch();
             }
 
-            if(!PersistentLayoutHelper.TryDeserializeLayout(LayoutSerializationService, ViewName))
+            if (!PersistentLayoutHelper.TryDeserializeLayout(LayoutSerializationService, ViewName))
             {
+                isLayoutLoaded = false;
                 if (TableViewService != null)
                 {
                     TableViewService.ApplyDefaultF2Behavior();
 
-                    if(!doNotApplyBestFit)
+                    if (!doNotApplyBestFit)
                         //Do not apply best fit if entities aren't loaded within timeframe
-                        if(forceApplyBestFit || (DisplayEntities != null && DisplayEntities.Count > 0))
+                        if (forceApplyBestFit || (Entities != null && Entities.Count > 0))
                             TableViewService.ApplyBestFit();
                 }
             }
+            else
+                isLayoutLoaded = true;
 
-            if(IsReadOnly)
+            if (IsReadOnly)
                 MessageBoxService.ShowMessage(readOnlyMessage, "Read Only", MessageButton.OK);
         }
 
-        protected void ApplyProjectionPropertiesAndCreatedDateToEntity(TMainProjectionEntity projectionEntity, TMainEntity entity)
+        protected virtual bool OnBeforeApplyingProjectionPropertiesToEntityIsContinue(TMainProjectionEntity projectionEntity, TMainEntity entity)
         {
-            OnBeforeApplyProjectionPropertiesToEntity(projectionEntity, entity);
-            IProjection<TMainEntity> projection = projectionEntity as IProjection<TMainEntity>;
-            if(projection != null)
-            {
-                IHaveCreatedDate iHaveCreatedDateProjectionEntity = projection.Entity as IHaveCreatedDate;
-                if (iHaveCreatedDateProjectionEntity != null)
-                {
-                    //workaround for created because Save() only sets the projection primary key, this is used for property redo where the interceptor only tampers with UPDATED and CREATED is left as null
-                    if (iHaveCreatedDateProjectionEntity.EntityCreatedDate.Date.Year == 1)
-                        iHaveCreatedDateProjectionEntity.EntityCreatedDate = DateTime.Now;
-                }
-
-                DataUtils.ShallowCopy(entity, projection.Entity);
-            }
-        }
-
-        protected virtual void OnBeforeApplyProjectionPropertiesToEntity(TMainProjectionEntity projectionEntity, TMainEntity entity)
-        {
-
+            return true;
         }
 
         IEnumerable<IEntitiesLoaderDescription> compulsoryLoaders { get; set; }
@@ -358,15 +340,15 @@ namespace BaseModel.ViewModel.Loader
             {
                 if (isBulkRefresh)
                 {
-                    refreshDispatcherTimer.Tick -= refreshTimer_Tick;
-                    refreshDispatcherTimer.Tick += refreshTimer_Tick;
-                    refreshDispatcherTimer.Start();
+                    viewRefreshDispatcherTimer.Tick -= refreshTimer_Tick;
+                    viewRefreshDispatcherTimer.Tick += refreshTimer_Tick;
+                    viewRefreshDispatcherTimer.Start();
                 }
                 else
                 {
-                    raisePropertyChangeDispatcherTimer.Tick -= RaisePropertyChangeDispatcherTimer_Tick;
-                    raisePropertyChangeDispatcherTimer.Tick += RaisePropertyChangeDispatcherTimer_Tick;
-                    raisePropertyChangeDispatcherTimer.Start();
+                    viewRaisePropertyChangeDispatcherTimer.Tick -= RaisePropertyChangeDispatcherTimer_Tick;
+                    viewRaisePropertyChangeDispatcherTimer.Tick += RaisePropertyChangeDispatcherTimer_Tick;
+                    viewRaisePropertyChangeDispatcherTimer.Start();
                 }
             }
         }
@@ -425,155 +407,13 @@ namespace BaseModel.ViewModel.Loader
         #endregion
 
         #region Presentation
-        TMainProjectionEntity displaySelectedEntity;
-        public TMainProjectionEntity DisplaySelectedEntity
-        {
-            get
-            {
-                return displaySelectedEntity;
-            }
-            set
-            {
-                displaySelectedEntity = value;
-                OnDisplaySelectedEntityChanged(value);
-            }
-        }
-
-        List<TMainProjectionEntity> newlyAddedProjections;
-        protected virtual void OnAfterNewRowAdded(IEnumerable<TMainProjectionEntity> newItems)
-        {
-            if(newItems.Count() > 0)
-            {
-                if (newlyAddedProjections == null)
-                    newlyAddedProjections = new List<TMainProjectionEntity>();
-
-                newlyAddedProjections.AddRange(newItems);
-                //Uncomment this to allow grid to focus on new row
-                focusNewlyAddedProjectionTimer.Tick -= FocusNewlyAddedProjectionTimer_Tick;
-                focusNewlyAddedProjectionTimer.Tick += FocusNewlyAddedProjectionTimer_Tick;
-                focusNewlyAddedProjectionTimer.Start();
-            }
-        }
-
-        private void FocusNewlyAddedProjectionTimer_Tick(object sender, EventArgs e)
-        {
-            focusNewlyAddedProjectionTimer.Stop();
-            if (DisplayEntities == null || newlyAddedProjections.Count() == 0)
-                return;
-
-            List<TMainProjectionEntity> selectedProjections = new List<TMainProjectionEntity>();
-            var keyPropertyInfo = DataUtils.GetKeyPropertyInfo(typeof(TMainProjectionEntity));
-
-            if(keyPropertyInfo != null)
-            {
-                object findKeyValue = null;
-                if (keyPropertyInfo != null)
-                {
-                    foreach (TMainProjectionEntity newlyAddedProjection in newlyAddedProjections)
-                    {
-                        findKeyValue = keyPropertyInfo.GetValue(newlyAddedProjection);
-                        TMainProjectionEntity actualNewlyAddedProjection = DisplayEntities.FirstOrDefault(x => keyPropertyInfo.GetValue(x).ToString() == findKeyValue.ToString());
-                        if(actualNewlyAddedProjection != null)
-                            selectedProjections.Add(actualNewlyAddedProjection);
-                    }
-                }
-            }
-            else
-            {
-                foreach (TMainProjectionEntity newlyAddedProjection in newlyAddedProjections)
-                {
-                    selectedProjections.Add(newlyAddedProjection);
-                }
-            }
-
-            newlyAddedProjections.Clear();
-            displaySelectedEntities.Clear();
-            foreach(TMainProjectionEntity selectedProjection in selectedProjections)
-            {
-                displaySelectedEntities.Add(selectedProjection);
-            }
-
-            if(selectedProjections.Count > 0)
-            {
-                displaySelectedEntity = selectedProjections.Last();
-                this.RaisePropertyChanged(x => x.DisplaySelectedEntity);
-                this.RaisePropertyChanged(x => x.DisplaySelectedEntities);
-            }
-        }
-
-
-        protected ObservableCollection<TMainProjectionEntity> displaySelectedEntities;
-        public ObservableCollection<TMainProjectionEntity> DisplaySelectedEntities
-        {
-            get
-            {
-                mainThreadDispatcher.BeginInvoke(new Action(() => onBeforeDisplaySelectedEntitiesGet()));
-                return displaySelectedEntities;
-            }
-
-            set { displaySelectedEntities = value; }
-        }
-
-        protected virtual void onBeforeDisplaySelectedEntitiesGet()
-        {
-
-        }
-
-        private BackgroundWorker refreshBackgroundWorker;
-
-        private void DisplaySelectedEntities_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
-        {
-            //multiple selection will call this multiple times. so this is used to remove unecessary calls
-            selectedEntitiesChangedDispatchTimer.Tick -= dispatchTimer_Tick;
-            selectedEntitiesChangedDispatchTimer.Tick += dispatchTimer_Tick;
-            selectedEntitiesChangedDispatchTimer.Start();
-        }
-
-        private void dispatchTimer_Tick(object sender, EventArgs e)
-        {
-            selectedEntitiesChangedDispatchTimer.Stop();
-            OnSelectedEntitiesChanged();
-        }
-
-        protected virtual void OnSelectedEntitiesChanged()
-        {
-
-        }
-
         public virtual void RefreshSelectedEntity()
         {
-            this.RaisePropertyChanged(x => x.DisplaySelectedEntity);
-        }
-
-        public virtual ObservableCollection<TMainProjectionEntity> DisplayEntities
-        {
-            get
-            {
-                if (MainViewModel == null)
-                    return null;
-
-                return MainViewModel.Entities;
-            }
+            this.RaisePropertyChanged(x => x.SelectedEntity);
         }
         #endregion
 
         #region Refresh
-        public virtual bool CanFullRefresh()
-        {
-            return !IsLoading;
-        }
-
-        public virtual void FullRefresh()
-        {
-            if (MainViewModel == null)
-                return;
-
-            //Since notification is turned off full refresh demands reloading entities
-            //MainViewModel.Refresh();
-            ReloadEntitiesCollection();
-            BackgroundRefresh();
-        }
-
         public virtual void FullRefreshWithoutClearingUndoRedo()
         {
             if (MainViewModel == null)
@@ -609,20 +449,20 @@ namespace BaseModel.ViewModel.Loader
         int viewRefreshDelay = 1000;
         protected virtual void BackgroundRefresh()
         {
-            if (refreshBackgroundWorker != null && !refreshBackgroundWorker.IsBusy)
-                refreshBackgroundWorker.RunWorkerAsync();
+            if (viewRefreshBackgroundWorker != null && !viewRefreshBackgroundWorker.IsBusy)
+                viewRefreshBackgroundWorker.RunWorkerAsync();
         }
 
         private void refreshBackgroundWorker_DoWork(object sender, DoWorkEventArgs e)
         {
             System.Threading.Thread.Sleep(viewRefreshDelay);
-            if (refreshBackgroundWorker.CancellationPending)
+            if (viewRefreshBackgroundWorker.CancellationPending)
             {
                 e.Cancel = true;
                 return;
             }
 
-            mainThreadDispatcher.BeginInvoke(new Action(() => this.Refresh()));
+            mainThreadDispatcher.BeginInvoke(new Action(() => this.ViewRefresh()));
         }
 
         protected virtual void onAfterRefresh()
@@ -630,7 +470,7 @@ namespace BaseModel.ViewModel.Loader
 
         }
 
-        public void PreviewKeyDown(KeyEventArgs e)
+        public void PreviewKeyDown(System.Windows.Input.KeyEventArgs e)
         {
             if (e.Key == Key.Enter)
             {
@@ -641,7 +481,7 @@ namespace BaseModel.ViewModel.Loader
             }
         }
 
-        public virtual void Refresh()
+        public virtual void ViewRefresh()
         {
             IPOCOViewModel viewModel = this as IPOCOViewModel;
             if (viewModel != null)
@@ -664,6 +504,320 @@ namespace BaseModel.ViewModel.Loader
 
                 onAfterRefresh();
             }
+
+            this.RaisePropertiesChanged();
+        }
+        #endregion
+
+        #region Grid Proxy
+        protected virtual void OnSelectedEntitiesChanged()
+        {
+            this.RaisePropertyChanged(x => x.SelectedEntities);
+            this.RaisePropertyChanged(x => x.SelectedEntity);
+        }
+
+        /// <summary>
+        /// Fired before cell validation, influence column(s) when changes happens in other column
+        /// </summary>
+        public virtual void CellValueChanging(CellValueChangedEventArgs e)
+        {
+            MainViewModel?.CellValueChanging(e);
+        }
+
+        /// <summary>
+        /// Fired after cell validation, influence column(s) when changes happens in other column
+        /// </summary>
+        public virtual void CellValueChanged(CellValueChangedEventArgs e)
+        {
+            MainViewModel?.CellValueChanged(e);
+        }
+
+        protected ObservableCollection<TMainProjectionEntity> selectedEntities;
+        public ObservableCollection<TMainProjectionEntity> SelectedEntities
+        {
+            get => MainViewModel == null ? null : MainViewModel.SelectedEntities;
+            set
+            {
+                if (MainViewModel != null)
+                    MainViewModel.SelectedEntities = value;
+            }
+        }
+
+        public TMainProjectionEntity SelectedEntity
+        {
+            get => MainViewModel == null ? null : MainViewModel.SelectedEntity;
+            set
+            {
+                if (MainViewModel != null)
+                    MainViewModel.SelectedEntity = value;
+            }
+        }
+
+        public virtual ObservableCollection<TMainProjectionEntity> Entities => MainViewModel == null ? null : MainViewModel.Entities;
+
+        public ScaleTransform Zoom => MainViewModel == null ? null : MainViewModel.Zoom;
+
+        public void ShowPopUp(object sender)
+        {
+            MainViewModel?.ShowPopUp(sender);
+        }
+
+        public void Grid_MouseWheel(MouseWheelEventArgs e)
+        {
+            MainViewModel?.Grid_MouseWheel(e);
+        }
+
+        public string CellValueChangingFieldName => MainViewModel == null ? null : MainViewModel.CellValueChangingFieldName;
+
+        public bool IsPasteCellLevel
+        {
+            get => MainViewModel == null ? false : MainViewModel.IsPasteCellLevel;
+            set
+            {
+                if (MainViewModel != null)
+                {
+                    MainViewModel.IsPasteCellLevel = value;
+                    this.RaisePropertyChanged(x => x.SelectMode);
+                }
+            }
+        }
+
+        public MultiSelectMode SelectMode => MainViewModel == null ? MultiSelectMode.Row : MainViewModel.SelectMode;
+
+        public virtual void ValidateCell(GridCellValidationEventArgs e)
+        {
+            MainViewModel?.ValidateCell(e);
+        }
+
+        public virtual void ValidateRow(GridRowValidationEventArgs e)
+        {
+            MainViewModel?.ValidateRow(e);
+        }
+
+        public void NewRowSave(RowEventArgs e)
+        {
+            MainViewModel?.NewRowSave(e);
+        }
+
+        public virtual void PastingFromClipboard(PastingFromClipboardEventArgs e)
+        {
+            MainViewModel?.PastingFromClipboard(e);
+        }
+
+        public void ShownEditor(EditorEventArgs e)
+        {
+            MainViewModel?.ShownEditor(e);
+        }
+
+        public virtual void TreelistExistingRowSave(TreeListCellValueChangedEventArgs e)
+        {
+            MainViewModel?.TreelistExistingRowSave(e);
+        }
+
+        public virtual void PastingFromClipboardTreeList(PastingFromClipboardEventArgs e)
+        {
+            MainViewModel?.PastingFromClipboardTreeList(e);
+        }
+
+        public bool IsChangingValueFromBackgroundEvents
+        {
+            get => MainViewModel == null ? false : MainViewModel.IsChangingValueFromBackgroundEvents;
+            set
+            {
+                if (MainViewModel != null)
+                    MainViewModel.IsChangingValueFromBackgroundEvents = value;
+            }
+        }
+
+        public void ShowErrorMessage(string dialogTitle, List<ErrorMessage> errorMessages)
+        {
+            if (MainViewModel == null)
+                return;
+
+            MainViewModel.ShowErrorMessage(dialogTitle, errorMessages);
+        }
+        #endregion
+
+        #region Button Commands
+        public virtual bool CanFullRefresh()
+        {
+            return !IsLoading && MainViewModel != null;
+        }
+
+        public virtual void FullRefresh()
+        {
+            //don't have to call this because it's not going to be called from the background by user interaction, i.e. Undo/Redo
+            //if (!CanFullRefresh())
+            //    return;
+
+            if (!stopSubsequentEntitiesLoading && MainViewModel == null)
+                return;
+
+            ReloadEntitiesCollection();
+            BackgroundRefresh();
+        }
+
+        protected virtual void onBeforeReloadingEntitiesCollection()
+        {
+
+        }
+
+        public virtual bool CanSaveLayout()
+        {
+            return !IsLoading;
+        }
+
+        public void SaveLayout()
+        {
+            isLayoutLoaded = true;
+            PersistentLayoutHelper.TrySerializeLayout(LayoutSerializationService, ViewName);
+            PersistentLayoutHelper.SaveLayout();
+        }
+
+        public virtual bool CanResetLayout()
+        {
+            return !IsLoading && isLayoutLoaded;
+        }
+
+        public void ResetLayout()
+        {
+            if (MessageBoxService.ShowMessage(CommonResources.Confirmation_ResetLayout, CommonResources.Confirmation_Caption, MessageButton.YesNo) != MessageResult.Yes)
+                return;
+
+            isLayoutLoaded = false;
+            PersistentLayoutHelper.ResetLayout(ViewName);
+        }
+
+        public virtual bool CanCopyWithHeader()
+        {
+            return !IsLoading && GridControlService != null;
+        }
+
+        public virtual void CopyWithHeader()
+        {
+            GridControlService.CopyWithHeader();
+        }
+
+        public bool CanExpandAllGroups()
+        {
+            return !IsLoading && GridControlService != null && GridControlService.GridControl.IsGrouped;
+        }
+
+        public virtual void ExpandAllGroups()
+        {
+            GridControlService.ExpandAllGroups();
+        }
+
+        public bool CanCollapseAllGroups()
+        {
+            return !IsLoading && GridControlService != null && GridControlService.GridControl.IsGrouped;
+        }
+
+        public virtual void CollapseAllGroups()
+        {
+            GridControlService.CollapseAllGroups();
+        }
+
+        public virtual bool CanBulkDelete()
+        {
+            return !IsLoading && MainViewModel != null;
+        }
+
+        public virtual void BulkDelete()
+        {
+            MainViewModel?.BulkDelete();
+        }
+
+        public virtual bool CanUndo()
+        {
+            return !IsLoading && MainViewModel != null && MainViewModel.CanUndo();
+        }
+
+        public virtual void Undo()
+        {
+            if (!CanUndo())
+                return;
+
+            MainViewModel?.Undo();
+        }
+
+        public virtual bool CanRedo()
+        {
+            return !IsLoading && MainViewModel != null && MainViewModel.CanRedo();
+        }
+
+        public virtual void Redo()
+        {
+            if (!CanRedo())
+                return;
+
+            MainViewModel?.Redo();
+        }
+
+        public virtual bool CanKeyboardCopy()
+        {
+            return !IsLoading;
+        }
+
+        public virtual void KeyboardCopy()
+        {
+            if (!CanKeyboardCopy())
+                return;
+
+            SendKeys.SendWait("^c");
+        }
+
+        public virtual bool CanKeyboardPaste()
+        {
+            return !IsLoading;
+        }
+
+        public virtual void KeyboardPaste()
+        {
+            if (!CanKeyboardPaste())
+                return;
+
+            SendKeys.SendWait("^v");
+        }
+
+        public virtual bool CanDeleteCellContent(GridControl gridControl)
+        {
+            return !IsLoading;
+        }
+
+        public virtual void DeleteCellContent(GridControl gridControl)
+        {
+            MainViewModel?.DeleteCellContent(gridControl);
+        }
+
+        public virtual bool CanBulkColumnEdit(object button)
+        {
+            return !IsLoading && MainViewModel != null && MainViewModel.CanBulkColumnEdit(button);
+        }
+
+        public virtual void BulkColumnEdit(object button)
+        {
+            MainViewModel?.BulkColumnEdit(button);
+        }
+
+        public virtual bool CanFillUp(object button)
+        {
+            return !IsLoading && MainViewModel != null && MainViewModel.CanFillUp(button);
+        }
+
+        public virtual void FillUp(object button)
+        {
+            MainViewModel?.FillUp(button);
+        }
+
+        public virtual bool CanFillDown(object button)
+        {
+            return !IsLoading && MainViewModel != null && MainViewModel.CanFillDown(button);
+        }
+
+        public virtual void FillDown(object button)
+        {
+            MainViewModel?.FillDown(button);
         }
         #endregion
 
@@ -686,23 +840,32 @@ namespace BaseModel.ViewModel.Loader
             //PersistentLayoutHelper.TryDeserializeLayout(LayoutSerializationService, ViewName);
         }
 
+        private bool? isLoading;
         public bool IsLoading
         {
             get
             {
                 if (this.IsInDesignMode())
                     return true;
+
+                if (isLoading != null && (bool)isLoading)
+                    return true;
+
                 if (MainViewModel == null)
                     return true;
 
                 //assuming RaisePropertyChanged will be always be called upon on MainViewModel entities loaded
-                return false;
+                return MainViewModel.IsLoading;
+            }
+            set
+            {
+                isLoading = value;
             }
         }
 
         protected virtual void OnClose(CancelEventArgs e)
         {
-            refreshBackgroundWorker.CancelAsync();
+            viewRefreshBackgroundWorker.CancelAsync();
         }
 
         void IDocumentContent.OnClose(CancelEventArgs e)
@@ -762,6 +925,11 @@ namespace BaseModel.ViewModel.Loader
             return "grid_export";
         }
 
+        public virtual bool CanExportToExcel()
+        {
+            return !IsLoading;
+        }
+
         protected bool isExcelExportDataAware = true;
         public virtual void ExportToExcel()
         {
@@ -776,6 +944,11 @@ namespace BaseModel.ViewModel.Loader
             }
         }
 
+        public virtual bool CanExportToPDF()
+        {
+            return !IsLoading;
+        }
+
         public virtual void ExportToPDF()
         {
             string ResultPath = string.Empty;
@@ -787,21 +960,6 @@ namespace BaseModel.ViewModel.Loader
                 if (!result)
                     MessageBoxService.ShowMessage("Export failed because the file is in use");
             }
-        }
-
-        public virtual void CopyWithHeader()
-        {
-            GridControlService.CopyWithHeader();
-        }
-
-        public virtual void ExpandAllGroups()
-        {
-            GridControlService.ExpandAllGroups();
-        }
-
-        public virtual void CollapseAllGroups()
-        {
-            GridControlService.CollapseAllGroups();
         }
         #endregion
 
@@ -850,21 +1008,7 @@ namespace BaseModel.ViewModel.Loader
         public bool InViewModelOnlyMode { get; set; }
         #endregion
 
-        #region Layout
-        public void SaveLayout()
-        {
-            PersistentLayoutHelper.TrySerializeLayout(LayoutSerializationService, ViewName);
-            PersistentLayoutHelper.SaveLayout();
-        }
-
-        public void ResetLayout()
-        {
-            if (MessageBoxService.ShowMessage(CommonResources.Confirmation_ResetLayout, CommonResources.Confirmation_Caption, MessageButton.YesNo) != MessageResult.Yes)
-                return;
-
-            PersistentLayoutHelper.ResetLayout(ViewName);
-        }
-
+        #region Messages
         /// <summary>
         /// for sending signalR deleted message
         /// </summary>
@@ -912,6 +1056,11 @@ namespace BaseModel.ViewModel.Loader
         #endregion
 
         #region View Behavior
+        public bool CanCustomColumnGroup(CustomColumnSortEventArgs e)
+        {
+            return !IsLoading;
+        }
+
         /// <summary>
         /// Resolve problem in the view group value repeats itself
         /// </summary>
@@ -924,44 +1073,6 @@ namespace BaseModel.ViewModel.Loader
                 int res = Comparer.Default.Compare(first_department_string, second_department_string);
                 e.Result = res;
                 e.Handled = true;
-            }
-        }
-
-        protected bool disable_immediate_post;
-        /// <summary>
-        /// Fired before cell validation, influence column(s) when changes happens in other column
-        /// </summary>
-        public virtual void CellValueChanging(CellValueChangedEventArgs e)
-        {
-            if (e.RowHandle == GridControl.AutoFilterRowHandle)
-                return;
-
-            if(!e.Handled)
-            {
-                MainViewModel.EntitiesUndoRedoManager.PauseActionId();
-                UnifiedCellValueChanging(e.Column.FieldName, e.OldValue, e.Value, (TMainProjectionEntity)e.Row, e.RowHandle == DataControlBase.NewItemRowHandle);
-                //will be unpaused in existingrow or newrow save
-            }
-
-            //so users don't have to exit cell for changes on checkboxes to happen
-
-            if (!disable_immediate_post && e.RowHandle != DataControlBase.NewItemRowHandle)
-                CellValueChangedImmediatePost(e);
-        }
-
-        /// <summary>
-        /// Fired after cell validation, influence column(s) when changes happens in other column
-        /// </summary>
-        public virtual void CellValueChanged(CellValueChangedEventArgs e)
-        {
-            if (e.RowHandle == GridControl.AutoFilterRowHandle)
-                return;
-
-            if (!e.Handled)
-            {
-                MainViewModel.EntitiesUndoRedoManager.PauseActionId();
-                UnifiedCellValueChanged(e.Column.FieldName, e.OldValue, e.Value, (TMainProjectionEntity)e.Row, e.RowHandle == DataControlBase.NewItemRowHandle);
-                //will be unpaused in existingrow or newrow save
             }
         }
 

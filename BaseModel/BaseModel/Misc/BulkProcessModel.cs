@@ -9,7 +9,7 @@ namespace BaseModel.Misc
     public class BulkProcessModel<TProjection, TEntity>
     {
         public TProjection Projection { get; set; }
-        public TEntity Entity { get; set; }
+        public TEntity RepositoryEntity { get; set; }
         public bool IsNewEntity { get; set; }
     }
 }

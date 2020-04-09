@@ -103,35 +103,35 @@ namespace BaseModel.ViewModel.Loader
         #endregion
 
         private List<Guid> restoreMainExpandedGuids = new List<Guid>();
-        ObservableCollection<TStaticEntity> displayEntities;
-        public override ObservableCollection<TStaticEntity> DisplayEntities
+        ObservableCollection<TStaticEntity> entities;
+        public override ObservableCollection<TStaticEntity> Entities
         {
             get
             {
                 if (MainViewModel == null)
                     return null;
 
-                if (displayEntities == null)
+                if (entities == null)
                 {
-                    displayEntities = new ObservableCollection<TStaticEntity>();
+                    entities = new ObservableCollection<TStaticEntity>();
                     var staticEntities = MainViewModel.Entities.Where(x => x.IsLast).OrderBy(x => x.DisplayNumber);
                     var mainEntities = main_entities;
                     var childEntities = child_entities;
                     foreach(var staticEntity in staticEntities)
                     {
-                        displayEntities.Add(staticEntity);
+                        entities.Add(staticEntity);
                     }
 
-                    foreach(var displayEntity in displayEntities)
+                    foreach(var entity in entities)
                     {
-                        IEnumerable<TMainEntity> currentMainProjectionEntities = mainEntities.Where(y => y.ParentEntityKey == displayEntity.GUID);
+                        IEnumerable<TMainEntity> currentMainProjectionEntities = mainEntities.Where(y => y.ParentEntityKey == entity.GUID);
                         foreach(var currentMainProjectionEntity in currentMainProjectionEntities)
                         {
-                            displayEntity.DetailEntities.Add(currentMainProjectionEntity);
+                            entity.DetailEntities.Add(currentMainProjectionEntity);
                         }
                     }
 
-                    IEnumerable<TMainEntity> mainProjectionEntities = displayEntities.SelectMany(x => x.DetailEntities);
+                    IEnumerable<TMainEntity> mainProjectionEntities = entities.SelectMany(x => x.DetailEntities);
                     foreach (var parentEntity in mainProjectionEntities)
                     {
                         IEnumerable<TChildEntity> currentChildEntities = childEntities.Where(y => y.ParentEntityKey == parentEntity.GUID);
@@ -142,7 +142,7 @@ namespace BaseModel.ViewModel.Loader
                     }
                 }
 
-                return displayEntities;
+                return entities;
             }
         }
 
@@ -158,13 +158,13 @@ namespace BaseModel.ViewModel.Loader
         #region View Refresh
         public override void OnAfterAuxiliaryEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender, bool isBulkRefresh)
         {
-            mainThreadDispatcher.BeginInvoke(new Action(() => refreshDisplayEntities()));
+            mainThreadDispatcher.BeginInvoke(new Action(() => refreshEntities()));
         }
 
-        private void refreshDisplayEntities()
+        private void refreshEntities()
         {
-            displayEntities = null;
-            this.RaisePropertyChanged(x => x.DisplayEntities);
+            entities = null;
+            this.RaisePropertyChanged(x => x.Entities);
             onAfterRefresh();
         }
 
@@ -173,8 +173,8 @@ namespace BaseModel.ViewModel.Loader
         //public Action<TMainProjectionEntity> SetIsRowExpanded;
         protected override void onAfterRefresh()
         {
-            if(DisplayEntities != null)
-                foreach (var entity in DisplayEntities)
+            if(Entities != null)
+                foreach (var entity in Entities)
                 {
                     GridControlService.SetRowExpandedByColumnValue(expand_key_field_name, entity);
                 }
