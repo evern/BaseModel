@@ -20,6 +20,11 @@ namespace BaseModel.DataModel
         /// Checks if the unit of work is tracking any new, deleted, or changed entities or relationships that will be sent to the store if SaveChanges() is called.
         /// </summary>
         bool HasChanges();
+
+        /// <summary>
+        /// Allow change tracking to be enabled/disabled
+        /// </summary>
+        void AutoDetectChangesEnabled(bool autoDetectChangesEnabled);
     }
 
     /// <summary>

@@ -67,5 +67,10 @@ namespace BaseModel.DataModel.EntityFramework
                 GetRepositoryCore<IReadOnlyRepository<TEntity>, TEntity>(
                     () => new DbReadOnlyRepository<TEntity, TContext>(this, dbSetAccessor));
         }
+
+        public void AutoDetectChangesEnabled(bool autoDetectChangesEnabled)
+        {
+            Context.Configuration.AutoDetectChangesEnabled = autoDetectChangesEnabled;
+        }
     }
 }

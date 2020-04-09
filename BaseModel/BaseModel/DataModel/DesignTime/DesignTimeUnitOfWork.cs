@@ -34,5 +34,9 @@ namespace BaseModel.DataModel.DesignTime
                 GetRepositoryCore<IReadOnlyRepository<TEntity>, TEntity>(
                     () => new DesignTimeReadOnlyRepository<TEntity>(this));
         }
+
+        public void AutoDetectChangesEnabled(bool autoDetectChangesEnabled)
+        {
+        }
     }
 }
