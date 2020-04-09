@@ -219,11 +219,15 @@ namespace BaseModel.ViewModel.Base
                 canUpdateEntity?.Update();
             }
 
-            BaseBulkSave(bulkSaveProperties.Select(x => x.ChangedEntity));
-            BaseBulkSave(bulkAddProperties.Select(x => x.ChangedEntity));
+            List<UndoRedoEntityInfo<TProjection>> bulkSaveOperationEntities = new List<UndoRedoEntityInfo<TProjection>>();
+            bulkSaveOperationEntities.AddRange(bulkSaveProperties);
+            bulkSaveOperationEntities.AddRange(bulkAddProperties);
+            if (bulkSaveOperationEntities.Count > 0)
+                BaseBulkSave(bulkSaveOperationEntities.Select(x => x.ChangedEntity));
 
             //use ignore refresh here because it'll be refreshed in basebulksave
-            BaseBulkDelete(bulkDeleteProperties.Select(x => x.ChangedEntity));
+            if (bulkDeleteProperties.Count() > 0)
+                BaseBulkDelete(bulkDeleteProperties.Select(x => x.ChangedEntity));
 
             IsChangingValueFromBackgroundEvents = false;
         }
@@ -251,11 +255,16 @@ namespace BaseModel.ViewModel.Base
                 canUpdateEntity?.Update();
             }
 
-            BaseBulkSave(bulkAddProperties.Select(x => x.ChangedEntity));
-            BaseBulkSave(bulkSaveProperties.Select(x => x.ChangedEntity));
+            List<UndoRedoEntityInfo<TProjection>> bulkSaveOperationEntities = new List<UndoRedoEntityInfo<TProjection>>();
+            bulkSaveOperationEntities.AddRange(bulkSaveProperties);
+            bulkSaveOperationEntities.AddRange(bulkAddProperties);
 
-            //use ignore refresh here because it'll be refreshed in basebulksave
-            BaseBulkDelete(bulkDeleteProperties.Select(x => x.ChangedEntity));
+            if(bulkSaveOperationEntities.Count > 0)
+                BaseBulkSave(bulkSaveOperationEntities.Select(x => x.ChangedEntity));
+
+            if (bulkDeleteProperties.Count() > 0)
+                //use ignore refresh here because it'll be refreshed in basebulksave
+                BaseBulkDelete(bulkDeleteProperties.Select(x => x.ChangedEntity));
 
             IsChangingValueFromBackgroundEvents = false;
         }

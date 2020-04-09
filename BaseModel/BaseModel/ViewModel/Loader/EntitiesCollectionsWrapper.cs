@@ -186,6 +186,7 @@ namespace BaseModel.ViewModel.Loader
             MainViewModel.OnBeforeProjectionSaveIsContinueCallBack = OnBeforeProjectionSaveIsContinue;
             MainViewModel.OnBeforeProjectionDeleteIsContinueCallBack = OnBeforeProjectionDeleteIsContinue;
             MainViewModel.OnAfterProjectionSavedCallBack = OnAfterProjectionSave;
+            MainViewModel.OnAfterProjectionsSavedCallBack = OnAfterProjectionsSave;
             MainViewModel.OnBeforeProjectionsDeleteCallBack = OnBeforeProjectionsDelete;
             MainViewModel.OnAfterProjectionsDeletedCallBack = OnAfterProjectionsDeleted;
             mainEntityLoaderDescription.LoadMainCollectionViewModel();
@@ -1050,6 +1051,11 @@ namespace BaseModel.ViewModel.Loader
         }
 
         protected virtual void OnAfterProjectionSave(TMainProjectionEntity projection, TMainEntity entity, bool isNew)
+        {
+
+        }
+
+        protected virtual void OnAfterProjectionsSave(IEnumerable<TMainProjectionEntity> projections)
         {
 
         }

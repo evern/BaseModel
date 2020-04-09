@@ -70,6 +70,11 @@ namespace BaseModel.ViewModel.Base
         public Action<TProjection, TEntity, bool> OnAfterProjectionSavedCallBack;
 
         /// <summary>
+        /// Allow unit of work to bulk save on db saves skip operation
+        /// </summary>
+        public Action<IEnumerable<TProjection>> OnAfterProjectionsSavedCallBack;
+
+        /// <summary>
         /// For detail validation on whether deletion can continue
         /// </summary>
         public delegate OperationInterceptMode EntityDeleteDelegate(TProjection projection, out List<ErrorMessage> errorMessages);
@@ -406,7 +411,7 @@ namespace BaseModel.ViewModel.Base
                             Entities.Remove(bulkProcessModel.Projection);
                     }
 
-                    if(!skipDbSave)
+                    if(bulkProcessModels.Count > 0 && !skipDbSave)
                     {
                         var primaryKey = Repository.GetProjectionPrimaryKey(bulkProcessModel.Projection);
                         var entity = Repository.Find(primaryKey);
@@ -674,7 +679,7 @@ namespace BaseModel.ViewModel.Base
 
             bool isError = false;
             //perform after save operation to map primary key back to TEntity
-            if(!skipDbSave)
+            if(bulkProcessModels.Count > 0 && !skipDbSave)
             {
                 try
                 {
@@ -698,7 +703,8 @@ namespace BaseModel.ViewModel.Base
                 }
             }
 
-            if(!isError)
+            OnAfterProjectionsSavedCallBack?.Invoke(bulkProcessModels.Select(x => x.Projection));
+            if (!isError)
             {
                 OnAfterNewProjectionsAdded(newlyAddedProjections);
                 if (doNotRefresh)
