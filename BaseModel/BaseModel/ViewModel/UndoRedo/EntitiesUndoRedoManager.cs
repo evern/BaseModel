@@ -70,7 +70,7 @@ namespace BaseModel.ViewModel.UndoRedo
             {
                 if(!ExceptionFieldNames.Any(x => x == propertyName))
                 {
-                    if (oldValue == null && newValue == null)
+                    if (oldValue == null && newValue == null && messageType != EntityMessageType.Added)
                         return;
 
                     if ((oldValue != null && newValue != null) && oldValue.ToString() == newValue.ToString())
