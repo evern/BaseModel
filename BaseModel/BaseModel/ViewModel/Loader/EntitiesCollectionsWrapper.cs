@@ -274,7 +274,7 @@ namespace BaseModel.ViewModel.Loader
                 isLayoutLoaded = false;
                 if (TableViewService != null)
                 {
-                    TableViewService.ApplyDefaultF2Behavior();
+                    //TableViewService.ApplyDefaultF2Behavior();
 
                     if (!doNotApplyBestFit)
                         //Do not apply best fit if entities aren't loaded within timeframe

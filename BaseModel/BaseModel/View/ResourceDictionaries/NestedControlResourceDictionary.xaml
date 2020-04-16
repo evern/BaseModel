@@ -48,7 +48,6 @@
         <Setter Property="ShowSearchPanelMode" Value="Always" />
         <Setter Property="SearchDelay" Value="0" />
         <Setter Property="AllowScrollAnimation" Value="True" />
-        <Setter Property="ShowAutoFilterRow" Value="True" />
         <Setter Property="ShowCriteriaInAutoFilterRow" Value="True" />
     </Style>
     <Style x:Key="NestedMasterDetailGridControlTemplate" TargetType="{x:Type dxg:GridControl}">

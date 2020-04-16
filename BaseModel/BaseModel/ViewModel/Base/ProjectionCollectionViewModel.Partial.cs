@@ -1359,12 +1359,14 @@ namespace BaseModel.ViewModel.Base
 
         //Indicate that paste data will not have carriage return in cells, to improve paste data accuracy
         public bool UseRegularSplitting;
+
         /// <summary>
         /// Converts clipboard text into entity values and saves to database
         /// </summary>
         /// <param name="e"></param>
         public virtual void PastingFromClipboard(PastingFromClipboardEventArgs e)
         {
+            IsPasting = true;
             IsChangingValueFromBackgroundEvents = true;
             bool shouldSkip = false;
             var gridControl = (GridControl)e.Source;
@@ -1451,6 +1453,7 @@ namespace BaseModel.ViewModel.Base
             }
 
             IsChangingValueFromBackgroundEvents = false;
+            IsPasting = false;
         }
 
         /// <summary>

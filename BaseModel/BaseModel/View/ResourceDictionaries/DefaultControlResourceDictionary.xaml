@@ -414,7 +414,6 @@
     <Style x:Key="DefaultMinimalTableViewTemplate" TargetType="{x:Type dxg:TableView}">
         <Setter Property="ScrollBarAnnotationMode" Value="All" />
         <Setter Property="GroupSummaryDisplayMode" Value="AlignByColumns" />
-        <Setter Property="ColumnFilterPopupMode" Value="ExcelSmart" />
         <Setter Property="AllowPerPixelScrolling" Value="False" />
         <Setter Property="AllowScrollAnimation" Value="False" />
         <Setter Property="AllowHorizontalScrollingVirtualization" Value="False" />
@@ -425,7 +424,6 @@
         <Setter Property="ShowSearchPanelMode" Value="Default" />
         <Setter Property="SearchDelay" Value="0" />
         <Setter Property="AllowScrollAnimation" Value="True" />
-        <Setter Property="ShowAutoFilterRow" Value="True" />
         <Setter Property="ShowCriteriaInAutoFilterRow" Value="True" />
         <Setter Property="ShowFixedTotalSummary" Value="False" />
         <Setter Property="ShowTotalSummary" Value="True" />
@@ -455,7 +453,6 @@
                 </DataTemplate>
             </Setter.Value>
         </Setter>
-        <Setter Property="ColumnFilterPopupMode" Value="ExcelSmart" />
         <Setter Property="ScrollBarAnnotationMode" Value="All" />
         <Setter Property="ShowTotalSummary" Value="True" />
         <Setter Property="GroupSummaryDisplayMode" Value="AlignByColumns" />
@@ -470,7 +467,6 @@
         <Setter Property="ShowSearchPanelMode" Value="Default" />
         <Setter Property="SearchDelay" Value="0" />
         <Setter Property="AllowScrollAnimation" Value="True" />
-        <Setter Property="ShowAutoFilterRow" Value="True" />
         <Setter Property="ShowCriteriaInAutoFilterRow" Value="True" />
         <Setter Property="ShowFixedTotalSummary" Value="False" />
         <Setter Property="UseLightweightTemplates" Value="All" />
@@ -507,7 +503,6 @@
         <Setter Property="ShowSearchPanelMode" Value="Default" />
         <Setter Property="SearchDelay" Value="0" />
         <Setter Property="AllowScrollAnimation" Value="True" />
-        <Setter Property="ShowAutoFilterRow" Value="True" />
         <Setter Property="ShowCriteriaInAutoFilterRow" Value="True" />
         <Setter Property="ShowFixedTotalSummary" Value="False" />
         <Setter Property="UseLightweightTemplates" Value="All" />
@@ -544,7 +539,6 @@
         <Setter Property="ShowSearchPanelMode" Value="Default" />
         <Setter Property="SearchDelay" Value="0" />
         <Setter Property="AllowScrollAnimation" Value="True" />
-        <Setter Property="ShowAutoFilterRow" Value="True" />
         <Setter Property="ShowCriteriaInAutoFilterRow" Value="True" />
         <Setter Property="ShowFixedTotalSummary" Value="False" />
         <Setter Property="UseLightweightTemplates" Value="All" />
@@ -640,7 +634,6 @@
         <Setter Property="ShowSearchPanelMode" Value="Default" />
         <Setter Property="SearchDelay" Value="0" />
         <Setter Property="AllowScrollAnimation" Value="True" />
-        <Setter Property="ShowAutoFilterRow" Value="True" />
         <Setter Property="ShowCriteriaInAutoFilterRow" Value="True" />
         <Setter Property="ShowFixedTotalSummary" Value="False" />
         <Setter Property="AllowSorting" Value="True" />
@@ -667,7 +660,6 @@
         <Setter Property="ShowSearchPanelMode" Value="Default" />
         <Setter Property="SearchDelay" Value="0" />
         <Setter Property="AllowScrollAnimation" Value="True" />
-        <Setter Property="ShowAutoFilterRow" Value="True" />
         <Setter Property="ShowCriteriaInAutoFilterRow" Value="True" />
         <Setter Property="ShowFixedTotalSummary" Value="False" />
         <Setter Property="AllowSorting" Value="True" />
@@ -694,7 +686,6 @@
         <Setter Property="ShowSearchPanelMode" Value="Default" />
         <Setter Property="SearchDelay" Value="0" />
         <Setter Property="AllowScrollAnimation" Value="True" />
-        <Setter Property="ShowAutoFilterRow" Value="True" />
         <Setter Property="ShowCriteriaInAutoFilterRow" Value="True" />
         <Setter Property="ShowFixedTotalSummary" Value="False" />
         <Setter Property="AllowSorting" Value="True" />

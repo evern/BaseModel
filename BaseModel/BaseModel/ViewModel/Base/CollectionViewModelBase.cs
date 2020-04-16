@@ -131,6 +131,8 @@ namespace BaseModel.ViewModel.Base
         private DispatcherTimer selectedEntitiesChangedDispatchTimer;
         protected System.Timers.Timer postLoadedTimer;
         DispatcherTimer focusNewlyAddedProjectionTimer = new DispatcherTimer();
+        //indicate that pasting is in effect, so add newly committed entities manually
+        public bool IsPasting;
         #endregion
         #endregion
 
@@ -146,7 +148,7 @@ namespace BaseModel.ViewModel.Base
             SelectedEntities = new ObservableCollection<TProjection>();
             selectedentities.CollectionChanged += DelayedOnSelectedEntitiesChanged;
             selectedEntitiesChangedDispatchTimer = new DispatcherTimer();
-            selectedEntitiesChangedDispatchTimer.Interval = new TimeSpan(0, 0, 0, 0, 1);
+            selectedEntitiesChangedDispatchTimer.Interval = new TimeSpan(0, 0, 0, 0, 300);
             focusNewlyAddedProjectionTimer = new DispatcherTimer();
             focusNewlyAddedProjectionTimer.Interval = new TimeSpan(0, 0, 0, 0, 1);
         }
@@ -625,7 +627,7 @@ namespace BaseModel.ViewModel.Base
                         {
                             AddUndoBeforeEntityAdded(bulkProcessModel.Projection);
                             newlyAddedProjections.Add(bulkProcessModel.Projection);
-                            if (IsInUndoRedoOperation())
+                            if (!IsInUndoRedoOperation() && IsPasting)
                             {
                                 Entities.Add(bulkProcessModel.Projection);
                             }
@@ -639,7 +641,9 @@ namespace BaseModel.ViewModel.Base
                         {
                             AddUndoBeforeEntityAdded(bulkProcessModel.Projection);
                             newlyAddedProjections.Add(bulkProcessModel.Projection);
-                            if (IsInUndoRedoOperation())
+
+                            //because this doesn't go through normal messaging mechanism to add new entities, add it manually here
+                            if (!IsInUndoRedoOperation() && IsPasting)
                             {
                                 Entities.Add(bulkProcessModel.Projection);
                             }

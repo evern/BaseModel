@@ -35,7 +35,6 @@ namespace BaseModel.ViewModel.Services
         IEnumerable<object> GetVisibleRowObjects();
         void HighlightIncorrectText(SpellChecker spellChecker);
         void SetExcelFilterPopUpMode();
-        void SetGridColumnSortMode();
         void ClearSorting();
         void ClearGrouping();
         void SortBy(string fieldName);
@@ -246,16 +245,24 @@ namespace BaseModel.ViewModel.Services
 
             GridControl.FilterCriteria = null;
         }
-
         public void SetExcelFilterPopUpMode()
         {
             if (GridControl == null)
                 return;
 
-            foreach(GridColumn grid_column in GridControl.Columns)
+            foreach (GridColumn grid_column in GridControl.Columns)
             {
-                if(grid_column.FilterPopupMode == FilterPopupMode.Default)
-                    grid_column.FilterPopupMode = FilterPopupMode.Excel;
+                DateEditSettings dateEditSettings = grid_column.EditSettings as DateEditSettings;
+                if (dateEditSettings != null)
+                {
+                    grid_column.FilterPopupMode = FilterPopupMode.DateSmart;
+                }
+
+                SpinEditSettings spinEditSettings = grid_column.EditSettings as SpinEditSettings;
+                if(spinEditSettings != null)
+                {
+                    grid_column.CustomColumnFilterPopupTemplate = Application.Current.Resources["RangeFilterTemplate"] as DataTemplate;
+                }
             }
         }
 
@@ -289,17 +296,6 @@ namespace BaseModel.ViewModel.Services
                 return;
 
             GridControl.GroupBy(fieldName);
-        }
-
-        public void SetGridColumnSortMode()
-        {
-            if (GridControl == null)
-                return;
-
-            foreach (GridColumn grid_column in GridControl.Columns)
-            {
-                grid_column.SortMode = DevExpress.XtraGrid.ColumnSortMode.DisplayText;
-            }
         }
 
         public void SetRowExpandedByColumnValue(string field_name, IHaveExpandState row)
