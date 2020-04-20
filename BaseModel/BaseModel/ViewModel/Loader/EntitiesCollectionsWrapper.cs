@@ -216,6 +216,7 @@ namespace BaseModel.ViewModel.Loader
 
         protected virtual void AssignCallBacksAndRaisePropertyChange(IEnumerable<TMainProjectionEntity> entities)
         {
+            isFirstLoaded = true;
             MainViewModel.SetParentViewModel(this);
             if (!OnEntitiesLoadedCallBackManualDispose && OnEntitiesLoadedCallBack != null)
             {
@@ -837,7 +838,6 @@ namespace BaseModel.ViewModel.Loader
         protected bool isFirstLoaded;
         public virtual void OnLoaded()
         {
-            isFirstLoaded = true;
             //PersistentLayoutHelper.TryDeserializeLayout(LayoutSerializationService, ViewName);
         }
 
