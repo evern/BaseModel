@@ -94,8 +94,6 @@ namespace BaseModel.View.Behaviors
             foreach (GridColumn detailCol in detailView.VisibleColumns)
             {
                 GridColumn masterCol = null;
-                //if (detailCol.VisibleIndex >= 0 && detailCol.VisibleIndex < masterView.VisibleColumns.Count)
-                //masterCol = masterView.VisibleColumns[detailCol.VisibleIndex];
 
                 if (detailCol.HeaderCaption.ToString() != string.Empty)
                 {
@@ -107,9 +105,6 @@ namespace BaseModel.View.Behaviors
 
                 IEnumerable<GridColumn> masterColumnsWithoutChild = masterView.VisibleColumns.Where(x => !detailView.VisibleColumns.Any(y => y.HeaderCaption.ToString() == x.HeaderCaption.ToString()));
                 widthAdjustmentValue = masterColumnsWithoutChild.Sum(x => x.Width.Value);
-
-                //if (!CheckNeedReset(masterCol, detailCol))
-                //    continue;
 
                 RemoveColumnBinding(masterCol, detailCol);
                 if (masterCol != null)

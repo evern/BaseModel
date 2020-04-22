@@ -12,8 +12,9 @@ namespace BaseModel.Misc
 {
     public static class GridControlHelpers
     {
-        public static void PasteCellData(GridControl gridControl, TableView gridTableView, string[] RowData, Func<DataRow, ColumnBase, string, bool, bool> basePasteDataAction, bool showLoadingScreen = false)
+        public static List<DataRow> PasteCellData(GridControl gridControl, TableView gridTableView, string[] RowData, Func<DataRow, ColumnBase, string, bool, bool> basePasteDataAction, bool showLoadingScreen = false)
         {
+            List<DataRow> editedRows = new List<DataRow>();
             var selected_cells = gridTableView.GetSelectedCells();
             if (selected_cells.Count == 0)
             {
@@ -23,7 +24,7 @@ namespace BaseModel.Misc
                 SelectMany(x => ((TableView)(x).View).GetSelectedCells()).ToList();
 
                 if (selected_cells.Count == 0)
-                    return;
+                    return editedRows;
                 else
                 {
                     gridTableView = (TableView)selected_cells.First().Column.View;
@@ -66,7 +67,7 @@ namespace BaseModel.Misc
                     DataRowView editing_row_view = (DataRowView)gridControl.GetRow(row_handle);
                     DataRow editing_row = editing_row_view.Row;
                     basePasteDataAction?.Invoke(editing_row, selected_cell.Column, string.Empty, true);
-
+                    editedRows.Add(editing_row);
                     if (showLoadingScreen)
                         LoadingScreenManager.Progress();
                 }
@@ -130,7 +131,7 @@ namespace BaseModel.Misc
                                 pasteValueColumnOffset = 0;
 
                             basePasteDataAction?.Invoke(editing_row, current_column, columnValue, columnOffset == columnOffsetSelection - 1);
-
+                            editedRows.Add(editing_row);
                             if (showLoadingScreen)
                                 LoadingScreenManager.Progress();
                         }
@@ -144,6 +145,8 @@ namespace BaseModel.Misc
                     }
                 }
             }
+
+            return editedRows;
         }
     }
 }
