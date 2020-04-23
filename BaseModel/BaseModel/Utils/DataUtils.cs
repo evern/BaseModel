@@ -434,7 +434,6 @@ namespace BaseModel.Data.Helpers
                     }
                 }
 
-                List<ErrorMessage> pasteErrorMessages = new List<ErrorMessage>();
                 foreach (TProjection projection in pasteProjections)
                 {
                     string errorMessage = string.Empty;

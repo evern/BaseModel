@@ -586,6 +586,16 @@ namespace BaseModel.ViewModel.Loader
 
         public MultiSelectMode SelectMode => MainViewModel == null ? MultiSelectMode.Row : MainViewModel.SelectMode;
 
+        public virtual bool IsValidEntity(TMainProjectionEntity entity, IEnumerable<TMainProjectionEntity> preCommittedProjections, ref string errorMessage, out List<KeyValuePair<string, string>> constraintIssues)
+        {
+            constraintIssues = new List<KeyValuePair<string, string>>();
+            if(MainViewModel != null)
+                if(!MainViewModel.IsValidEntity(entity, preCommittedProjections, ref errorMessage, out constraintIssues))
+                    return false;
+
+            return true;
+        }
+
         public virtual void ValidateCell(GridCellValidationEventArgs e)
         {
             MainViewModel?.ValidateCell(e);
@@ -599,6 +609,11 @@ namespace BaseModel.ViewModel.Loader
         public void NewRowSave(RowEventArgs e)
         {
             MainViewModel?.NewRowSave(e);
+        }
+
+        public void OnAfterNewProjectionsAdded(IEnumerable<TMainProjectionEntity> newItems)
+        {
+            MainViewModel?.OnAfterNewProjectionsAdded(newItems);
         }
 
         public virtual void PastingFromClipboard(PastingFromClipboardEventArgs e)

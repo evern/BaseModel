@@ -360,7 +360,7 @@ namespace BaseModel.ViewModel.Base
         /// <param name="entity">The entity to be validated</param>
         /// <param name="errorMessage">Error message to notify the user of conflicting constraints</param>
         /// <returns>Returns true if no other entity contains similar constraint member values</returns>
-        public bool IsValidEntity(TProjection entity, IEnumerable<TProjection> preCommittedProjections, ref string errorMessage, out List<KeyValuePair<string, string>> constraintIssues)
+        public virtual bool IsValidEntity(TProjection entity, IEnumerable<TProjection> preCommittedProjections, ref string errorMessage, out List<KeyValuePair<string, string>> constraintIssues)
         {
             //if (OnBeforeEntitySavedIsContinueCallBack != null && !OnBeforeEntitySavedIsContinueCallBack(entity))
             //    return false;

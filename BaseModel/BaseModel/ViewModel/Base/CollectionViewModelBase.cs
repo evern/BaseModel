@@ -181,7 +181,7 @@ namespace BaseModel.ViewModel.Base
         }
 
         List<TProjection> newlyAddedProjections;
-        protected virtual void OnAfterNewProjectionsAdded(IEnumerable<TProjection> newItems)
+        public virtual void OnAfterNewProjectionsAdded(IEnumerable<TProjection> newItems)
         {
             if (newItems.Count() > 0)
             {
