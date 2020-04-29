@@ -589,7 +589,7 @@ namespace BaseModel.Data.Helpers
                         }
                         else if (columnPropertyInfo.PropertyType == typeof(decimal) || columnPropertyInfo.PropertyType == typeof(decimal?) || columnPropertyInfo.PropertyType == typeof(int) || columnPropertyInfo.PropertyType == typeof(int?) || columnPropertyInfo.PropertyType == typeof(double) || columnPropertyInfo.PropertyType == typeof(double?))
                         {
-                            var rgx = new Regex("[^0-9a-z\\.\\-]");
+                            var rgx = new Regex("[A-Za-z\\.\\-]");
                             var cleanColumnString = rgx.Replace(pasteData, string.Empty);
 
                             if (columnPropertyInfo.PropertyType == typeof(decimal) ||
