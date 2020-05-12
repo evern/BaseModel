@@ -66,7 +66,7 @@ namespace BaseModel.ViewModel.UndoRedo
             EntityMessageType messageType)
         {
             //view will invoke add undo, put a check to make sure that it's not redoing before adding
-            if(!_isUndoing)
+            if(!_isUndoing && !_isRedoing)
             {
                 if(!ExceptionFieldNames.Any(x => x == propertyName))
                 {
@@ -105,7 +105,6 @@ namespace BaseModel.ViewModel.UndoRedo
         public void Undo()
         {
             _isUndoing = true;
-
             List<UndoRedoEntityInfo<TEntity>> bulkUndoList = new List<UndoRedoEntityInfo<TEntity>>();
             if (UndoList.Count > 0)
             {
@@ -139,7 +138,6 @@ namespace BaseModel.ViewModel.UndoRedo
             }
 
             BulkFuncUndo?.Invoke(bulkUndoList);
-
             _isUndoing = false;
         }
 

@@ -673,7 +673,6 @@ namespace BaseModel.ViewModel.Base
                 if (updateProjection != null)
                     updateProjection.NewEntityFromView = true;
 
-                UnifiedNewRowInitialisationFromView?.Invoke(projection);
                 if (OnBeforeNewRowSavedIsContinueFromViewCallBack != null)
                     if (!OnBeforeNewRowSavedIsContinueFromViewCallBack(e, projection))
                         return;

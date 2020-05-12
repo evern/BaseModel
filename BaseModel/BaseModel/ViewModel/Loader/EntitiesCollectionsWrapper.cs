@@ -606,6 +606,19 @@ namespace BaseModel.ViewModel.Loader
             MainViewModel?.ValidateRow(e);
         }
 
+        public virtual void InitNewRow(InitNewRowEventArgs e)
+        {
+            try
+            {
+                TMainProjectionEntity projection = (TMainProjectionEntity)GridControlService.GetRow(e.RowHandle);
+                UnifiedNewRowInitializationFromView(projection);
+            }
+            catch
+            {
+
+            }
+        }
+
         public void NewRowSave(RowEventArgs e)
         {
             MainViewModel?.NewRowSave(e);

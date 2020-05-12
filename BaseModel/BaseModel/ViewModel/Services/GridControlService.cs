@@ -59,6 +59,7 @@ namespace BaseModel.ViewModel.Services
         void RefreshRowByListIndex(int listIndex);
         ObservableCollection<Misc.GroupInfo> GetExpansionState();
         GridColumnCollection GridColumns();
+        object GetRow(int rowHandle);
         void SetExpansionState(ObservableCollection<Misc.GroupInfo> states);
     }
 
@@ -88,6 +89,11 @@ namespace BaseModel.ViewModel.Services
                     view.DeleteRow(handle);
                 }
             }
+        }
+
+        public object GetRow(int rowHandle)
+        {
+            return GridControl.GetRow(rowHandle);
         }
 
         public int GetListIndexByRowHandle(int rowHandle)

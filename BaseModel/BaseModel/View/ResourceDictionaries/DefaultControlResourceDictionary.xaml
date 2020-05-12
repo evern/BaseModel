@@ -443,6 +443,7 @@
                     <ItemsControl>
                         <dxmvvm:EventToCommand Command="{Binding CellValueChangingCommand}" EventName="CellValueChanging" PassEventArgsToCommand="True" />
                         <dxmvvm:EventToCommand Command="{Binding CellValueChangedCommand}" EventName="CellValueChanged" PassEventArgsToCommand="True" />
+                        <dxmvvm:EventToCommand Command="{Binding InitNewRowCommand}" EventName="InitNewRow" PassEventArgsToCommand="True" />
                         <dxmvvm:EventToCommand Command="{Binding NewRowSaveCommand}" EventName="RowUpdated" PassEventArgsToCommand="True" />
                         <dxmvvm:EventToCommand Command="{Binding ValidateCellCommand}" EventName="ValidateCell" PassEventArgsToCommand="True" />
                         <dxmvvm:EventToCommand Command="{Binding ValidateRowCommand}" EventName="ValidateRow" PassEventArgsToCommand="True" />
