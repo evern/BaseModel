@@ -1366,6 +1366,7 @@ namespace BaseModel.ViewModel.Base
         public virtual void PastingFromClipboard(PastingFromClipboardEventArgs e)
         {
             IsPasting = true;
+
             IsChangingValueFromBackgroundEvents = true;
             bool shouldSkip = false;
             var gridControl = (GridControl)e.Source;
@@ -1452,6 +1453,7 @@ namespace BaseModel.ViewModel.Base
             }
 
             IsChangingValueFromBackgroundEvents = false;
+
             IsPasting = false;
         }
 

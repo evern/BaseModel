@@ -81,7 +81,7 @@ namespace BaseModel.ViewModel.UndoRedo
                     UndoRedoEntityInfo<TEntity> similarUndoRedoProperty = null;
                     if (newValue == null)
                         similarUndoRedoProperty = similarUndoRedoProperties.Where(x => x.OldValue != null).FirstOrDefault(x => x.OldValue.ToString() == oldValue.ToString() && x.NewValue == null);
-                    else
+                    else if (oldValue != null)
                         similarUndoRedoProperty = similarUndoRedoProperties.Where(x => x.OldValue != null).FirstOrDefault(x => x.OldValue.ToString() == oldValue.ToString() && x.NewValue.ToString() == newValue.ToString());
 
                     if (similarUndoRedoProperty != null)
