@@ -1365,8 +1365,6 @@ namespace BaseModel.ViewModel.Base
         /// <param name="e"></param>
         public virtual void PastingFromClipboard(PastingFromClipboardEventArgs e)
         {
-            IsPasting = true;
-
             IsChangingValueFromBackgroundEvents = true;
             bool shouldSkip = false;
             var gridControl = (GridControl)e.Source;
@@ -1375,7 +1373,9 @@ namespace BaseModel.ViewModel.Base
             if (tableView.ActiveEditor != null)
                 return;
 
-            if(tableView != null && tableView.FocusedRowHandle == GridControl.AutoFilterRowHandle)
+            IsPasting = true;
+
+            if (tableView != null && tableView.FocusedRowHandle == GridControl.AutoFilterRowHandle)
             {
                 shouldSkip = true;
             }

@@ -627,7 +627,7 @@ namespace BaseModel.ViewModel.Base
                         {
                             AddUndoBeforeEntityAdded(bulkProcessModel.Projection);
                             newlyAddedProjections.Add(bulkProcessModel.Projection);
-                            if (IsInUndoRedoOperation())
+                            if (IsInUndoRedoOperation() || IsPasting)
                             {
                                 Entities.Add(bulkProcessModel.Projection);
                             }
@@ -643,7 +643,7 @@ namespace BaseModel.ViewModel.Base
                             newlyAddedProjections.Add(bulkProcessModel.Projection);
 
                             //because this doesn't go through normal messaging mechanism to add new entities, add it manually here
-                            if (IsInUndoRedoOperation())
+                            if (IsInUndoRedoOperation() || IsPasting)
                             {
                                 Entities.Add(bulkProcessModel.Projection);
                             }
