@@ -104,7 +104,17 @@ namespace BaseModel.Data.Helpers
                     {
                         int row_handle = selected_cell.RowHandle;
                         TProjection editing_row = (TProjection)gridControl.GetRow(row_handle);
-                        PasteResult result = pasteDataInProjectionColumn(editing_row, selected_cell.Column, string.Empty, undoRedoArguments);
+                        string errorMessage = string.Empty;
+                        PasteResult result = pasteDataInProjectionColumn(editing_row, selected_cell.Column, string.Empty, out errorMessage, undoRedoArguments);
+                        if (result == PasteResult.FailOnRequired || errorMessage != string.Empty)
+                        {
+                            string errorString = errorMessage == string.Empty ? "Cannot set null in required cell, operation has been terminated" : errorMessage;
+                            errorMessages.Add(new ErrorMessage(selected_cell.Column.Header.ToString(), errorString));
+                            break;
+                        }
+                        if (result != PasteResult.Success)
+                            continue;
+
                         if (!preValidatedProjections.Any(x => x.GetHashCode() == editing_row.GetHashCode()))
                             preValidatedProjections.Add(editing_row);
                     }
@@ -169,10 +179,12 @@ namespace BaseModel.Data.Helpers
                                 break;
                             }
 
-                            PasteResult result = pasteDataInProjectionColumn(editing_row, current_column, columnValue, undoRedoArguments);
-                            if (result == PasteResult.FailOnRequired)
+                            string errorMessage = string.Empty;
+                            PasteResult result = pasteDataInProjectionColumn(editing_row, current_column, columnValue, out errorMessage, undoRedoArguments);
+                            if (result == PasteResult.FailOnRequired || errorMessage != string.Empty)
                             {
-                                errorMessages.Add(new ErrorMessage(current_column.Header.ToString(), "Cannot set null in required cell, operation has been terminated"));
+                                string errorString = errorMessage == string.Empty ? "Cannot set null in required cell, operation has been terminated" : errorMessage;
+                                errorMessages.Add(new ErrorMessage(current_column.Header.ToString(), errorString));
                                 break;
                             }
                             if (result != PasteResult.Success)
@@ -273,7 +285,12 @@ namespace BaseModel.Data.Helpers
                     {
                         int row_handle = selected_cell.RowHandle;
                         TProjection editing_row = (TProjection)gridControl.GetRow(row_handle);
-                        PasteResult result = pasteDataInProjectionColumn(editing_row, selected_cell.Column, string.Empty, undoRedoArguments);
+                        string errorMessage = string.Empty;
+                        PasteResult result = pasteDataInProjectionColumn(editing_row, selected_cell.Column, string.Empty, out errorMessage, undoRedoArguments);
+                        
+                        if(errorMessage != string.Empty)
+                            errorMessages.Add(new ErrorMessage(selected_cell.Column.Header.ToString(), errorMessage));
+
                         if (!preValidatedProjections.Any(x => x.GetHashCode() == editing_row.GetHashCode()))
                             preValidatedProjections.Add(editing_row);
                     }
@@ -297,11 +314,14 @@ namespace BaseModel.Data.Helpers
                             int row_handle = selected_cell.RowHandle;
                             ColumnBase current_column = visible_columns[column_visible_index];
                             TProjection editing_row = (TProjection)gridControl.GetRow(row_handle);
-                            PasteResult result = pasteDataInProjectionColumn(editing_row, current_column, paste_data, undoRedoArguments);
 
-                            if (result == PasteResult.FailOnRequired)
+                            string errorMessage = string.Empty;
+                            PasteResult result = pasteDataInProjectionColumn(editing_row, current_column, paste_data, out errorMessage, undoRedoArguments);
+
+                            if (result == PasteResult.FailOnRequired || errorMessage != string.Empty)
                             {
-                                errorMessages.Add(new ErrorMessage(current_column.Header.ToString(), "Cannot set null in required cell, operation has been terminated"));
+                                string errorString = errorMessage == string.Empty ? "Cannot set null in required cell, operation has been terminated" : errorMessage;
+                                errorMessages.Add(new ErrorMessage(current_column.Header.ToString(), errorString));
                                 break;
                             }
                             if (result != PasteResult.Success)
@@ -333,10 +353,12 @@ namespace BaseModel.Data.Helpers
                             TProjection editing_row = (TProjection)gridControl.GetRow(current_row_handle);
                             row_visible_index_offset += 1;
 
-                            PasteResult result = pasteDataInProjectionColumn(editing_row, current_column, rowValue, undoRedoArguments);
-                            if (result == PasteResult.FailOnRequired)
+                            string errorMessage = string.Empty;
+                            PasteResult result = pasteDataInProjectionColumn(editing_row, current_column, rowValue, out errorMessage, undoRedoArguments);
+                            if (result == PasteResult.FailOnRequired || errorMessage != string.Empty)
                             {
-                                errorMessages.Add(new ErrorMessage(current_column.Header.ToString(), "Cannot set null in required cell, operation has been terminated"));
+                                string errorString = errorMessage == string.Empty ? "Cannot set null in required cell, operation has been terminated" : errorMessage;
+                                errorMessages.Add(new ErrorMessage(current_column.Header.ToString(), errorString));
                                 break;
                             }
                             if (result != PasteResult.Success)
@@ -413,7 +435,11 @@ namespace BaseModel.Data.Helpers
                             continue;
 
                         ColumnBase copyColumn = gridTableView != null ? gridTableView.VisibleColumns[i] : gridTreeListView.VisibleColumns[i];
-                        result = pasteDataInProjectionColumn(projection, copyColumn, ColumnStrings[i]);
+                        string errorMessage = string.Empty;
+                        result = pasteDataInProjectionColumn(projection, copyColumn, ColumnStrings[i], out errorMessage);
+
+                        if(errorMessage != string.Empty)
+                            errorMessages.Add(new ErrorMessage(gridTableView.VisibleColumns[i].Header.ToString(), errorMessage));
 
                         //When column has gone through unifiedCellValidation and have error
                         if (result == PasteResult.Failed)
@@ -438,6 +464,7 @@ namespace BaseModel.Data.Helpers
                 {
                     string errorMessage = string.Empty;
                     List<KeyValuePair<string, string>> constraintIssues;
+
                     if (isValidProjectionFunc(projection, validatedProjections, ref errorMessage, out constraintIssues))
                         if (onBeforePasteWithValidationFunc != null)
                         {
@@ -485,8 +512,9 @@ namespace BaseModel.Data.Helpers
                 return false;
         }
 
-        public PasteResult pasteDataInProjectionColumn(TProjection projection, ColumnBase column, string pasteData, List<UndoRedoArg<TProjection>> undoRedoArguments = null)
+        public PasteResult pasteDataInProjectionColumn(TProjection projection, ColumnBase column, string pasteData, out string errorMessage, List<UndoRedoArg<TProjection>> undoRedoArguments = null)
         {
+            errorMessage = string.Empty;
             if (column.ReadOnly)
                 return PasteResult.Skip;
 
@@ -505,7 +533,7 @@ namespace BaseModel.Data.Helpers
                             if (Attribute.IsDefined(columnPropertyInfo, typeof(RequiredAttribute)))
                                 return PasteResult.FailOnRequired;
 
-                            return trySetValueInProjection(projection, column_name, null, undoRedoArguments);
+                            return trySetValueInProjection(projection, column_name, null, out errorMessage, undoRedoArguments);
                         }
                         else if (columnPropertyInfo.PropertyType == typeof(Guid?) || columnPropertyInfo.PropertyType == typeof(Guid))
                         {
@@ -530,7 +558,7 @@ namespace BaseModel.Data.Helpers
                             {
                                 Guid? guid_value = getEditSettingsValueMemberValue<Guid?>(editSettings, pasteData);
                                 if (guid_value != null)
-                                    return trySetValueInProjection(projection, column_name, guid_value, undoRedoArguments);
+                                    return trySetValueInProjection(projection, column_name, guid_value, out errorMessage, undoRedoArguments);
                                 else
                                     return PasteResult.Skip;
                             }
@@ -538,7 +566,7 @@ namespace BaseModel.Data.Helpers
                             else if ((editSettings != null || column.ActualEditSettings.GetType() == typeof(TextEditSettings)) && pasteData != Guid.Empty.ToString())
                             {
                                 Guid new_guid = new Guid(pasteData);
-                                return trySetValueInProjection(projection, column_name, new_guid, undoRedoArguments);
+                                return trySetValueInProjection(projection, column_name, new_guid, out errorMessage, undoRedoArguments);
                             }
                         }
                         else if (columnPropertyInfo.PropertyType == typeof(string))
@@ -567,7 +595,7 @@ namespace BaseModel.Data.Helpers
                                     return PasteResult.FailOnRequired;
                             }
 
-                            return trySetValueInProjection(projection, column_name, new_string, undoRedoArguments);
+                            return trySetValueInProjection(projection, column_name, new_string, out errorMessage, undoRedoArguments);
                         }
                         else if (columnPropertyInfo.PropertyType.BaseType == typeof(Enum))
                         {
@@ -584,7 +612,7 @@ namespace BaseModel.Data.Helpers
 
                                 var descriptionAttribute = descriptionAttributes.First();
                                 if (pasteData == descriptionAttribute.Name)
-                                    return trySetValueInProjection(projection, column_name, enum_value, undoRedoArguments);
+                                    return trySetValueInProjection(projection, column_name, enum_value, out errorMessage, undoRedoArguments);
                             }
                         }
                         else if (columnPropertyInfo.PropertyType == typeof(decimal) || columnPropertyInfo.PropertyType == typeof(decimal?) || columnPropertyInfo.PropertyType == typeof(int) || columnPropertyInfo.PropertyType == typeof(int?) || columnPropertyInfo.PropertyType == typeof(double) || columnPropertyInfo.PropertyType == typeof(double?))
@@ -605,7 +633,7 @@ namespace BaseModel.Data.Helpers
                                         //else when user copy from grid and paste it will be the actual value
                                     }
 
-                                    return trySetValueInProjection(projection, column_name, decimal_value, undoRedoArguments);
+                                    return trySetValueInProjection(projection, column_name, decimal_value, out errorMessage, undoRedoArguments);
                                 }
                                 else
                                     return PasteResult.Skip;
@@ -617,7 +645,7 @@ namespace BaseModel.Data.Helpers
                                 {
                                     int? int_value = getEditSettingsValueMemberValue<int?>(editSettings, pasteData);
                                     if (int_value != null)
-                                        return trySetValueInProjection(projection, column_name, int_value, undoRedoArguments);
+                                        return trySetValueInProjection(projection, column_name, int_value, out errorMessage, undoRedoArguments);
                                     else
                                         return PasteResult.Skip;
                                 }
@@ -625,7 +653,7 @@ namespace BaseModel.Data.Helpers
                                 {
                                     int int_value;
                                     if (int.TryParse(cleanColumnString, out int_value))
-                                        return trySetValueInProjection(projection, column_name, int_value, undoRedoArguments);
+                                        return trySetValueInProjection(projection, column_name, int_value, out errorMessage, undoRedoArguments);
                                     else
                                         return PasteResult.Skip;
                                 }
@@ -639,7 +667,7 @@ namespace BaseModel.Data.Helpers
                                     if (column_name.Contains('%') || column_name.ToUpper().Contains("PERCENT"))
                                         double_value /= 100;
 
-                                    return trySetValueInProjection(projection, column_name, double_value, undoRedoArguments);
+                                    return trySetValueInProjection(projection, column_name, double_value, out errorMessage, undoRedoArguments);
                                 }
                                 else
                                     return PasteResult.Skip;
@@ -651,7 +679,7 @@ namespace BaseModel.Data.Helpers
                         {
                             DateTime datetime_value;
                             if (DateTime.TryParse(pasteData, out datetime_value))
-                                return trySetValueInProjection(projection, column_name, datetime_value, undoRedoArguments);
+                                return trySetValueInProjection(projection, column_name, datetime_value, out errorMessage, undoRedoArguments);
                             else
                                 return PasteResult.Skip;
                         }
@@ -683,7 +711,7 @@ namespace BaseModel.Data.Helpers
                                 }
 
                                 if (setValues.Count > 0)
-                                    return trySetValueInProjection(projection, column_name, setValues, undoRedoArguments);
+                                    return trySetValueInProjection(projection, column_name, setValues, out errorMessage, undoRedoArguments);
                                 else
                                     return PasteResult.Skip;
                             }
@@ -699,7 +727,7 @@ namespace BaseModel.Data.Helpers
                                 if (booleanValue == null)
                                     return PasteResult.Skip;
                                 else
-                                    return trySetValueInProjection(projection, column_name, (bool)booleanValue, undoRedoArguments);
+                                    return trySetValueInProjection(projection, column_name, (bool)booleanValue, out errorMessage, undoRedoArguments);
                             }
                         }
                     }
@@ -746,9 +774,9 @@ namespace BaseModel.Data.Helpers
             return editValue;
         }
 
-        private PasteResult trySetValueInProjection(TProjection projection, string column_name, object new_value, List<UndoRedoArg<TProjection>> undoRedoArguments = null)
+        private PasteResult trySetValueInProjection(TProjection projection, string column_name, object new_value, out string error_message, List<UndoRedoArg<TProjection>> undoRedoArguments = null)
         {
-            string error_message = unifiedValueValidationCallback == null ? string.Empty : unifiedValueValidationCallback(projection, column_name, new_value, true);
+            error_message = unifiedValueValidationCallback == null ? string.Empty : unifiedValueValidationCallback(projection, column_name, new_value, true);
             if (error_message == string.Empty)
             {
                 object old_value = DataUtils.GetNestedValue(column_name, projection);
