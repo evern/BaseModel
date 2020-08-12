@@ -215,9 +215,16 @@ namespace BaseModel.ViewModel.Base
                         findKeyValue = keyPropertyInfo.GetValue(newlyAddedProjection);
                         if(findKeyValue != null)
                         {
-                            TProjection actualNewlyAddedProjection = Entities.Where(x => x != null).FirstOrDefault(x => keyPropertyInfo.GetValue(x).ToString() == findKeyValue.ToString());
-                            if (actualNewlyAddedProjection != null)
-                                selectedProjections.Add(actualNewlyAddedProjection);
+                            try
+                            {
+                                TProjection actualNewlyAddedProjection = Entities.Where(x => x != null).FirstOrDefault(x => keyPropertyInfo.GetValue(x) != null && keyPropertyInfo.GetValue(x).ToString() == findKeyValue.ToString());
+                                if (actualNewlyAddedProjection != null)
+                                    selectedProjections.Add(actualNewlyAddedProjection);
+                            }
+                            catch
+                            {
+
+                            }
                         }
                     }
                 }
