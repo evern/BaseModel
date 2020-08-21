@@ -619,6 +619,7 @@ namespace BaseModel.Data.Helpers
                         {
                             var rgx = new Regex("[A-Za-z\\.\\-]");
                             var cleanColumnString = rgx.Replace(pasteData, string.Empty);
+                            cleanColumnString = cleanColumnString.Replace("$", "");
 
                             if (columnPropertyInfo.PropertyType == typeof(decimal) ||
                                 columnPropertyInfo.PropertyType == typeof(decimal?))
@@ -1256,6 +1257,21 @@ namespace BaseModel.Data.Helpers
                 childPropertyString = childPropertyString.Substring(0, childPropertyString.Length - 1);
                 return GetNestedPropertyInfo(childPropertyString, childInstance);
             }
+        }
+
+        public static Type GetEnumerableType(Type type)
+        {
+            if (type.IsInterface && type.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+                return type.GetGenericArguments()[0];
+            foreach (Type intType in type.GetInterfaces())
+            {
+                if (intType.IsGenericType
+                    && intType.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+                {
+                    return intType.GetGenericArguments()[0];
+                }
+            }
+            return null;
         }
 
         public static string GetNameOf<T>(Expression<Func<T>> property)

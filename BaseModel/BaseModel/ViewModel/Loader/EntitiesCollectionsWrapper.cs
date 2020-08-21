@@ -870,7 +870,7 @@ namespace BaseModel.ViewModel.Loader
         }
 
         private bool? isLoading;
-        public bool IsLoading
+        public virtual bool IsLoading
         {
             get
             {

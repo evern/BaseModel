@@ -1,4 +1,5 @@
-﻿using BaseModel.Misc;
+﻿using BaseModel.Data.Helpers;
+using BaseModel.Misc;
 using BaseModel.View;
 using System;
 using System.Collections.Generic;
@@ -68,26 +69,38 @@ namespace BaseModel.ViewModel.UndoRedo
             //view will invoke add undo, put a check to make sure that it's not redoing before adding
             if(!_isUndoing && !_isRedoing)
             {
+                if (propertyName == null)
+                    return;
+
                 if(!ExceptionFieldNames.Any(x => x == propertyName))
                 {
-                    if (oldValue == null && newValue == null && messageType != EntityMessageType.Added)
-                        return;
+                    //when type is enumerable (e.g. tokens), add the entire object
+                    if (oldValue != null && DataUtils.GetEnumerableType(oldValue.GetType()) != null)
+                    {
+                        UndoList.Add(new UndoRedoEntityInfo<TEntity>(changedEntity, propertyName, oldValue, newValue, ActionId, messageType));
+                    }
+                    else
+                    { 
+                        if (oldValue == null && newValue == null && messageType != EntityMessageType.Added)
+                            return;
 
-                    if ((oldValue != null && newValue != null) && oldValue.ToString() == newValue.ToString())
-                        return;
+                        if ((oldValue != null && newValue != null) && oldValue.ToString() == newValue.ToString())
+                            return;
 
-                    //sometimes undo gets invoked multiple times by view events, check that it doesn't exists already before adding
-                    IEnumerable<UndoRedoEntityInfo<TEntity>> similarUndoRedoProperties = UndoList.Where(x => (x.ActionId == ActionId - 1 || x.ActionId == ActionId) && x.ChangedEntity == changedEntity && x.PropertyName == propertyName && x.MessageType == messageType);
-                    UndoRedoEntityInfo<TEntity> similarUndoRedoProperty = null;
-                    if (newValue == null)
-                        similarUndoRedoProperty = similarUndoRedoProperties.Where(x => x.OldValue != null).FirstOrDefault(x => x.OldValue.ToString() == oldValue.ToString() && x.NewValue == null);
-                    else if (oldValue != null)
-                        similarUndoRedoProperty = similarUndoRedoProperties.Where(x => x.OldValue != null).FirstOrDefault(x => x.OldValue.ToString() == oldValue.ToString() && x.NewValue.ToString() == newValue.ToString());
+                        //sometimes undo gets invoked multiple times by view events, check that it doesn't exists already before adding
+                        IEnumerable<UndoRedoEntityInfo<TEntity>> similarUndoRedoProperties = UndoList.Where(x => (x.ActionId == ActionId - 1 || x.ActionId == ActionId) && x.ChangedEntity == changedEntity && x.PropertyName == propertyName && x.MessageType == messageType);
+                        UndoRedoEntityInfo<TEntity> similarUndoRedoProperty = null;
+                        if (newValue == null)
+                            similarUndoRedoProperty = similarUndoRedoProperties.Where(x => x.OldValue != null).FirstOrDefault(x => x.OldValue.ToString() == oldValue.ToString() && x.NewValue == null);
+                        else if (oldValue != null)
+                            similarUndoRedoProperty = similarUndoRedoProperties.Where(x => x.OldValue != null && x.NewValue != null).FirstOrDefault(x => x.OldValue.ToString() == oldValue.ToString() && x.NewValue.ToString() == newValue.ToString());
 
-                    if (similarUndoRedoProperty != null)
-                        return;
+                        if (similarUndoRedoProperty != null)
+                            return;
 
-                    UndoList.Add(new UndoRedoEntityInfo<TEntity>(changedEntity, propertyName, oldValue, newValue, ActionId, messageType));
+                        UndoList.Add(new UndoRedoEntityInfo<TEntity>(changedEntity, propertyName, oldValue, newValue, ActionId, messageType));
+                    }
+
                     RedoList.Clear();
                 }
             }
