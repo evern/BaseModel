@@ -822,6 +822,18 @@ namespace BaseModel.Data.Helpers
     public static class DataUtils
     {
         /// <summary>
+        /// For the purpose of presentation, variation code must always be empty
+        /// But when budget is edited, findExistingOrAddNewLine will handle the difference between null and string.empty values
+        /// </summary>
+        public static string NormalizeString(string strValue)
+        {
+            if (strValue == null)
+                return string.Empty;
+
+            return strValue;
+        }
+
+        /// <summary>
         /// Account for "" in excel splitting which signifies line breaks within "" isn't new row
         /// </summary>
         public static List<string> ExcelSplit(string pasteString)
@@ -1278,6 +1290,13 @@ namespace BaseModel.Data.Helpers
             return (property.Body as MemberExpression).Member.Name;
         }
 
+        public static IEnumerable<T> GetValuesOf<T>(Expression<Func<T>> property)
+        {
+            foreach (T enumProperty in (T[])Enum.GetValues(typeof(T)))
+            {
+                yield return enumProperty;
+            }
+        }
 
         public static string GetEditSettingsDisplayMemberValue(object editSettings, string searchData)
         {

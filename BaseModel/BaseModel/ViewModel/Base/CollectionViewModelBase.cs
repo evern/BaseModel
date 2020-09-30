@@ -445,6 +445,7 @@ namespace BaseModel.ViewModel.Base
                     Repository.UnitOfWork.SaveChanges();
 
                 OnAfterProjectionsDeletedCallBack?.Invoke(bulkProcessModels.Select(x => x.Projection));
+                LoadingScreenManager.CloseLoadingScreen();
                 ShowErrorMessage(errorMessageDialogTitle, errorMessages);
             }
             catch (DbException e)
@@ -730,6 +731,7 @@ namespace BaseModel.ViewModel.Base
                 //if ((doBulkRefresh && !doNotRefresh) && FullRefreshWithoutClearingUndoRedoCallBack != null)
                 //    FullRefreshWithoutClearingUndoRedoCallBack.Invoke();
             }
+            LoadingScreenManager.CloseLoadingScreen();
         }
 
         /// <summary>
