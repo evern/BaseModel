@@ -163,4 +163,22 @@ namespace BaseModel.Misc
         public string ERROR { get; set; }
         public List<KeyValuePair<string, string>> CONSTRAINT_ISSUES { get; set; }
     }
+
+    public class P6ErrorMessage
+    {
+        public P6ErrorMessage(string error, string task, string deliverable_name, decimal units, DateTime? progressDate)
+        {
+            TASK = task;
+            ERROR = error;
+            DELIVERABLE_NAME = deliverable_name;
+            UNITS = units;
+            PROGRESS_DATE = progressDate;
+        }
+
+        public string TASK { get; set; }
+        public string ERROR { get; set; }
+        public string DELIVERABLE_NAME { get; set; }
+        public decimal UNITS { get; set; }
+        public DateTime? PROGRESS_DATE { get; set; }
+    }
 }
