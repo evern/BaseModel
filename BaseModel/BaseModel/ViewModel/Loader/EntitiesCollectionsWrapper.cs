@@ -45,6 +45,7 @@ namespace BaseModel.ViewModel.Loader
         /// when grid rows loaded will be handled
         /// </summary>
         protected bool isHandleLoadedGridRows;
+        public bool IsUsedAsPersistentViewModel;
         public bool IsReadOnly { get; set; }
         protected virtual string readOnlyMessage => string.Empty;
         public CollectionViewModel<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey, TMainEntityUnitOfWork> MainViewModel { get; set; }
@@ -224,15 +225,21 @@ namespace BaseModel.ViewModel.Loader
                 OnEntitiesLoadedCallBack = null;
                 OnEntitiesLoadedCallBackRelateParam = null;
 
-                //Self destruct after entities has been returned
-                CleanUpEntitiesLoader();
-                return;
+                if(!IsUsedAsPersistentViewModel)
+                {
+                    //Self destruct after entities has been returned
+                    CleanUpEntitiesLoader();
+                    return;
+                }
             }
 
-            BackgroundRefresh();
-            if(!isHandleLoadedGridRows)
+            if(!IsUsedAsPersistentViewModel)
             {
-                onGridRowsLoaded();
+                BackgroundRefresh();
+                if (!isHandleLoadedGridRows)
+                {
+                    onGridRowsLoaded();
+                }
             }
         }
 

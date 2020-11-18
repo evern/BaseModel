@@ -18,6 +18,7 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Media;
+using static BaseModel.Data.Helpers.DataUtils;
 
 namespace BaseModel.Data.Helpers
 {
@@ -57,14 +58,6 @@ namespace BaseModel.Data.Helpers
             this.formatErrorMessages = formatErrorMessages;
         }
 
-        public enum PasteResult
-        {
-            Success, 
-            Skip, 
-            Failed, 
-            FailOnRequired
-        }
-
         public List<TProjection> PastingFromClipboardCellLevel<TView>(GridControl gridControl, string[] RowData, EntitiesUndoRedoManager<TProjection> undo_redo_manager, out List<ErrorMessage> errorMessages)
             where TView : DataViewBase
         {
@@ -102,7 +95,8 @@ namespace BaseModel.Data.Helpers
                 {
                     foreach(var selected_cell in selected_cells)
                     {
-                        int row_handle = selected_cell.RowHandle;
+
+                            int row_handle = selected_cell.RowHandle;
                         TProjection editing_row = (TProjection)gridControl.GetRow(row_handle);
                         string errorMessage = string.Empty;
                         PasteResult result = pasteDataInProjectionColumn(editing_row, selected_cell.Column, string.Empty, out errorMessage, undoRedoArguments);
@@ -127,7 +121,14 @@ namespace BaseModel.Data.Helpers
                     int first_row_handle = selected_cells.Min(x => x.RowHandle);
                     int last_row_handle = selected_cells.Max(x => x.RowHandle);
                     int first_row_visible_index = gridControl.GetRowVisibleIndexByHandle(first_row_handle);
+                    //row visible index can't be retrieved from grid control in detailed descriptor
+                    if (first_row_visible_index < 1)
+                        first_row_visible_index = first_row_handle;
+
                     int last_row_visible_index = gridControl.GetRowVisibleIndexByHandle(last_row_handle);
+                    if (last_row_visible_index < 1)
+                        last_row_visible_index = last_row_handle;
+
                     int numberOfSelectedRows = (last_row_visible_index - first_row_visible_index) + 1;
                     int numberOfCopiedRows = grouped_results.First().Count;
 
@@ -166,6 +167,8 @@ namespace BaseModel.Data.Helpers
 
                             int current_row_visible_index = first_row_visible_index + rowOffset;
                             int current_row_handle = gridControl.GetRowHandleByVisibleIndex(current_row_visible_index);
+                            if (current_row_handle < 1)
+                                current_row_handle = current_row_visible_index;
 
                             object rowObject = gridControl.GetRow(current_row_handle);
                             if (rowObject == null)
@@ -201,12 +204,12 @@ namespace BaseModel.Data.Helpers
                     }
                 }
                 
-                undo_redo_manager.PauseActionId();
+                undo_redo_manager?.PauseActionId();
                 foreach (TProjection preValidatedProjection in preValidatedProjections)
                 {
                     string errorMessage = string.Empty;
-                    List<KeyValuePair<string, string>> constraintIssues;
-                    if (isValidProjectionFunc(preValidatedProjection, validatedProjections, ref errorMessage, out constraintIssues))
+                    List<KeyValuePair<string, string>> constraintIssues = new List<KeyValuePair<string, string>>();
+                    if (isValidProjectionFunc != null && isValidProjectionFunc(preValidatedProjection, validatedProjections, ref errorMessage, out constraintIssues))
                         if (onBeforePasteWithValidationFunc != null)
                         {
                             if (onBeforePasteWithValidationFunc(preValidatedProjection))
@@ -217,7 +220,7 @@ namespace BaseModel.Data.Helpers
                                     cellValueChanging?.Invoke(projection_undo_redo.FieldName, projection_undo_redo.OldValue, projection_undo_redo.NewValue, projection_undo_redo.Projection, false);
                                     cellValueChanged?.Invoke(projection_undo_redo.FieldName, projection_undo_redo.OldValue, projection_undo_redo.NewValue, projection_undo_redo.Projection, false);
 
-                                    undo_redo_manager.AddUndo(projection_undo_redo.Projection, projection_undo_redo.FieldName, projection_undo_redo.OldValue, projection_undo_redo.NewValue, EntityMessageType.Changed);
+                                    undo_redo_manager?.AddUndo(projection_undo_redo.Projection, projection_undo_redo.FieldName, projection_undo_redo.OldValue, projection_undo_redo.NewValue, EntityMessageType.Changed);
                                 }
 
                                 validatedProjections.Add(preValidatedProjection);
@@ -231,7 +234,7 @@ namespace BaseModel.Data.Helpers
                                 cellValueChanging?.Invoke(projection_undo_redo.FieldName, projection_undo_redo.OldValue, projection_undo_redo.NewValue, projection_undo_redo.Projection, false);
                                 cellValueChanged?.Invoke(projection_undo_redo.FieldName, projection_undo_redo.OldValue, projection_undo_redo.NewValue, projection_undo_redo.Projection, false);
 
-                                undo_redo_manager.AddUndo(projection_undo_redo.Projection, projection_undo_redo.FieldName, projection_undo_redo.OldValue, projection_undo_redo.NewValue, EntityMessageType.Changed);
+                                undo_redo_manager?.AddUndo(projection_undo_redo.Projection, projection_undo_redo.FieldName, projection_undo_redo.OldValue, projection_undo_redo.NewValue, EntityMessageType.Changed);
                             }
 
                             validatedProjections.Add(preValidatedProjection);
@@ -244,7 +247,7 @@ namespace BaseModel.Data.Helpers
                 }
             }
 
-            undo_redo_manager.UnpauseActionId();
+            undo_redo_manager?.UnpauseActionId();
             return validatedProjections;
         }
 
@@ -463,20 +466,27 @@ namespace BaseModel.Data.Helpers
                 foreach (TProjection projection in pasteProjections)
                 {
                     string errorMessage = string.Empty;
-                    List<KeyValuePair<string, string>> constraintIssues;
+                    List<KeyValuePair<string, string>> constraintIssues = new List<KeyValuePair<string, string>>();
 
-                    if (isValidProjectionFunc(projection, validatedProjections, ref errorMessage, out constraintIssues))
-                        if (onBeforePasteWithValidationFunc != null)
-                        {
-                            if (onBeforePasteWithValidationFunc(projection))
+                    if (isValidProjectionFunc != null)
+                    {
+                        if (isValidProjectionFunc(projection, validatedProjections, ref errorMessage, out constraintIssues))
+                            if (onBeforePasteWithValidationFunc != null)
+                            {
+                                if (onBeforePasteWithValidationFunc(projection))
+                                    validatedProjections.Add(projection);
+                            }
+                            else
                                 validatedProjections.Add(projection);
-                        }
                         else
-                            validatedProjections.Add(projection);
+                        {
+                            formatErrorMessages?.Invoke(errorMessages);
+                            errorMessages.Add(new ErrorMessage("Row error", errorMessage, constraintIssues));
+                        }
+                    }
                     else
                     {
-                        formatErrorMessages?.Invoke(errorMessages);
-                        errorMessages.Add(new ErrorMessage("Row error", errorMessage, constraintIssues));
+                        validatedProjections.Add(projection);
                     }
                 }
             }
@@ -511,14 +521,73 @@ namespace BaseModel.Data.Helpers
             //else
                 return false;
         }
+    }
+    
+    public static class MorphUtils<TFromEntity, TToEntity>
+    {
+        public static TToEntity ShallowCopy(TToEntity copyObject, TFromEntity objectToCopy,
+            bool copyVirtualProperties = false)
+        {
+            var objectToCopyProperties =
+                objectToCopy.GetType()
+                    .GetProperties()
+                    .Where(
+                        p =>
+                            (copyVirtualProperties == true || !p.GetGetMethod().IsVirtual) &&
+                            !p.GetCustomAttributes().Any(attr => attr.GetType() == typeof(ProjectionPropertyAttribute)));
+            foreach (var objectToCopyProperty in objectToCopyProperties)
+            {
+                if (!objectToCopyProperty.CanWrite || !objectToCopyProperty.CanRead)
+                    continue;
 
-        public PasteResult pasteDataInProjectionColumn(TProjection projection, ColumnBase column, string pasteData, out string errorMessage, List<UndoRedoArg<TProjection>> undoRedoArguments = null)
+                var objectToCopyValue = objectToCopyProperty.GetValue(objectToCopy);
+                var copyObjectProperty = copyObject.GetType().GetProperty(objectToCopyProperty.Name);
+
+                copyObjectProperty.SetValue(copyObject, objectToCopyValue);
+            }
+
+            return copyObject;
+        }
+    }
+
+    public static class DataUtils
+    {
+        public static T getEditSettingsValueMemberValue<T>(object editSettings, string searchData)
+        {
+            var copyColumnValueMember = (string)editSettings.GetType().GetProperty("ValueMember").GetValue(editSettings);
+            var copyColumnDisplayMember = (string)editSettings.GetType().GetProperty("DisplayMember").GetValue(editSettings);
+            var copyColumnItemsSource = (IEnumerable<object>)editSettings.GetType().GetProperty("ItemsSource").GetValue(editSettings);
+
+            T editValue = default(T);
+
+            if (copyColumnItemsSource == null || (copyColumnValueMember == null || copyColumnValueMember == string.Empty) || (copyColumnDisplayMember == null || copyColumnDisplayMember == string.Empty))
+            {
+                return editValue;
+            }
+
+            foreach (var copyColumnItem in copyColumnItemsSource)
+            {
+                var itemDisplayMemberPropertyInfo =
+                    copyColumnItem.GetType().GetProperty(copyColumnDisplayMember);
+                var itemValueMemberPropertyInfo =
+                    copyColumnItem.GetType().GetProperty(copyColumnValueMember);
+                if (itemDisplayMemberPropertyInfo.GetValue(copyColumnItem) != null && itemDisplayMemberPropertyInfo.GetValue(copyColumnItem).ToString().ToUpper() == searchData.ToUpper())
+                {
+                    editValue = (T)itemValueMemberPropertyInfo.GetValue(copyColumnItem);
+                    break;
+                }
+            }
+
+            return editValue;
+        }
+
+        public static PasteResult pasteDataInProjectionColumn<TProjection>(TProjection projection, ColumnBase column, string pasteData, out string errorMessage, List<UndoRedoArg<TProjection>> undoRedoArguments = null, Func<TProjection, ColumnBase, string, List<UndoRedoArg<TProjection>>, bool> funcManualCellPastingIsContinue = null, string alternateFieldName = "")
         {
             errorMessage = string.Empty;
             if (column.ReadOnly)
                 return PasteResult.Skip;
 
-            string column_name = column.FieldName;
+            string column_name = alternateFieldName != string.Empty ? alternateFieldName : column.FieldName;
             pasteData = pasteData.Trim();
 
             try
@@ -526,7 +595,7 @@ namespace BaseModel.Data.Helpers
                 PropertyInfo columnPropertyInfo = DataUtils.GetNestedPropertyInfo(column_name, projection);
                 if (columnPropertyInfo != null)
                 {
-                    if(funcManualCellPastingIsContinue == null || (funcManualCellPastingIsContinue != null && funcManualCellPastingIsContinue.Invoke(projection, column, pasteData, undoRedoArguments)))
+                    if (funcManualCellPastingIsContinue == null || (funcManualCellPastingIsContinue != null && funcManualCellPastingIsContinue.Invoke(projection, column, pasteData, undoRedoArguments)))
                     {
                         if (pasteData == string.Empty && Nullable.GetUnderlyingType(columnPropertyInfo.PropertyType) != null)
                         {
@@ -619,6 +688,9 @@ namespace BaseModel.Data.Helpers
                         {
                             var rgx = new Regex("[A-Za-z\\$\\-]");
                             var cleanColumnString = rgx.Replace(pasteData, string.Empty);
+                            bool isPercentColumn = column_name.Contains('%') || column_name.ToUpper().Contains("PERCENT");
+                            if (isPercentColumn)
+                                cleanColumnString = cleanColumnString.Replace("%", "");
 
                             if (columnPropertyInfo.PropertyType == typeof(decimal) ||
                                 columnPropertyInfo.PropertyType == typeof(decimal?))
@@ -626,7 +698,7 @@ namespace BaseModel.Data.Helpers
                                 decimal decimal_value;
                                 if (decimal.TryParse(cleanColumnString, out decimal_value))
                                 {
-                                    if (column_name.Contains('%') || column_name.ToUpper().Contains("PERCENT"))
+                                    if (isPercentColumn)
                                     {
                                         if (decimal_value > 1)
                                             decimal_value /= 100;
@@ -745,36 +817,7 @@ namespace BaseModel.Data.Helpers
             return PasteResult.Success;
         }
 
-        private T getEditSettingsValueMemberValue<T>(object editSettings, string searchData)
-        {
-            var copyColumnValueMember = (string)editSettings.GetType().GetProperty("ValueMember").GetValue(editSettings);
-            var copyColumnDisplayMember = (string)editSettings.GetType().GetProperty("DisplayMember").GetValue(editSettings);
-            var copyColumnItemsSource = (IEnumerable<object>)editSettings.GetType().GetProperty("ItemsSource").GetValue(editSettings);
-
-            T editValue = default(T);
-
-            if (copyColumnItemsSource == null || (copyColumnValueMember == null || copyColumnValueMember == string.Empty) || (copyColumnDisplayMember == null || copyColumnDisplayMember == string.Empty))
-            {
-                return editValue;
-            }
-
-            foreach (var copyColumnItem in copyColumnItemsSource)
-            {
-                var itemDisplayMemberPropertyInfo =
-                    copyColumnItem.GetType().GetProperty(copyColumnDisplayMember);
-                var itemValueMemberPropertyInfo =
-                    copyColumnItem.GetType().GetProperty(copyColumnValueMember);
-                if (itemDisplayMemberPropertyInfo.GetValue(copyColumnItem) != null && itemDisplayMemberPropertyInfo.GetValue(copyColumnItem).ToString().ToUpper() == searchData.ToUpper())
-                {
-                    editValue = (T)itemValueMemberPropertyInfo.GetValue(copyColumnItem);
-                    break;
-                }
-            }
-
-            return editValue;
-        }
-
-        private PasteResult trySetValueInProjection(TProjection projection, string column_name, object new_value, out string error_message, List<UndoRedoArg<TProjection>> undoRedoArguments = null)
+        public static PasteResult trySetValueInProjection<TProjection>(TProjection projection, string column_name, object new_value, out string error_message, List<UndoRedoArg<TProjection>> undoRedoArguments = null, Func<TProjection, string, object, bool, string> unifiedValueValidationCallback = null)
         {
             error_message = unifiedValueValidationCallback == null ? string.Empty : unifiedValueValidationCallback(projection, column_name, new_value, true);
             if (error_message == string.Empty)
@@ -790,37 +833,7 @@ namespace BaseModel.Data.Helpers
             else
                 return PasteResult.Failed;
         }
-    }
 
-    public static class MorphUtils<TFromEntity, TToEntity>
-    {
-        public static TToEntity ShallowCopy(TToEntity copyObject, TFromEntity objectToCopy,
-            bool copyVirtualProperties = false)
-        {
-            var objectToCopyProperties =
-                objectToCopy.GetType()
-                    .GetProperties()
-                    .Where(
-                        p =>
-                            (copyVirtualProperties == true || !p.GetGetMethod().IsVirtual) &&
-                            !p.GetCustomAttributes().Any(attr => attr.GetType() == typeof(ProjectionPropertyAttribute)));
-            foreach (var objectToCopyProperty in objectToCopyProperties)
-            {
-                if (!objectToCopyProperty.CanWrite || !objectToCopyProperty.CanRead)
-                    continue;
-
-                var objectToCopyValue = objectToCopyProperty.GetValue(objectToCopy);
-                var copyObjectProperty = copyObject.GetType().GetProperty(objectToCopyProperty.Name);
-
-                copyObjectProperty.SetValue(copyObject, objectToCopyValue);
-            }
-
-            return copyObject;
-        }
-    }
-
-    public static class DataUtils
-    {
         /// <summary>
         /// For the purpose of presentation, variation code must always be empty
         /// But when budget is edited, findExistingOrAddNewLine will handle the difference between null and string.empty values
@@ -1323,6 +1336,14 @@ namespace BaseModel.Data.Helpers
             }
 
             return displayValue;
+        }
+
+        public enum PasteResult
+        {
+            Success,
+            Skip,
+            Failed,
+            FailOnRequired
         }
     }
 }

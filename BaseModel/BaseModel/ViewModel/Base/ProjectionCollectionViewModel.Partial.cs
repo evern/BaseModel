@@ -1390,7 +1390,6 @@ namespace BaseModel.ViewModel.Base
                     dontSplit = true;
 
                 List<TProjection> pasteProjections;
-
                 var PasteString = System.Windows.Clipboard.GetText();
                 string[] RowData;
                 if (dontSplit)

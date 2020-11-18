@@ -23,6 +23,13 @@ namespace BaseModel.View.Behaviors
         private WidthAdjustmentConverter widthAdjustmentConverter = new WidthAdjustmentConverter();
         private double widthAdjustmentValue = 0.0f;
         private double leftMarginWidthAdjustmentValue = 0.0f;
+        public static readonly DependencyProperty IsUseTagProperty = DependencyProperty.Register("IsUseTag", typeof(bool), typeof(DetailSyncBehavior), new PropertyMetadata(false));
+
+        public bool IsUseTag
+        {
+            get { return (bool)GetValue(IsUseTagProperty); }
+            set { SetValue(IsUseTagProperty, value); }
+        }
 
         private void SetColumnBinding(GridColumn masterCol, GridColumn detailCol)
         {
@@ -72,7 +79,12 @@ namespace BaseModel.View.Behaviors
                 //    continue;
 
                 //GridColumn masterCol = masterView.VisibleColumns[detailCol.VisibleIndex];
-                GridColumn masterCol = masterView.VisibleColumns.FirstOrDefault(x => x.Header.ToString() == detailCol.Header.ToString());
+                GridColumn masterCol = null;
+                if(!IsUseTag)
+                    masterCol = masterView.VisibleColumns.FirstOrDefault(x => x.HeaderCaption.ToString() == detailCol.HeaderCaption.ToString());
+                else
+                    masterCol = masterView.VisibleColumns.FirstOrDefault(x => x.HeaderCaption.ToString() == detailCol.Tag.ToString());
+
                 SetColumnBinding(masterCol, detailCol);
             }
         }
@@ -95,16 +107,32 @@ namespace BaseModel.View.Behaviors
             {
                 GridColumn masterCol = null;
 
-                if (detailCol.HeaderCaption.ToString() != string.Empty)
+                if(IsUseTag)
                 {
-                    IEnumerable<GridColumn> masterColumnsWithHeader = masterView.VisibleColumns.Where(x => x.HeaderCaption.ToString() != string.Empty);
-                    masterCol = masterColumnsWithHeader.FirstOrDefault(x => x.HeaderCaption.ToString() == detailCol.HeaderCaption.ToString());
-                }
-                else if(masterView.VisibleColumns.Count > 0)
-                    masterCol = masterView.VisibleColumns.First();
+                    if (detailCol.Tag != null && detailCol.Tag.ToString() != string.Empty)
+                    {
+                        IEnumerable<GridColumn> masterColumnsWithHeader = masterView.VisibleColumns.Where(x => x.HeaderCaption.ToString() != string.Empty);
+                        masterCol = masterColumnsWithHeader.FirstOrDefault(x => x.HeaderCaption.ToString() == detailCol.Tag.ToString());
+                    }
+                    else if (masterView.VisibleColumns.Count > 0)
+                        masterCol = masterView.VisibleColumns.First();
 
-                IEnumerable<GridColumn> masterColumnsWithoutChild = masterView.VisibleColumns.Where(x => !detailView.VisibleColumns.Any(y => y.HeaderCaption.ToString() == x.HeaderCaption.ToString()));
-                widthAdjustmentValue = masterColumnsWithoutChild.Sum(x => x.Width.Value);
+                    IEnumerable<GridColumn> masterColumnsWithoutChild = masterView.VisibleColumns.Where(x => !detailView.VisibleColumns.Any(y => y.Tag != null && y.Tag.ToString() == x.HeaderCaption.ToString()));
+                    widthAdjustmentValue = masterColumnsWithoutChild.Sum(x => x.Width.Value);
+                }
+                else
+                {
+                    if (detailCol.HeaderCaption.ToString() != string.Empty)
+                    {
+                        IEnumerable<GridColumn> masterColumnsWithHeader = masterView.VisibleColumns.Where(x => x.HeaderCaption.ToString() != string.Empty);
+                        masterCol = masterColumnsWithHeader.FirstOrDefault(x => x.HeaderCaption.ToString() == detailCol.HeaderCaption.ToString());
+                    }
+                    else if (masterView.VisibleColumns.Count > 0)
+                        masterCol = masterView.VisibleColumns.First();
+
+                    IEnumerable<GridColumn> masterColumnsWithoutChild = masterView.VisibleColumns.Where(x => !detailView.VisibleColumns.Any(y => y.HeaderCaption.ToString() == x.HeaderCaption.ToString()));
+                    widthAdjustmentValue = masterColumnsWithoutChild.Sum(x => x.Width.Value);
+                }
 
                 RemoveColumnBinding(masterCol, detailCol);
                 if (masterCol != null)
