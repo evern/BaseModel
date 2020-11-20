@@ -757,14 +757,14 @@ namespace BaseModel.Data.Helpers
                         }
                         else if (column.ActualEditSettings is ComboBoxEditSettings)
                         {
-                            ComboBoxEditSettings editSettings = column.ActualEditSettings as ComboBoxEditSettings;
-                            CheckedComboBoxStyleSettings checkedComboBoxStyleSettings = editSettings.StyleSettings as CheckedComboBoxStyleSettings;
+                            ComboBoxEditSettings comboboxEditSettings = column.ActualEditSettings as ComboBoxEditSettings;
+                            CheckedComboBoxStyleSettings checkedComboBoxStyleSettings = comboboxEditSettings.StyleSettings as CheckedComboBoxStyleSettings;
 
                             if (checkedComboBoxStyleSettings != null)
                             {
-                                var copyColumnDisplayMember = (string)editSettings.GetType().GetProperty("DisplayMember").GetValue(editSettings);
-                                var copyColumnItemsSource = (IEnumerable<object>)editSettings.GetType().GetProperty("ItemsSource").GetValue(editSettings);
-                                var copyColumnTag = (IEnumerable<object>)editSettings.GetType().GetProperty("Tag").GetValue(editSettings);
+                                var copyColumnDisplayMember = (string)comboboxEditSettings.GetType().GetProperty("DisplayMember").GetValue(comboboxEditSettings);
+                                var copyColumnItemsSource = (IEnumerable<object>)comboboxEditSettings.GetType().GetProperty("ItemsSource").GetValue(comboboxEditSettings);
+                                var copyColumnTag = (IEnumerable<object>)comboboxEditSettings.GetType().GetProperty("Tag").GetValue(comboboxEditSettings);
                                 if (copyColumnTag != null && copyColumnTag.ToString().ToUpper() == "COPYPASTESKIP")
                                     return PasteResult.Skip;
 
@@ -786,6 +786,29 @@ namespace BaseModel.Data.Helpers
                                     return trySetValueInProjection(projection, column_name, setValues, out errorMessage, undoRedoArguments);
                                 else
                                     return PasteResult.Skip;
+                            }
+                            else if(comboboxEditSettings != null)
+                            {
+                                var copyColumnItemsSource = (IEnumerable<object>)comboboxEditSettings.GetType().GetProperty("ItemsSource").GetValue(comboboxEditSettings);
+                                if(copyColumnItemsSource.Count() > 0)
+                                {
+                                    var itemSourceFirstProperty = copyColumnItemsSource.First();
+                                    if(itemSourceFirstProperty.GetType() == typeof(EnumMemberInfo))
+                                    {
+                                        EnumMemberInfo findEnumValueFromString = (EnumMemberInfo)copyColumnItemsSource.FirstOrDefault(x => x.ToString() == pasteData);
+                                        if (findEnumValueFromString != null)
+                                        {
+                                            Type enumType;
+                                            if (columnPropertyInfo.PropertyType.IsGenericType && columnPropertyInfo.PropertyType.GetGenericTypeDefinition() == typeof(Nullable<>))
+                                                enumType = columnPropertyInfo.PropertyType.GetGenericArguments().First();
+                                            else
+                                                enumType = columnPropertyInfo.PropertyType;
+
+                                            object enumValue = System.Enum.Parse(enumType, pasteData);
+                                            return trySetValueInProjection(projection, column_name, enumValue, out errorMessage, undoRedoArguments);
+                                        }
+                                    }
+                                }
                             }
                             else
                                 return PasteResult.Skip;
