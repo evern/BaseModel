@@ -12,8 +12,10 @@ namespace BaseModel.Misc
 {
     public static class GridControlHelpers
     {
-        public static List<DataRow> PasteCellData(GridControl gridControl, TableView gridTableView, string[] RowData, Func<DataRow, ColumnBase, string, bool, bool> basePasteDataAction, bool showLoadingScreen = false)
+        public delegate bool BasePasteDataFunc(DataRow newRow, ColumnBase copyColumn, string pasteData, bool isLastRow, out List<ErrorMessage> errorMessages);
+        public static List<DataRow> PasteCellData(GridControl gridControl, TableView gridTableView, string[] RowData, BasePasteDataFunc basePasteDataFunc, out List<ErrorMessage> errorMessages, bool showLoadingScreen = false)
         {
+            errorMessages = new List<ErrorMessage>();
             List<DataRow> editedRows = new List<DataRow>();
             var selected_cells = gridTableView.GetSelectedCells();
             if (selected_cells.Count == 0)
@@ -66,7 +68,10 @@ namespace BaseModel.Misc
                     int row_handle = selected_cell.RowHandle;
                     DataRowView editing_row_view = (DataRowView)gridControl.GetRow(row_handle);
                     DataRow editing_row = editing_row_view.Row;
-                    basePasteDataAction?.Invoke(editing_row, selected_cell.Column, string.Empty, true);
+
+                    List<ErrorMessage> currentRowPasteErrorMessage = new List<ErrorMessage>();
+                    basePasteDataFunc?.Invoke(editing_row, selected_cell.Column, string.Empty, true, out currentRowPasteErrorMessage);
+                    errorMessages.AddRange(currentRowPasteErrorMessage);
                     editedRows.Add(editing_row);
                     if (showLoadingScreen)
                         LoadingScreenManager.Progress();
@@ -130,7 +135,10 @@ namespace BaseModel.Misc
                             if (pasteValueColumnOffset >= grouped_results.Count)
                                 pasteValueColumnOffset = 0;
 
-                            basePasteDataAction?.Invoke(editing_row, current_column, columnValue, columnOffset == columnOffsetSelection - 1);
+                            List<ErrorMessage> currentCellPasteErrorMessage = new List<ErrorMessage>();
+                            basePasteDataFunc?.Invoke(editing_row, current_column, columnValue, columnOffset == columnOffsetSelection - 1, out currentCellPasteErrorMessage);
+                            errorMessages.AddRange(currentCellPasteErrorMessage);
+
                             editedRows.Add(editing_row);
                             if (showLoadingScreen)
                                 LoadingScreenManager.Progress();
