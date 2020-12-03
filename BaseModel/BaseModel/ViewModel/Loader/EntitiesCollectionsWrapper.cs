@@ -328,7 +328,7 @@ namespace BaseModel.ViewModel.Loader
         #endregion
 
         #region Messaging
-        public virtual bool OnBeforeEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender, bool isBulkRefresh)
+        public virtual bool OnBeforeEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender, Guid senderKey, bool isBulkRefresh)
         {
             onMessageSender = sender;
             //if (sender != null && sender == MainViewModel)
@@ -336,16 +336,16 @@ namespace BaseModel.ViewModel.Loader
             return true;
         }
 
-        public virtual void OnAfterAuxiliaryEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender, bool isBulkRefresh)
+        public virtual void OnAfterAuxiliaryEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender, Guid senderKey, bool isBulkRefresh)
         {
             UpdateGridSummaryAsync();
 
-            OnPersistentAfterAuxiliaryEntitiesChanges(key, changedType, messageType, sender, isBulkRefresh);
+            OnPersistentAfterAuxiliaryEntitiesChanges(key, changedType, messageType, sender, senderKey, isBulkRefresh);
 
             if (sender != null && sender == MainViewModel)
                 return;
 
-            if (!IsSingleMainEntityRefreshIdentified(key, changedType, messageType, sender, isBulkRefresh))
+            if (!IsSingleMainEntityRefreshIdentified(key, changedType, messageType, sender, senderKey, isBulkRefresh))
             {
                 if (isBulkRefresh)
                 {
@@ -367,7 +367,7 @@ namespace BaseModel.ViewModel.Loader
             this.RaisePropertiesChanged();
         }
 
-        protected virtual void OnPersistentAfterAuxiliaryEntitiesChanges(object key, Type changedType, EntityMessageType messageType, object sender, bool isBulkRefresh)
+        protected virtual void OnPersistentAfterAuxiliaryEntitiesChanges(object key, Type changedType, EntityMessageType messageType, object sender, Guid senderKey, bool isBulkRefresh)
         {
 
         }
@@ -379,7 +379,7 @@ namespace BaseModel.ViewModel.Loader
                 Task.Run(() => mainThreadDispatcher.BeginInvoke(new Action(() => GridControlService.RefreshSummary())));
         }
 
-        public virtual void OnAfterCompulsoryEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender, bool isBulkRefresh)
+        public virtual void OnAfterCompulsoryEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender, Guid senderKey, bool isBulkRefresh)
         {
             if (SuppressNotification)
                 return;
@@ -408,7 +408,7 @@ namespace BaseModel.ViewModel.Loader
         /// <summary>
         /// override this method if entity refresh can be handled manually
         /// </summary>
-        protected virtual bool IsSingleMainEntityRefreshIdentified(object key, Type changedType, EntityMessageType messageType, object sender, bool isBulkRefresh)
+        protected virtual bool IsSingleMainEntityRefreshIdentified(object key, Type changedType, EntityMessageType messageType, object sender, Guid senderKey, bool isBulkRefresh)
         {
             return DoNotAutoRefresh;
         }
@@ -1247,11 +1247,11 @@ namespace BaseModel.ViewModel.Loader
     {
         void loadEntitiesCollection();
 
-        void OnAfterAuxiliaryEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender, bool isBulkRefresh);
+        void OnAfterAuxiliaryEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender, Guid senderKey, bool isBulkRefresh);
 
-        void OnAfterCompulsoryEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender, bool isBulkRefresh);
+        void OnAfterCompulsoryEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender, Guid senderKey, bool isBulkRefresh);
 
-        bool OnBeforeEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender, bool isBulkRefresh);
+        bool OnBeforeEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender, Guid senderKey, bool isBulkRefresh);
 
         void OnAfterDeletedSendMessage(string entityName, string key, string messageType, string sender);
 

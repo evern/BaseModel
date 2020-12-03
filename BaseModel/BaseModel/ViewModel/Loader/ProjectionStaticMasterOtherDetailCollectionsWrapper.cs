@@ -156,7 +156,7 @@ namespace BaseModel.ViewModel.Loader
         public abstract CollectionViewModel<TMainEntity, TMainEntity, TAllEntityPrimaryKey, TMainEntityUnitOfWork> MainEntitiesViewModel { get; }
 
         #region View Refresh
-        public override void OnAfterAuxiliaryEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender, bool isBulkRefresh)
+        public override void OnAfterAuxiliaryEntitiesChanged(object key, Type changedType, EntityMessageType messageType, object sender, Guid senderKey, bool isBulkRefresh)
         {
             mainThreadDispatcher.BeginInvoke(new Action(() => refreshEntities()));
         }

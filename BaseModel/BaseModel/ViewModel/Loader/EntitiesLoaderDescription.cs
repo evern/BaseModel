@@ -27,8 +27,8 @@ namespace BaseModel.ViewModel.Loader
 
         private CollectionViewModel<TEntity, TProjection, TPrimaryKey, TUnitOfWork> collectionViewModel;
         readonly Func<IEnumerable<TProjection>, bool> isContinueLoadingCallBack;
-        readonly Action<object, Type, EntityMessageType, object, bool> collectionViewModelChangedCallBack;
-        readonly Func<object, Type, EntityMessageType, object, bool, bool> collectionViewModelBeforeChangedCallBack;
+        readonly Action<object, Type, EntityMessageType, object, Guid, bool> collectionViewModelChangedCallBack;
+        readonly Func<object, Type, EntityMessageType, object, Guid, bool, bool> collectionViewModelBeforeChangedCallBack;
 
         /// <summary>
         /// Describe how should entities be handled within EntitiesCollectionWrapper
@@ -43,8 +43,8 @@ namespace BaseModel.ViewModel.Loader
             IUnitOfWorkFactory<TUnitOfWork> unitOfWorkFactory,
             Func<TUnitOfWork, IRepository<TEntity, TPrimaryKey>> getRepositoryFunc,
             Func<IEnumerable<TProjection>, bool> isContinueLoadingCallBack = null,
-            Func<object, Type, EntityMessageType, object, bool, bool> collectionViewModelBeforeChangedCallBack = null,
-            Action<object, Type, EntityMessageType, object, bool> collectionViewModelChangedCallBack = null,
+            Func<object, Type, EntityMessageType, object, Guid, bool, bool> collectionViewModelBeforeChangedCallBack = null,
+            Action<object, Type, EntityMessageType, object, Guid, bool> collectionViewModelChangedCallBack = null,
             Func<Func<IRepositoryQuery<TEntity>, IQueryable<TProjection>>> constructProjectionCallBackFunc = null,
             Action<TProjection> compulsoryEntityAssignmentFunc = null, bool alwaysSkipMessage = false)
         {

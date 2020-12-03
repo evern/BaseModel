@@ -132,7 +132,7 @@ namespace BaseModel.ViewModel.Base
                 if (!owner.IsLoaded)
                     return;
 
-                if (owner.OnBeforeEntitiesChangedCallBack != null && !owner.OnBeforeEntitiesChangedCallBack(message.PrimaryKey, typeof(TEntity), message.MessageType, message.Sender, message.WillPerformBulkRefresh))
+                if (owner.OnBeforeEntitiesChangedCallBack != null && !owner.OnBeforeEntitiesChangedCallBack(message.PrimaryKey, typeof(TEntity), message.MessageType, message.Sender, message.Key, message.WillPerformBulkRefresh))
                     return;
 
                 if (owner.AlwaysSkipMessage)
@@ -156,7 +156,7 @@ namespace BaseModel.ViewModel.Base
                         break;
                 }
 
-                owner.OnAfterEntitiesChangedCallBack?.Invoke(message.PrimaryKey, typeof(TEntity), message.MessageType, message.Sender, message.WillPerformBulkRefresh);
+                owner.OnAfterEntitiesChangedCallBack?.Invoke(message.PrimaryKey, typeof(TEntity), message.MessageType, message.Sender, message.Key, message.WillPerformBulkRefresh);
             }
 
             private void OnEntityAdded(TPrimaryKey primaryKey)
@@ -475,8 +475,8 @@ namespace BaseModel.ViewModel.Base
 
 
         public Action<IEnumerable<TProjection>> OnEntitiesLoadedCallBack { get; set; }
-        public Func<object, Type, EntityMessageType, object, bool, bool> OnBeforeEntitiesChangedCallBack { get; set; }
-        public Action<object, Type, EntityMessageType, object, bool> OnAfterEntitiesChangedCallBack { get; set; }
+        public Func<object, Type, EntityMessageType, object, Guid, bool, bool> OnBeforeEntitiesChangedCallBack { get; set; }
+        public Action<object, Type, EntityMessageType, object, Guid, bool> OnAfterEntitiesChangedCallBack { get; set; }
         public Action<TProjection, TProjection> OnBeforeAssignRepositoryToExistingProjection { get; set; }
         public Action<TProjection, TProjection> OnMappingAdditionalChangedEntitiesProperties { get; set; }
         public string CurrentHWID { get; set; }
@@ -506,8 +506,8 @@ namespace BaseModel.ViewModel.Base
 
         //BaseModel Customization Start
         Action<IEnumerable<TProjection>> OnEntitiesLoadedCallBack { get; set; }
-        Func<object, Type, EntityMessageType, object, bool, bool> OnBeforeEntitiesChangedCallBack { get; set; }
-        Action<object, Type, EntityMessageType, object, bool> OnAfterEntitiesChangedCallBack { get; set; }
+        Func<object, Type, EntityMessageType, object, Guid, bool, bool> OnBeforeEntitiesChangedCallBack { get; set; }
+        Action<object, Type, EntityMessageType, object, Guid, bool> OnAfterEntitiesChangedCallBack { get; set; }
         Action<TProjection, TProjection> OnBeforeAssignRepositoryToExistingProjection { get; set; }
         //BaseModel Customization End
     }
