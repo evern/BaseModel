@@ -1023,6 +1023,7 @@ namespace BaseModel.ViewModel.Loader
         protected virtual ITreeViewService TreeViewService { get { return this.GetService<ITreeViewService>(); } }
         protected virtual ITreeListControlService TreeListControlService { get { return this.GetService<ITreeListControlService>(); } }
         protected virtual IFolderBrowserDialogService FolderBrowserDialogService { get { return this.GetService<IFolderBrowserDialogService>(); } }
+        protected virtual ISaveFileDialogService SaveFileDialogService { get { return this.GetService<ISaveFileDialogService>(); } }
         protected virtual IOpenFileDialogService FileBrowserDialogService { get { return this.GetService<IOpenFileDialogService>(); } }
 
         protected IMessageBoxService MessageBoxService

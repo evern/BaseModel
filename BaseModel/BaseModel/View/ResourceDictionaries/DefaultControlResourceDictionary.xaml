@@ -66,6 +66,7 @@
                             </dx:DialogService.DialogStyle>
                         </dx:DialogService>
                         <dxmvvm:LayoutSerializationService />
+                        <dxmvvm:SaveFileDialogService OverwritePrompt="True"  />
                         <dxmvvm:FolderBrowserDialogService Description="Choose Folder" RestorePreviouslySelectedDirectory="True" RootFolder="Desktop" ShowNewFolderButton="True" />
                         <dx:DXSplashScreenService>
                             <dx:DXSplashScreenService.SplashScreenWindowStyle>
@@ -125,6 +126,7 @@
                             </dx:DialogService.DialogStyle>
                         </dx:DialogService>
                         <dxmvvm:LayoutSerializationService />
+                        <dxmvvm:SaveFileDialogService OverwritePrompt="True" />
                         <dxmvvm:FolderBrowserDialogService Description="Choose Folder" RestorePreviouslySelectedDirectory="True" RootFolder="Desktop" ShowNewFolderButton="True" />
                         <services:TableViewService x:Name="DefaultTableViewService" TableView="{Binding ElementName=tableView}" />
                         <services:GridControlService x:Name="DefaultGridControlService" GridControl="{Binding ElementName=GridControl}" />
