@@ -278,10 +278,27 @@ namespace BaseModel.ViewModel.Base
                     return;
             }
 
-            IProjection<TEntity> projection = projectionEntity as IProjection<TEntity>;
-            if (projection != null)
-                DataUtils.ShallowCopy(entity, projection.Entity);
+            //when it's the same type but one is EF object and the other is POCO initialised from view
+            TEntity projectionObject = projectionEntity as TEntity;
+            if(projectionObject != null)
+            {
+                if (entity.GetHashCode() != projectionObject.GetHashCode())
+                {
+                    //need to set created date because POCO have incompatible min date with Db
+                    IHaveCreatedDate iHaveCreatedDateObject = projectionObject as IHaveCreatedDate;
+                    if(iHaveCreatedDateObject != null)
+                        iHaveCreatedDateObject.EntityCreatedDate = DateTime.Now;
 
+                    DataUtils.ShallowCopy(entity, projectionObject);
+                }
+            }
+            //when it's a projection type
+            else
+            {
+                IProjection<TEntity> projection = projectionEntity as IProjection<TEntity>;
+                if (projection != null)
+                    DataUtils.ShallowCopy(entity, projection.Entity);
+            }
         }
 
         protected override IEntitiesChangeTracker CreateEntitiesChangeTracker()
