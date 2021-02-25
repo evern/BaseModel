@@ -12,6 +12,7 @@ using DevExpress.Xpf.Grid.TreeList;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -571,7 +572,10 @@ namespace BaseModel.Data.Helpers
                     copyColumnItem.GetType().GetProperty(copyColumnDisplayMember);
                 var itemValueMemberPropertyInfo =
                     copyColumnItem.GetType().GetProperty(copyColumnValueMember);
-                if (itemDisplayMemberPropertyInfo.GetValue(copyColumnItem) != null && itemDisplayMemberPropertyInfo.GetValue(copyColumnItem).ToString().ToUpper() == searchData.ToUpper())
+
+                string displayMemberStr = itemDisplayMemberPropertyInfo.GetValue(copyColumnItem) == null ? string.Empty : itemDisplayMemberPropertyInfo.GetValue(copyColumnItem).ToString().ToUpper();
+                Debug.Print(displayMemberStr);
+                if (displayMemberStr.Trim() == searchData.ToUpper().Trim())
                 {
                     editValue = (T)itemValueMemberPropertyInfo.GetValue(copyColumnItem);
                     break;
