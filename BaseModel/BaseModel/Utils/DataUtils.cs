@@ -574,7 +574,6 @@ namespace BaseModel.Data.Helpers
                     copyColumnItem.GetType().GetProperty(copyColumnValueMember);
 
                 string displayMemberStr = itemDisplayMemberPropertyInfo.GetValue(copyColumnItem) == null ? string.Empty : itemDisplayMemberPropertyInfo.GetValue(copyColumnItem).ToString().ToUpper();
-                Debug.Print(displayMemberStr);
                 if (displayMemberStr.Trim() == searchData.ToUpper().Trim())
                 {
                     editValue = (T)itemValueMemberPropertyInfo.GetValue(copyColumnItem);
