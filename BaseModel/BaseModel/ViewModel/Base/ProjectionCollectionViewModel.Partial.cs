@@ -28,6 +28,7 @@ using System.Windows.Input;
 using DevExpress.Xpf.Editors.Filtering;
 using System.Windows.Forms;
 using System.ComponentModel;
+using DevExpress.Xpf.Utils;
 
 namespace BaseModel.ViewModel.Base
 {
@@ -348,7 +349,30 @@ namespace BaseModel.ViewModel.Base
             {
                 TableView tableView = e.Source as TableView;
                 if(tableView != null)
-                    tableView.PostEditor();
+                {
+                    if (tableView.FocusedRowHandle == GridControl.NewItemRowHandle)
+                        tableView.CommitEditing();
+                    else
+                        tableView.PostEditor();
+                }
+            }
+        }
+
+        public void PART_Editor_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            TextEdit ed = (TextEdit)sender;
+            TableView view = ((DevExpress.Xpf.Grid.GridCellData)(ed.DataContext)).View as TableView;
+            if (KeyboardHelper.IsShiftPressed & Keyboard.IsKeyDown(System.Windows.Input.Key.Enter))
+            {
+                ed.SelectedText = Environment.NewLine;
+                ed.SelectionLength = 0;
+                ed.SelectionStart += 1;
+                e.Handled = true;
+            }
+            if (e.Key == System.Windows.Input.Key.Enter && ed.IsEditorActive && !KeyboardHelper.IsShiftPressed)
+            {
+                view.CloseEditor();
+                e.Handled = true;
             }
         }
         #endregion

@@ -479,17 +479,6 @@ namespace BaseModel.ViewModel.Loader
 
         }
 
-        public void PreviewKeyDown(System.Windows.Input.KeyEventArgs e)
-        {
-            if (e.Key == Key.Enter)
-            {
-                mainThreadDispatcher.BeginInvoke(new Action(() =>
-                {
-                    TableViewService.CommitEditing();
-                }));
-            }
-        }
-
         public virtual void ViewRefresh()
         {
             IPOCOViewModel viewModel = this as IPOCOViewModel;
@@ -815,6 +804,11 @@ namespace BaseModel.ViewModel.Loader
                 return;
 
             SendKeys.SendWait("^v");
+        }
+
+        public virtual void PreviewKeyDown(System.Windows.Input.KeyEventArgs e)
+        {
+            MainViewModel?.PreviewKeyDown(e);
         }
 
         public virtual bool CanDeleteCellContent(GridControl gridControl)
