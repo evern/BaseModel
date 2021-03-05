@@ -351,28 +351,14 @@ namespace BaseModel.ViewModel.Base
                 if(tableView != null)
                 {
                     if (tableView.FocusedRowHandle == GridControl.NewItemRowHandle)
-                        tableView.CommitEditing();
+                    {
+                        TextEdit textEdit = tableView.ActiveEditor as TextEdit;
+                        if(textEdit == null || textEdit.AcceptsReturn == false)
+                            tableView.CommitEditing();
+                    }
                     else
                         tableView.PostEditor();
                 }
-            }
-        }
-
-        public void PART_Editor_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
-        {
-            TextEdit ed = (TextEdit)sender;
-            TableView view = ((DevExpress.Xpf.Grid.GridCellData)(ed.DataContext)).View as TableView;
-            if (KeyboardHelper.IsShiftPressed & Keyboard.IsKeyDown(System.Windows.Input.Key.Enter))
-            {
-                ed.SelectedText = Environment.NewLine;
-                ed.SelectionLength = 0;
-                ed.SelectionStart += 1;
-                e.Handled = true;
-            }
-            if (e.Key == System.Windows.Input.Key.Enter && ed.IsEditorActive && !KeyboardHelper.IsShiftPressed)
-            {
-                view.CloseEditor();
-                e.Handled = true;
             }
         }
         #endregion

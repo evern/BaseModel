@@ -18,6 +18,8 @@ namespace BaseModel.ViewModel.Services
 {
     public interface ITableViewService
     {
+        //For testing
+        //TableView TableView { get; set; }
         bool ExportToPDF(string exportPath);
         bool ExportToXls(string exportPath, bool isDataAware);
         bool ExportToXls(MemoryStream stream);
@@ -27,6 +29,7 @@ namespace BaseModel.ViewModel.Services
         void SetImmediateUpdateRowPosition(bool updatePositionImmediately);
         void ScrollToLast();
         void ApplyBestFit();
+        void AddNewRow();
     }
 
     public class TableViewService : ServiceBase, ITableViewService
@@ -40,6 +43,14 @@ namespace BaseModel.ViewModel.Services
         // Using a DependencyProperty as the backing store for Camera.  This enables animation, styling, binding, etc...
         public static readonly DependencyProperty TableViewProperty =
             DependencyProperty.Register("TableView", typeof(TableView), typeof(TableViewService), new PropertyMetadata(null));
+
+        public void AddNewRow()
+        {
+            if (this.TableView == null)
+                return;
+
+            this.TableView.AddNewRow();
+        }
 
         public bool ExportToXls(string exportPath, bool isDataAware = true)
         {
