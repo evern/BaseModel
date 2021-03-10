@@ -67,6 +67,11 @@ namespace BaseModel.ViewModel.Loader
             viewRefreshBackgroundWorker.DoWork += refreshBackgroundWorker_DoWork;
             viewRefreshBackgroundWorker.WorkerSupportsCancellation = true;
 
+            viewRefreshDispatcherTimer = new DispatcherTimer();
+            viewRefreshDispatcherTimer.Interval = new TimeSpan(0, 0, 0, 3);
+            viewRaisePropertyChangeDispatcherTimer = new DispatcherTimer();
+            viewRaisePropertyChangeDispatcherTimer.Interval = new TimeSpan(0, 0, 0, 3);
+
             CurrentHWID = string.Empty;
         }
 
@@ -206,13 +211,19 @@ namespace BaseModel.ViewModel.Loader
             if (MainViewModel == null)
                 return false;
 
-            viewRefreshDispatcherTimer = new DispatcherTimer();
-            viewRefreshDispatcherTimer.Interval = new TimeSpan(0, 0, 0, 3);
-            viewRaisePropertyChangeDispatcherTimer = new DispatcherTimer();
-            viewRaisePropertyChangeDispatcherTimer.Interval = new TimeSpan(0, 0, 0, 3);
-
             AssignCallBacksAndRaisePropertyChange(entities);
             return true;
+        }
+
+        public TMainEntityUnitOfWork MainEntityUnitOfWork
+        {
+            get
+            {
+                if (MainViewModel == null)
+                    return default(TMainEntityUnitOfWork);
+
+                return MainViewModel.UnitOfWork;
+            }
         }
 
         protected virtual void AssignCallBacksAndRaisePropertyChange(IEnumerable<TMainProjectionEntity> entities)

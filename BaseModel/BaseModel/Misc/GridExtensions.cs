@@ -34,6 +34,23 @@ namespace BaseModel.Misc
             }
         }
 
+        void grid_ItemsSourceChanged(object sender, ItemsSourceChangedEventArgs e)
+        {
+            ItemsSourceChanged -= grid_ItemsSourceChanged;
+            if (IsLoaded)
+            {
+                Dispatcher.BeginInvoke(new Action(() => {
+                    View.FocusedRowHandle = 0;
+                }), System.Windows.Threading.DispatcherPriority.Render, null);
+            }
+            else
+            {
+                Dispatcher.BeginInvoke(new Action(() => {
+                    View.FocusedRowHandle = 0;
+                }), System.Windows.Threading.DispatcherPriority.Loaded, null);
+            }
+        }
+
         private ObservableCollection<GroupInfo> GetGroupStates()
         {
             var states = new ObservableCollection<GroupInfo>();

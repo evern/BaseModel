@@ -19,7 +19,7 @@ namespace BaseModel.ViewModel.Services
     public interface ITableViewService
     {
         //For testing
-        //TableView TableView { get; set; }
+        TableView TableView { get; set; }
         bool ExportToPDF(string exportPath);
         bool ExportToXls(string exportPath, bool isDataAware);
         bool ExportToXls(MemoryStream stream);
