@@ -25,6 +25,7 @@ namespace BaseModel.ViewModel.Services
     {
         //for debugging purpose
         GridControl GridControl { get; set; }
+        List<GridColumn> GetGridColumns();
         void BeginDataUpdate();
         void EndDataUpdate();
         void SetRowExpandedByColumnValue(string field_name, IHaveExpandState row);
@@ -467,6 +468,14 @@ namespace BaseModel.ViewModel.Services
             int dataRowCount = GridControl.VisibleRowCount - 1;
             for (int rowHandle = 0; rowHandle < dataRowCount; rowHandle++)
                 GridControl.CollapseMasterRow(rowHandle);
+        }
+
+        public List<GridColumn> GetGridColumns()
+        {
+            if (GridControl == null)
+                return new List<GridColumn>();
+
+            return GridControl.Columns.ToList();
         }
 
         DependencyPropertyKey HighlightedTextPropertyKey;
