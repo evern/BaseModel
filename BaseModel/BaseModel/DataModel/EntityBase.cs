@@ -1,4 +1,5 @@
-﻿using BaseModel.Misc;
+﻿using BaseModel.Helpers;
+using BaseModel.Misc;
 using DevExpress.Mvvm;
 using System.ComponentModel.DataAnnotations.Schema;
 

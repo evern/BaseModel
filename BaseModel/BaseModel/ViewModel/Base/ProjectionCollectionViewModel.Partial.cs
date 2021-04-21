@@ -753,7 +753,7 @@ namespace BaseModel.ViewModel.Base
 
             TableView tableView = e.Source as TableView;
             Type activeEditorType = tableView.ActiveEditor.GetType();
-            if (activeEditorType == typeof(ComboBoxEdit) || activeEditorType == typeof(CheckEdit))
+            if (e.RowHandle != GridControl.NewItemRowHandle && (activeEditorType == typeof(ComboBoxEdit) || activeEditorType == typeof(CheckEdit)))
             {
                 if (e.Column.FieldName == previousImmediatePostFieldname)
                 {
@@ -976,7 +976,7 @@ namespace BaseModel.ViewModel.Base
             int? numericIndex = null;
             int numericFieldLength = 0;
             EnumerationType enumerationType;
-            if (valueToFill != null && valueToFill.GetType() == typeof(string) && nextValueInSequence != null)
+            if (valueToFill != null && (valueToFill.GetType() == typeof(string)) && nextValueInSequence != null)
                 enumerationType = DataUtils.GetEnumerateType(valueToFill.ToString(), nextValueInSequence.ToString(), out enumerationDifferences, out enumerator, out numericIndex, out numericFieldLength);
             else
                 enumerationType = EnumerationType.None;
@@ -993,7 +993,6 @@ namespace BaseModel.ViewModel.Base
                         if (enumerator < 0)
                             enumerator = 0;
                     }
-
 
                     TProjection seletedEntity = SelectedEntities[i];
                     if (UnifiedValueValidationCallback != null)
@@ -1046,7 +1045,6 @@ namespace BaseModel.ViewModel.Base
             if (numericIndex != null && enumerator != null)
             {
                 string valueToFillStringOnly = valueToFill.ToString().Substring(0, valueToFill.ToString().Length - numericFieldLength);
-
                 valueToFill = StringFormatUtils.AppendStringWithEnumerator(valueToFillStringOnly, (long)enumerator, numericFieldLength);
             }
 

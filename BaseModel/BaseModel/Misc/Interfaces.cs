@@ -74,6 +74,8 @@ namespace BaseModel.Misc
     {
         string EntityNumber { get; set; }
         string EntityGroup { get; }
+
+        long EntitySortNumber { get; }
     }
 
     public interface IProjection<TEntity> : IGuidEntityKey

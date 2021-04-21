@@ -703,7 +703,7 @@ namespace BaseModel.Data.Helpers
                                 {
                                     if (isPercentColumn)
                                     {
-                                        if (decimal_value > 1)
+                                        if (decimal_value >= 1)
                                             decimal_value /= 100;
                                         //else when user copy from grid and paste it will be the actual value
                                     }

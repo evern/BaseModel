@@ -55,10 +55,13 @@ namespace BaseModel.Helpers
         /// <param name="enumerator">current numeric value to append to string</param>
         /// <param name="numericFieldLength">portion of string allocated for enumeration from the right</param>
         /// <returns></returns>
-        public static string AppendStringWithEnumerator(string stringPortionOnly, long enumerator, int numericFieldLength)
+        public static string AppendStringWithEnumerator(string stringPortionOnly, long enumerator, int? numericFieldLength)
         {
             string enumeratorString = enumerator.ToString();
-            int numberOfLeadingZeros = numericFieldLength - enumeratorString.Length;
+            if (numericFieldLength == null)
+                return enumeratorString;
+
+            int numberOfLeadingZeros = (int)numericFieldLength - enumeratorString.Length;
             for (int i = 0; i < numberOfLeadingZeros; i++)
             {
                 stringPortionOnly += "0";
@@ -96,48 +99,59 @@ namespace BaseModel.Helpers
             return stringOnlyValue;
         }
 
-        public static string GetNewRegisterNumber(IEnumerable<IEntityNumber> originalEntities, IEnumerable<IEntityNumber> unsavedEntities, string duplicateInternalNumber, IEnumerable<IEntityNumber> insertSelectedEntities, string entityGroup = "")
+        public static string GetNewRegisterNumber(IEnumerable<IEntityNumber> originalEntities, IEnumerable<IEntityNumber> unsavedEntities, IEnumerable<IEntityNumber> insertSelectedEntities, string entityGroup = "", string insertNumberString = "")
         {
-            if (duplicateInternalNumber != string.Empty && duplicateInternalNumber != null)
+            List<IEntityNumber> allEntities = new List<IEntityNumber>(originalEntities);
+            allEntities.AddRange(unsavedEntities);
+
+            List<string> groupedOriginalEntitiesNumbers =
+            originalEntities.Where(x => x.EntityGroup == entityGroup).Where(x => x.EntityNumber != null).Select(x => x.EntityNumber).ToList();
+
+            List<string> groupedUnsavedEntitiesNumbers =
+            unsavedEntities.Where(x => x.EntityGroup == entityGroup).Where(x => x.EntityNumber != null).Select(x => x.EntityNumber).ToList();
+
+            List<string> insertSelectedEntitiesSimilarNames = insertSelectedEntities.Where(x => x.EntityGroup == entityGroup).Where(x => x.EntityNumber != null).Select(x => x.EntityNumber).ToList();
+
+            int numericFieldLength = 0;
+            long valueToFillNumberOnly = 0;
+            string valueToFillStringOnly;
+            
+            if (insertNumberString != string.Empty)
             {
-                string stringValueToFill = duplicateInternalNumber;
-                int numericFieldLength = 0;
-                long valueToFillNumberOnly = 0;
-                string valueToFillStringOnly = ParseStringIntoComponents(duplicateInternalNumber, out numericFieldLength, out valueToFillNumberOnly);
-
-                List<IEntityNumber> allEntities = new List<IEntityNumber>(originalEntities);
-                allEntities.AddRange(unsavedEntities);
-
-                List<string> originalEntitiesSimilarNames =
-                originalEntities.Where(x => x.EntityGroup == entityGroup).Where(x => x.EntityNumber != null).Select(x => x.EntityNumber).ToList();
-
-                List<string> allEntitiesSimilarNames =
-                allEntities.Where(x => x.EntityGroup == entityGroup).Where(x => x.EntityNumber != null).Select(x => x.EntityNumber).ToList();
-
-                List<string> unsavedEntitiesSimilarNames =
-                unsavedEntities.Where(x => x.EntityGroup == entityGroup).Where(x => x.EntityNumber != null).Select(x => x.EntityNumber).ToList();
-
-                List<string> insertSelectedEntitiesSimilarNames = insertSelectedEntities.Where(x => x.EntityGroup == entityGroup).Where(x => x.EntityNumber != null).Select(x => x.EntityNumber).ToList();
-
-                do
-                {
-                    valueToFillNumberOnly += 1;
-                    string nextName = StringFormatUtils.AppendStringWithEnumerator(valueToFillStringOnly, valueToFillNumberOnly, numericFieldLength);
-
-                    bool isExistsInInsert = insertSelectedEntitiesSimilarNames.Any(x => x == nextName);
-                    bool isExistsInUnsaved = unsavedEntitiesSimilarNames.Any(x => x == nextName);
-
-                    //when current name exists in unsaved it means that nextName is not safe to be used
-                    if (isExistsInUnsaved)
-                        continue;
-                    //when current name exists in insert it means that nextName is not safe to be used
-                    else if (isExistsInInsert)
-                        continue;
-                    else
-                        return nextName;
-
-                } while (valueToFillNumberOnly < 1000000);
+                valueToFillStringOnly = ParseStringIntoComponents(insertNumberString, out numericFieldLength, out valueToFillNumberOnly);
             }
+            else
+            {
+                List<Tuple<string, long>> entitiesNamesTupleList = new List<Tuple<string, long>>();
+                foreach (string groupedOriginalEntitiesNumber in groupedOriginalEntitiesNumbers)
+                {
+                    valueToFillStringOnly = ParseStringIntoComponents(groupedOriginalEntitiesNumber, out numericFieldLength, out valueToFillNumberOnly);
+                    entitiesNamesTupleList.Add(new Tuple<string, long>(valueToFillStringOnly, valueToFillNumberOnly));
+                }
+
+                valueToFillNumberOnly = entitiesNamesTupleList.Max(x => x.Item2);
+                Tuple<string, long> largestNumberTuple = entitiesNamesTupleList.First(x => x.Item2 == valueToFillNumberOnly);
+                valueToFillStringOnly = largestNumberTuple.Item1;
+            }
+
+            do
+            {
+                valueToFillNumberOnly += 1;
+                string nextName = StringFormatUtils.AppendStringWithEnumerator(valueToFillStringOnly, valueToFillNumberOnly, numericFieldLength);
+
+                bool isExistsInInsert = insertSelectedEntitiesSimilarNames.Any(x => x == nextName);
+                bool isExistsInUnsaved = groupedUnsavedEntitiesNumbers.Any(x => x == nextName);
+
+                //when current name exists in unsaved it means that nextName is not safe to be used
+                if (isExistsInUnsaved)
+                    continue;
+                //when current name exists in insert it means that nextName is not safe to be used
+                else if (isExistsInInsert)
+                    continue;
+                else
+                    return nextName;
+
+            } while (valueToFillNumberOnly < 1000000);
 
             return string.Empty;
         }

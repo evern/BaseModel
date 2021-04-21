@@ -274,6 +274,7 @@ namespace BaseModel.ViewModel.Base
         {
             if(OnBeforeApplyingProjectionPropertiesToEntityIsContinueCallBack != null)
             {
+                ApplyCreatedDateToEntity(projectionEntity);
                 if (!OnBeforeApplyingProjectionPropertiesToEntityIsContinueCallBack.Invoke(projectionEntity, entity))
                     return;
             }
@@ -285,10 +286,7 @@ namespace BaseModel.ViewModel.Base
                 if (entity.GetHashCode() != projectionObject.GetHashCode())
                 {
                     //need to set created date because POCO have incompatible min date with Db
-                    IHaveCreatedDate iHaveCreatedDateObject = projectionObject as IHaveCreatedDate;
-                    if(iHaveCreatedDateObject != null)
-                        iHaveCreatedDateObject.EntityCreatedDate = DateTime.Now;
-
+                    ApplyCreatedDateToEntity(projectionObject);
                     DataUtils.ShallowCopy(entity, projectionObject);
                 }
             }
@@ -485,7 +483,7 @@ namespace BaseModel.ViewModel.Base
             }
         }
 
-        protected void ApplyCreatedDateToEntity(object entity)
+        public void ApplyCreatedDateToEntity(object entity)
         {
             if (entity != null)
             {

@@ -2,6 +2,7 @@
 using BaseModel.DataModel;
 using BaseModel.Helpers;
 using BaseModel.Misc;
+using DevExpress.Mvvm;
 using DevExpress.Mvvm.POCO;
 using DevExpress.Xpf.Bars;
 using DevExpress.Xpf.Grid;
@@ -21,14 +22,10 @@ namespace BaseModel.ViewModel.Loader
             where TMainEntityUnitOfWork : IUnitOfWork
     {
         /// <summary>
-        /// Get the actual parent entity key field name for undo redo
-        /// </summary>
-        protected abstract string GetEntityNumberFieldName();
-
-        /// <summary>
         /// Get the project specific numeric field length
         /// </summary>
-        protected abstract int DefaultNumericFieldLength();
+        protected abstract int? DefaultNumericFieldLength();
+        protected abstract bool AllowReorderingOnDeletion();
 
         #region Call Backs
         protected override void AssignCallBacksAndRaisePropertyChange(IEnumerable<TMainProjectionEntity> entities)
@@ -38,32 +35,10 @@ namespace BaseModel.ViewModel.Loader
             MainViewModel.SetParentViewModel(this);
             base.AssignCallBacksAndRaisePropertyChange(entities);
         }
-
-        public override void UnifiedNewRowInitializationFromView(TMainProjectionEntity projection)
-        {
-            if (projection.EntityNumber == string.Empty || projection.EntityNumber == null)
-            {
-                IEnumerable<TMainProjectionEntity> entitiesInOrder = MainViewModel.Entities.Where(x => x.EntityGroup == projection.EntityGroup).OrderBy(x => x.EntityNumber);
-                if (entitiesInOrder.Count() == 0)
-                {
-                    projection.EntityNumber = StringFormatUtils.AppendStringWithEnumerator(string.Empty, 0, DefaultNumericFieldLength());
-                }
-
-                TMainProjectionEntity largestNumberEntity = entitiesInOrder.Last();
-                string largestNumberString = largestNumberEntity.EntityNumber;
-                int numericFieldLength = 0;
-                long largestNumberValueOnly = 0;
-                string largestNumberStringOnly = StringFormatUtils.ParseStringIntoComponents(largestNumberString, out numericFieldLength, out largestNumberValueOnly);
-                long newRowNumber = largestNumberValueOnly + 1;
-                projection.EntityNumber = StringFormatUtils.AppendStringWithEnumerator(string.Empty, newRowNumber, DefaultNumericFieldLength());
-            }
-
-            base.UnifiedNewRowInitializationFromView(projection);
-        }
         
         protected bool IsContinueNewRowFromViewCallBack(RowEventArgs e, TMainProjectionEntity projection)
         {
-            IEnumerable<TMainProjectionEntity> entitiesInOrder = MainViewModel.Entities.Where(x => x.EntityGroup == projection.EntityGroup).OrderBy(x => x.EntityNumber);
+            IEnumerable<TMainProjectionEntity> entitiesInOrder = MainViewModel.Entities.Where(x => x.EntityGroup == projection.EntityGroup).OrderBy(x => x.EntitySortNumber);
             if(entitiesInOrder.Count() == 0)
             {
                 projection.EntityNumber = StringFormatUtils.AppendStringWithEnumerator(string.Empty, 0, DefaultNumericFieldLength());
@@ -128,9 +103,6 @@ namespace BaseModel.ViewModel.Loader
         private List<TMainProjectionEntity> getNewDuplicateEntities(int timesToDuplicate, bool isInsert, IEnumerable<TMainProjectionEntity> all_entities, IEnumerable<TMainProjectionEntity> selected_entities)
         {
             List<TMainProjectionEntity> unsavedEntities = new List<TMainProjectionEntity>();
-            IEnumerable<TMainProjectionEntity> entitiesInOrder = MainViewModel.Entities.OrderBy(x => x.EntityNumber);
-            TMainProjectionEntity largestNumberEntity = entitiesInOrder.Last();
-            string largestNumberString = largestNumberEntity.EntityNumber;
 
             for (int i = 0; i < timesToDuplicate; i++)
             {
@@ -139,9 +111,9 @@ namespace BaseModel.ViewModel.Loader
                     var newProjection = new TMainProjectionEntity();
                     DataUtils.ShallowCopy(newProjection, selectedEntity);
                     newProjection.GUID = Guid.Empty;
+                    newProjection.EntityNumber = StringFormatUtils.GetNewRegisterNumber(MainViewModel.Entities, unsavedEntities, MainViewModel.SelectedEntities, selectedEntity.EntityGroup);
+                    newProjectionPropertyOverride(newProjection);
 
-                    newProjection.EntityNumber = newProjection.EntityNumber = StringFormatUtils.GetNewRegisterNumber(MainViewModel.Entities, unsavedEntities, largestNumberString, MainViewModel.SelectedEntities);
-                    
                     //handled in bulk save
                     //MainViewModel.EntitiesUndoRedoManager.AddUndo(newProjection, null, null, null, EntityMessageType.Added);
                     unsavedEntities.Add(newProjection);
@@ -151,27 +123,58 @@ namespace BaseModel.ViewModel.Loader
             return unsavedEntities;
         }
 
+        /// <summary>
+        /// set default property after shallow copy from selected property
+        /// </summary>
+        protected virtual void newProjectionPropertyOverride(TMainProjectionEntity projection)
+        {
+
+        }
+
+        /// <summary>
+        /// Reorder number when auto number group is deleted
+        /// </summary>
         private void OnAfterProjectionDeletedCallBack(IEnumerable<TMainProjectionEntity> entities)
         {
-            List<TMainProjectionEntity> changedEntities = new List<TMainProjectionEntity>();
-            IEnumerable<TMainProjectionEntity> entitiesInOrder = MainViewModel.Entities.OrderBy(x => x.EntityNumber);
-            long enumerateNumber = 1;
-
-            foreach (TMainProjectionEntity entityInOrder in entitiesInOrder)
+            if (AllowReorderingOnDeletion())
             {
-                int numericFieldLength = 0;
-                long largestNumberValueOnly = 0;
-                string largestNumberStringOnly = StringFormatUtils.ParseStringIntoComponents(entityInOrder.EntityNumber, out numericFieldLength, out largestNumberValueOnly);
-                if (enumerateNumber != largestNumberValueOnly)
-                {
-                    string oldNumberString = entityInOrder.EntityNumber;
-                    string newNumberString = StringFormatUtils.AppendStringWithEnumerator(string.Empty, enumerateNumber, DefaultNumericFieldLength());
-                    entityInOrder.EntityNumber = newNumberString;
-                    MainViewModel.EntitiesUndoRedoManager.AddUndo(entityInOrder, GetEntityNumberFieldName(), oldNumberString, newNumberString, EntityMessageType.Changed);
-                    changedEntities.Add(entityInOrder);
-                }
+                reorderEntities(entities);
+            }
+        }
 
-                enumerateNumber += 1;
+        public bool CanAutoOrder()
+        {
+            return SelectedEntities != null && SelectedEntities.Count > 0;
+        }
+
+        public void AutoOrder()
+        {
+            reorderEntities(SelectedEntities);
+        }
+
+        private void reorderEntities(IEnumerable<TMainProjectionEntity> entities)
+        {
+            List<TMainProjectionEntity> changedEntities = new List<TMainProjectionEntity>();
+            var groupedEntities = MainViewModel.Entities.GroupBy(x => x.EntityGroup).Select(group => new { Group = group.Key, GroupedEntities = group.ToList() });
+            foreach (var groupedEntity in groupedEntities)
+            {
+                long enumerateNumber = 1;
+                foreach (TMainProjectionEntity entityInOrder in groupedEntity.GroupedEntities.OrderBy(x => x.EntitySortNumber))
+                {
+                    int numericFieldLength = 0;
+                    long largestNumberValueOnly = 0;
+                    string largestNumberStringOnly = StringFormatUtils.ParseStringIntoComponents(entityInOrder.EntityNumber, out numericFieldLength, out largestNumberValueOnly);
+                    if (enumerateNumber != largestNumberValueOnly)
+                    {
+                        string oldNumberString = entityInOrder.EntityNumber;
+                        string newNumberString = StringFormatUtils.AppendStringWithEnumerator(string.Empty, enumerateNumber, DefaultNumericFieldLength());
+                        entityInOrder.EntityNumber = newNumberString;
+                        MainViewModel.EntitiesUndoRedoManager.AddUndo(entityInOrder, BindableBase.GetPropertyName(() => new TMainProjectionEntity().EntityNumber), oldNumberString, newNumberString, EntityMessageType.Changed);
+                        changedEntities.Add(entityInOrder);
+                    }
+
+                    enumerateNumber += 1;
+                }
             }
 
             MainViewModel.BaseBulkSave(changedEntities);
@@ -183,7 +186,7 @@ namespace BaseModel.ViewModel.Loader
             if (!_isProcessingMultiple)
                 MainViewModel.EntitiesUndoRedoManager.PauseActionId();
 
-            List<TMainProjectionEntity> newEntities = getNewEntities(1);
+            List<TMainProjectionEntity> newEntities = getNewInsertEntities(1);
             newEntities = concatenateNewEntitiesWithExistingRenameEntities(newEntities);
             MainViewModel.BaseBulkSave(newEntities);
             if (!_isProcessingMultiple)
@@ -199,7 +202,7 @@ namespace BaseModel.ViewModel.Loader
             List<TMainProjectionEntity> newEntities = new List<TMainProjectionEntity>();
             if (int.TryParse(barEdit.EditValue.ToString(), out timesToInsert))
             {
-                List<TMainProjectionEntity> currentEnumerationSaveEntities = getNewEntities(timesToInsert);
+                List<TMainProjectionEntity> currentEnumerationSaveEntities = getNewInsertEntities(timesToInsert);
                 newEntities.AddRange(currentEnumerationSaveEntities);
             }
 
@@ -212,7 +215,7 @@ namespace BaseModel.ViewModel.Loader
             //MainViewModel.EntitiesUndoRedoManager.UnpauseActionId();
         }
 
-        List<TMainProjectionEntity> getNewEntities(int timestoInsert)
+        List<TMainProjectionEntity> getNewInsertEntities(int timestoInsert)
         {
             List<TMainProjectionEntity> unsavedEntities = new List<TMainProjectionEntity>();
             for (int i = 0; i < timestoInsert; i++)
@@ -222,7 +225,8 @@ namespace BaseModel.ViewModel.Loader
                     var newProjection = new TMainProjectionEntity();
                     DataUtils.ShallowCopy(newProjection, selectedEntity);
                     newProjection.GUID = Guid.Empty;
-                    newProjection.EntityNumber = StringFormatUtils.GetNewRegisterNumber(MainViewModel.Entities, unsavedEntities, selectedEntity.EntityNumber, MainViewModel.SelectedEntities, selectedEntity.EntityGroup);
+                    newProjection.EntityNumber = StringFormatUtils.GetNewRegisterNumber(MainViewModel.Entities, unsavedEntities, MainViewModel.SelectedEntities, selectedEntity.EntityGroup, selectedEntity.EntityNumber);
+                    newProjectionPropertyOverride(newProjection);
 
                     //Handled in Bulk Save
                     //MainViewModel.EntitiesUndoRedoManager.AddUndo(newProjection, null, null, null, EntityMessageType.Added);
@@ -244,7 +248,7 @@ namespace BaseModel.ViewModel.Loader
             concatenatedEntities.AddRange(newEntities);
 
             List<string> processedValueToFillStringOnly = new List<string>();
-            foreach (TMainProjectionEntity entity in newEntities.OrderBy(x => x.EntityNumber))
+            foreach (TMainProjectionEntity entity in newEntities.OrderBy(x => x.EntitySortNumber))
             {
                 long lowestUnsavedNumericValue = 0;
                 long highestUnsavedNumericValue = 0;
@@ -269,7 +273,7 @@ namespace BaseModel.ViewModel.Loader
                 if (!processedValueToFillStringOnly.Contains(valueToFillStringOnly))
                 {
                     processedValueToFillStringOnly.Add(valueToFillStringOnly);
-                    List<TMainProjectionEntity> renameEntities = getRenameExistingEntities(valueToFillStringOnly, lowestUnsavedNumericValue, highestUnsavedNumericValue);
+                    List<TMainProjectionEntity> renameEntities = getRenameExistingEntities(valueToFillStringOnly, lowestUnsavedNumericValue, highestUnsavedNumericValue, entity.EntityGroup);
                     concatenatedEntities.AddRange(renameEntities);
                 }
             }
@@ -284,11 +288,13 @@ namespace BaseModel.ViewModel.Loader
         /// <param name="startNumber">Start of internal number to be named</param>
         /// <param name="endNumber">End if internal number to be named</param>
         /// <returns></returns>
-        private List<TMainProjectionEntity> getRenameExistingEntities(string renameStringOnly, long startNumber, long endNumber)
+        private List<TMainProjectionEntity> getRenameExistingEntities(string renameStringOnly, long startNumber, long endNumber, string entityGroup)
         {
             long valueToAdd = (endNumber - startNumber) + 1;
             List<TMainProjectionEntity> renameEntities = new List<TMainProjectionEntity>();
-            foreach (TMainProjectionEntity entity in MainViewModel.Entities)
+
+            long loopNumber = startNumber;
+            foreach (TMainProjectionEntity entity in MainViewModel.Entities.Where(x => x.EntityGroup == entityGroup).OrderBy(x => x.EntitySortNumber))
             {
                 string stringValueToFill = entity.EntityNumber;
                 if (stringValueToFill == null)
@@ -298,13 +304,14 @@ namespace BaseModel.ViewModel.Loader
                 long valueToFillNumberOnly = 0;
                 string valueToFillStringOnly = StringFormatUtils.ParseStringIntoComponents(stringValueToFill, out numericFieldLength, out valueToFillNumberOnly);
 
-                if (valueToFillNumberOnly >= startNumber)
+                if (valueToFillNumberOnly == loopNumber)
                 {
                     long increasedNumber = valueToFillNumberOnly + valueToAdd;
                     string oldInternalNum = entity.EntityNumber;
                     entity.EntityNumber = StringFormatUtils.AppendStringWithEnumerator(valueToFillStringOnly, increasedNumber, numericFieldLength);
-                    MainViewModel.EntitiesUndoRedoManager.AddUndo(entity, GetEntityNumberFieldName(), oldInternalNum, entity.EntityNumber, EntityMessageType.Changed);
+                    MainViewModel.EntitiesUndoRedoManager.AddUndo(entity, BindableBase.GetPropertyName(() => new TMainProjectionEntity().EntityNumber), oldInternalNum, entity.EntityNumber, EntityMessageType.Changed);
                     renameEntities.Add(entity);
+                    loopNumber += 1;
                 }
             }
 
