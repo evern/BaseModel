@@ -64,14 +64,11 @@ namespace BaseModel.ViewModel.UndoRedo
         /// <param name="actionId">Undo/Redo action id</param>
         /// <param name="messageType">Action to take when undoing/redoing</param>
         public void AddUndo(TEntity changedEntity, string propertyName, object oldValue, object newValue,
-            EntityMessageType messageType)
+            EntityMessageType messageType, bool force = false)
         {
             //view will invoke add undo, put a check to make sure that it's not redoing before adding
             if(!_isUndoing && !_isRedoing)
             {
-                if (propertyName == null)
-                    return;
-
                 if(!ExceptionFieldNames.Any(x => x == propertyName))
                 {
                     //when type is enumerable (e.g. tokens), add the entire object
@@ -84,7 +81,7 @@ namespace BaseModel.ViewModel.UndoRedo
                         if (oldValue == null && newValue == null && messageType != EntityMessageType.Added)
                             return;
 
-                        if ((oldValue != null && newValue != null) && oldValue.ToString() == newValue.ToString())
+                        if (!force && (oldValue != null && newValue != null) && oldValue.ToString() == newValue.ToString())
                             return;
 
                         //sometimes undo gets invoked multiple times by view events, check that it doesn't exists already before adding

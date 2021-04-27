@@ -165,19 +165,21 @@ namespace BaseModel.ViewModel.Loader
         {
             entities = null;
             this.RaisePropertyChanged(x => x.Entities);
-            onAfterRefresh();
+            loadDataPointsTable();
         }
 
         protected abstract string expand_key_field_name { get; }
 
         //public Action<TMainProjectionEntity> SetIsRowExpanded;
-        protected override void onAfterRefresh()
+        protected override bool loadDataPointsTable()
         {
             if(Entities != null)
                 foreach (var entity in Entities)
                 {
                     GridControlService.SetRowExpandedByColumnValue(expand_key_field_name, entity);
                 }
+
+            return true;
         }
 
         public void MasterRowExpanded(RowEventArgs e)

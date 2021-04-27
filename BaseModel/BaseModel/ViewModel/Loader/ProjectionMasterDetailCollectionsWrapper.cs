@@ -195,11 +195,12 @@ namespace BaseModel.ViewModel.Loader
         protected abstract string expand_key_field_name { get; }
 
         //public Action<TMainProjectionEntity> SetIsRowExpanded;
-        protected override void onAfterRefresh()
+        protected override bool loadDataPointsTable()
         {
             entities = null;
             this.RaisePropertyChanged(x => x.Entities);
             restoreRowExpansionState();
+            return true;
         }
 
         private void restoreRowExpansionState()

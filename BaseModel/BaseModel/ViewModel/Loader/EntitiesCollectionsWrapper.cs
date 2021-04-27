@@ -28,6 +28,7 @@ using DevExpress.Xpf.Editors.Settings;
 using DevExpress.Xpf.Grid.LookUp;
 using System.Windows.Forms;
 using DevExpress.Xpf.Grid.TreeList;
+using System.Data;
 
 namespace BaseModel.ViewModel.Loader
 {
@@ -45,7 +46,6 @@ namespace BaseModel.ViewModel.Loader
         /// when grid rows loaded will be handled
         /// </summary>
         protected bool isHandleLoadedGridRows;
-        public bool IsUsedAsPersistentViewModel;
         public bool IsReadOnly { get; set; }
         protected virtual string readOnlyMessage => string.Empty;
         public CollectionViewModel<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey, TMainEntityUnitOfWork> MainViewModel { get; set; }
@@ -61,6 +61,7 @@ namespace BaseModel.ViewModel.Loader
         private BackgroundWorker viewRefreshBackgroundWorker;
         private DispatcherTimer viewRaisePropertyChangeDispatcherTimer;
         private System.Timers.Timer entitiesLoadedTimer;
+
         public CollectionViewModelsWrapper()
         {
             viewRefreshBackgroundWorker = new BackgroundWorker();
@@ -236,21 +237,15 @@ namespace BaseModel.ViewModel.Loader
                 OnEntitiesLoadedCallBack = null;
                 OnEntitiesLoadedCallBackRelateParam = null;
 
-                if(!IsUsedAsPersistentViewModel)
-                {
-                    //Self destruct after entities has been returned
-                    CleanUpEntitiesLoader();
-                    return;
-                }
+                //Self destruct after entities has been returned
+                CleanUpEntitiesLoader();
+                return;
             }
 
-            if(!IsUsedAsPersistentViewModel)
+            BackgroundRefresh();
+            if (!isHandleLoadedGridRows)
             {
-                BackgroundRefresh();
-                if (!isHandleLoadedGridRows)
-                {
-                    onGridRowsLoaded();
-                }
+                onGridRowsLoaded();
             }
         }
 
@@ -287,22 +282,6 @@ namespace BaseModel.ViewModel.Loader
                 //GridControlService.SetGridColumnSortMode();
                 GridControlService.CombineMasterDetailSearch();
             }
-
-            if (!PersistentLayoutHelper.TryDeserializeLayout(LayoutSerializationService, ViewName))
-            {
-                isLayoutLoaded = false;
-                if (TableViewService != null)
-                {
-                    //TableViewService.ApplyDefaultF2Behavior();
-
-                    if (!doNotApplyBestFit)
-                        //Do not apply best fit if entities aren't loaded within timeframe
-                        if (forceApplyBestFit || (Entities != null && Entities.Count > 0))
-                            TableViewService.ApplyBestFit();
-                }
-            }
-            else
-                isLayoutLoaded = true;
 
             if (IsReadOnly)
                 MessageBoxService.ShowMessage(readOnlyMessage, "Read Only", MessageButton.OK);
@@ -453,7 +432,7 @@ namespace BaseModel.ViewModel.Loader
                 if (GridControlService != null)
                     GridControlService.RefreshSummary();
 
-                onAfterRefresh();
+                loadDataPointsTable();
             }
             GridControlService.SetExpansionState(groupExpansionState);
         }
@@ -485,33 +464,53 @@ namespace BaseModel.ViewModel.Loader
             mainThreadDispatcher.BeginInvoke(new Action(() => this.ViewRefresh()));
         }
 
-        protected virtual void onAfterRefresh()
+        protected virtual bool loadDataPointsTable()
         {
-
+            return false;
         }
 
         public virtual void ViewRefresh()
         {
-            IPOCOViewModel viewModel = this as IPOCOViewModel;
-            if (viewModel != null)
+            bool isUsingDataTable = loadDataPointsTable();
+            if (!PersistentLayoutHelper.TryDeserializeLayout(LayoutSerializationService, ViewName))
             {
-                ObservableCollection<Misc.GroupInfo> groupExpansionState = new ObservableCollection<Misc.GroupInfo>();
-                CriteriaOperator filterCriteria = null; 
-                if (GridControlService != null)
+                isLayoutLoaded = false;
+                if (TableViewService != null)
                 {
-                    groupExpansionState = GridControlService.GetExpansionState();
-                    filterCriteria = GridControlService.FilterCriteria;
-                }
+                    //TableViewService.ApplyDefaultF2Behavior();
 
-                viewModel.RaisePropertiesChanged();
-                if (GridControlService != null)
+                    if (!doNotApplyBestFit)
+                        //Do not apply best fit if entities aren't loaded within timeframe
+                        if (forceApplyBestFit || (Entities != null && Entities.Count > 0))
+                            TableViewService.ApplyBestFit();
+                }
+            }
+            else
+                isLayoutLoaded = true;
+
+            //expanded state will be reset if layout is saved on datatable
+            if(!isUsingDataTable)
+            {
+                IPOCOViewModel viewModel = this as IPOCOViewModel;
+                if (viewModel != null)
                 {
-                    GridControlService.RefreshSummary();
-                    GridControlService.SetExpansionState(groupExpansionState);
-                    GridControlService.FilterCriteria = filterCriteria;
-                }
+                    ObservableCollection<Misc.GroupInfo> groupExpansionState = new ObservableCollection<Misc.GroupInfo>();
+                    CriteriaOperator filterCriteria = null;
+                    if (GridControlService != null)
+                    {
+                        groupExpansionState = GridControlService.GetExpansionState();
+                        filterCriteria = GridControlService.FilterCriteria;
+                    }
 
-                onAfterRefresh();
+                    viewModel.RaisePropertiesChanged();
+                    if (GridControlService != null)
+                    {
+                        GridControlService.RefreshSummary();
+                        GridControlService.SetExpansionState(groupExpansionState);
+                        GridControlService.FilterCriteria = filterCriteria;
+                    }
+
+                }
             }
 
             this.RaisePropertiesChanged();
@@ -691,7 +690,6 @@ namespace BaseModel.ViewModel.Loader
                 return;
 
             ReloadEntitiesCollection();
-            BackgroundRefresh();
         }
 
         protected virtual void onBeforeReloadingEntitiesCollection()
