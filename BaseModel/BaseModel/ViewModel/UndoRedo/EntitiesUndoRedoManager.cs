@@ -64,7 +64,7 @@ namespace BaseModel.ViewModel.UndoRedo
         /// <param name="actionId">Undo/Redo action id</param>
         /// <param name="messageType">Action to take when undoing/redoing</param>
         public void AddUndo(TEntity changedEntity, string propertyName, object oldValue, object newValue,
-            EntityMessageType messageType)
+            EntityMessageType messageType, bool force = false)
         {
             //view will invoke add undo, put a check to make sure that it's not redoing before adding
             if(!_isUndoing && !_isRedoing)
@@ -75,7 +75,7 @@ namespace BaseModel.ViewModel.UndoRedo
                 if(!ExceptionFieldNames.Any(x => x == propertyName))
                 {
                     //when type is enumerable (e.g. tokens), add the entire object
-                    if (oldValue != null && DataUtils.GetEnumerableType(oldValue.GetType()) != null)
+                    if (force || oldValue != null && DataUtils.GetEnumerableType(oldValue.GetType()) != null)
                     {
                         UndoList.Add(new UndoRedoEntityInfo<TEntity>(changedEntity, propertyName, oldValue, newValue, ActionId, messageType));
                     }
@@ -88,7 +88,7 @@ namespace BaseModel.ViewModel.UndoRedo
                             return;
 
                         //sometimes undo gets invoked multiple times by view events, check that it doesn't exists already before adding
-                        IEnumerable<UndoRedoEntityInfo<TEntity>> similarUndoRedoProperties = UndoList.Where(x => (x.ActionId == ActionId - 1 || x.ActionId == ActionId) && x.ChangedEntity == changedEntity && x.PropertyName == propertyName && x.MessageType == messageType);
+                        IEnumerable<UndoRedoEntityInfo<TEntity>> similarUndoRedoProperties = UndoList.Where(x => (x.ActionId == QueryActionId - 1 || x.ActionId == QueryActionId) && x.ChangedEntity == changedEntity && x.PropertyName == propertyName && x.MessageType == messageType);
                         UndoRedoEntityInfo<TEntity> similarUndoRedoProperty = null;
                         if (newValue == null)
                             similarUndoRedoProperty = similarUndoRedoProperties.Where(x => x.OldValue != null).FirstOrDefault(x => x.OldValue.ToString() == oldValue.ToString() && x.NewValue == null);
@@ -290,6 +290,8 @@ namespace BaseModel.ViewModel.UndoRedo
             }
         }
 
+        private int QueryActionId => _ActionId;
+
         /// <summary>
         /// Set action id manually by undo/redo operation 
         /// </summary>
@@ -331,7 +333,7 @@ namespace BaseModel.ViewModel.UndoRedo
             return _PauseActionId;
         }
 
-        public bool IsInUndoRedoOperation => _isUndoing || _isRedoing;
+        public bool IsInUndoRedoOperation =>  _isUndoing || _isRedoing;
         #endregion
     }
 }
