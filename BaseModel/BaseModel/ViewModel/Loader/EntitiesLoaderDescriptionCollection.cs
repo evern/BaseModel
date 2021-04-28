@@ -75,7 +75,7 @@ namespace BaseModel.ViewModel.Loader
             {
                 var entitiesLoader = (IEntitiesLoaderDescription<TProjection>)GetLoader(typeof(TProjection));
                 if (entitiesLoader == null)
-                    throw new InvalidOperationException("Entities loader not added");
+                    return null;
 
                 return entitiesLoader.GetViewModel();
             }
