@@ -354,6 +354,7 @@ namespace BaseModel.ViewModel.Loader
 
         private void RaisePropertyChangeDispatcherTimer_Tick(object sender, EventArgs e)
         {
+            viewRaisePropertyChangeDispatcherTimer.Stop();
             this.RaisePropertiesChanged();
         }
 
@@ -392,6 +393,7 @@ namespace BaseModel.ViewModel.Loader
 
         private void refreshTimer_Tick(object sender, EventArgs e)
         {
+            viewRefreshDispatcherTimer.Stop();
             this.RaisePropertiesChanged();
         }
 
