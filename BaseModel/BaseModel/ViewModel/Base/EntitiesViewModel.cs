@@ -141,7 +141,10 @@ namespace BaseModel.ViewModel.Base
                 if (message.WillPerformBulkRefresh)
                     return;
 
-                bool skipOnMessage = message.Sender == null ? false : (!owner.RefreshOnSameSenderKey && message.Key == owner.Key) && message.HWID == owner.CurrentHWID;
+                bool skipOnMessage = message.Sender == null ? false : !(owner.RefreshOnSameSenderKey && message.Key == owner.Key) && message.HWID == owner.CurrentHWID;
+                if (skipOnMessage)
+                    return;
+
                 switch (message.MessageType)
                 {
                     case EntityMessageType.Added:
