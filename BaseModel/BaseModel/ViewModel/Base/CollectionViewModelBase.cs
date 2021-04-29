@@ -711,21 +711,29 @@ namespace BaseModel.ViewModel.Base
 
             bool isError = false;
             //perform after save operation to map primary key back to TEntity
-            if(bulkProcessModels.Count > 0 && !skipDbSave)
+            if(bulkProcessModels.Count > 0)
             {
                 try
                 {
-                    Repository.UnitOfWork.SaveChanges();
+                    if(!skipDbSave)
+                        Repository.UnitOfWork.SaveChanges();
+
                     foreach (BulkProcessModel<TProjection, TEntity> bulkProcessModel in bulkProcessModels)
                     {
-                        var primaryKey = Repository.GetPrimaryKey(bulkProcessModel.RepositoryEntity);
-                        if (bulkProcessModel.IsNewEntity)
-                            Repository.SetProjectionPrimaryKey(bulkProcessModel.Projection, primaryKey);
+                        TPrimaryKey primaryKey = default(TPrimaryKey);
+                        if (!skipDbSave)
+                        {
+                            primaryKey = Repository.GetPrimaryKey(bulkProcessModel.RepositoryEntity);
+                            if (bulkProcessModel.IsNewEntity)
+                                Repository.SetProjectionPrimaryKey(bulkProcessModel.Projection, primaryKey);
+                        }
 
                         //Need to put here because any updates associated with the entity need to be committed before sending message
                         OnAfterProjectionSavedCallBack?.Invoke(bulkProcessModel.Projection, bulkProcessModel.RepositoryEntity, bulkProcessModel.IsNewEntity);
-                        if (!doBulkRefresh && !AlwaysSkipMessage)
-                            SendMessage(primaryKey, bulkProcessModel.Projection, bulkProcessModel.RepositoryEntity, bulkProcessModel.IsNewEntity, doBulkRefresh);
+
+                        if (!skipDbSave)
+                            if (!doBulkRefresh && !AlwaysSkipMessage)
+                                SendMessage(primaryKey, bulkProcessModel.Projection, bulkProcessModel.RepositoryEntity, bulkProcessModel.IsNewEntity, doBulkRefresh);
                     }
                 }
                 catch (DbException e)

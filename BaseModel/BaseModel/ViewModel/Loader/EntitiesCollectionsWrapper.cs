@@ -488,30 +488,31 @@ namespace BaseModel.ViewModel.Loader
             else
                 isLayoutLoaded = true;
 
+            //remove this because of performance issue
             //expanded state will be reset if layout is saved on datatable
-            if(!isUsingDataTable)
-            {
-                IPOCOViewModel viewModel = this as IPOCOViewModel;
-                if (viewModel != null)
-                {
-                    ObservableCollection<Misc.GroupInfo> groupExpansionState = new ObservableCollection<Misc.GroupInfo>();
-                    CriteriaOperator filterCriteria = null;
-                    if (GridControlService != null)
-                    {
-                        groupExpansionState = GridControlService.GetExpansionState();
-                        filterCriteria = GridControlService.FilterCriteria;
-                    }
+            //if(!isUsingDataTable)
+            //{
+            //    IPOCOViewModel viewModel = this as IPOCOViewModel;
+            //    if (viewModel != null)
+            //    {
+            //        ObservableCollection<Misc.GroupInfo> groupExpansionState = new ObservableCollection<Misc.GroupInfo>();
+            //        CriteriaOperator filterCriteria = null;
+            //        if (GridControlService != null)
+            //        {
+            //            groupExpansionState = GridControlService.GetExpansionState();
+            //            filterCriteria = GridControlService.FilterCriteria;
+            //        }
 
-                    viewModel.RaisePropertiesChanged();
-                    if (GridControlService != null)
-                    {
-                        GridControlService.RefreshSummary();
-                        GridControlService.SetExpansionState(groupExpansionState);
-                        GridControlService.FilterCriteria = filterCriteria;
-                    }
+            //        viewModel.RaisePropertiesChanged();
+            //        if (GridControlService != null)
+            //        {
+            //            GridControlService.RefreshSummary();
+            //            GridControlService.SetExpansionState(groupExpansionState);
+            //            GridControlService.FilterCriteria = filterCriteria;
+            //        }
 
-                }
-            }
+            //    }
+            //}
 
             this.RaisePropertiesChanged();
         }
