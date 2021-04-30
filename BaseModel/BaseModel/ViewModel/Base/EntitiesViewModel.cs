@@ -141,7 +141,7 @@ namespace BaseModel.ViewModel.Base
                 if (message.WillPerformBulkRefresh)
                     return;
 
-                bool skipOnMessage = message.Sender == null ? false : !(owner.RefreshOnSameSenderKey && message.Key == owner.Key) && message.HWID == owner.CurrentHWID;
+                bool skipOnMessage = message.Sender == null ? false : (owner.RefreshOnlyOnSameSenderKey && message.Key != owner.Key) && message.HWID == owner.CurrentHWID;
                 if (skipOnMessage)
                     return;
 
@@ -294,7 +294,7 @@ namespace BaseModel.ViewModel.Base
         public bool AlwaysSkipMessage { get; set; }
 
         //by default same sender won't be refreshed unless overriden by this toggle
-        public bool RefreshOnSameSenderKey { get; set; }
+        public bool RefreshOnlyOnSameSenderKey { get; set; }
 
         public void LoadEntities(bool forceLoad, Action refreshAction = null)
         {
