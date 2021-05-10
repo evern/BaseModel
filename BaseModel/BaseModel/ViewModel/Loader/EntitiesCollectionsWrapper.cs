@@ -47,6 +47,7 @@ namespace BaseModel.ViewModel.Loader
         /// </summary>
         protected bool isHandleLoadedGridRows;
         public bool IsReadOnly { get; set; }
+        public bool IsInstantFeedbackMode { get; set; }
         protected virtual string readOnlyMessage => string.Empty;
         public CollectionViewModel<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey, TMainEntityUnitOfWork> MainViewModel { get; set; }
         public bool SuppressNotification { get; set; }
@@ -172,31 +173,45 @@ namespace BaseModel.ViewModel.Loader
 
         protected abstract void onAuxiliaryEntitiesCollectionLoaded();
 
+        public InstantFeedbackCollectionViewModel<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey, TMainEntityUnitOfWork> InstantFeedbackMainViewModel = null;
         protected void CreateMainViewModel(IUnitOfWorkFactory<TMainEntityUnitOfWork> unitOfWorkFactory, Func<TMainEntityUnitOfWork, IRepository<TMainEntity, TMainEntityPrimaryKey>> getRepositoryFunc)
         {
-            mainEntityLoaderDescription = new EntitiesLoaderDescription<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey, TMainEntityUnitOfWork>(this, 0, unitOfWorkFactory, getRepositoryFunc, OnMainViewModelLoaded, OnBeforeEntitiesChanged, OnAfterAuxiliaryEntitiesChanged, specifyMainViewModelProjection, null, this.AlwaysSkipMessage);
-            MainViewModel = mainEntityLoaderDescription.CreateMainCollectionViewModel();
-            MainViewModel.OnAfterSavedSendMessageCallBack = this.OnAfterSavedSendMessage;
-            MainViewModel.OnAfterDeletedSendMessageCallBack = this.OnAfterDeletedSendMessage;
-            MainViewModel.SelectedEntities = this.SelectedEntities;
-            MainViewModel.UnifiedValueChangingCallback = this.UnifiedCellValueChanging;
-            MainViewModel.UnifiedValueChangedCallback = this.UnifiedCellValueChanged;
-            MainViewModel.UnifiedNewRowInitialisationFromView = this.UnifiedNewRowInitializationFromView;
-            MainViewModel.UnifiedValueValidationCallback = this.UnifiedValueValidation;
-            MainViewModel.UnifiedValidateRow = this.UnifiedRowValidation;
-            MainViewModel.FullRefreshWithoutClearingUndoRedoCallBack = this.FullRefreshWithoutClearingUndoRedo;
-            MainViewModel.OnBeforeApplyingProjectionPropertiesToEntityIsContinueCallBack = OnBeforeApplyingProjectionPropertiesToEntityIsContinue;
-            MainViewModel.FormatErrorMessagesCallBack = FormatErrorMessages;
-            MainViewModel.OnSelectedEntitiesChangedCallBack = OnSelectedEntitiesChanged;
+            if (IsInstantFeedbackMode)
+            {
+                Func<IRepositoryQuery<TMainEntity>, IQueryable<TMainProjectionEntity>> projection = null;
+                projection = specifyMainViewModelProjection();
 
-            //database behaviours
-            MainViewModel.OnBeforeProjectionSaveIsContinueCallBack = OnBeforeProjectionSaveIsContinue;
-            MainViewModel.OnBeforeProjectionDeleteIsContinueCallBack = OnBeforeProjectionDeleteIsContinue;
-            MainViewModel.OnAfterProjectionSavedCallBack = OnAfterProjectionSave;
-            MainViewModel.OnAfterProjectionsSavedCallBack = OnAfterProjectionsSave;
-            MainViewModel.OnBeforeProjectionsDeleteCallBack = OnBeforeProjectionsDelete;
-            MainViewModel.OnAfterProjectionsDeletedCallBack = OnAfterProjectionsDeleted;
-            mainEntityLoaderDescription.LoadMainCollectionViewModel();
+                InstantFeedbackMainViewModel = InstantFeedbackCollectionViewModel<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey, TMainEntityUnitOfWork>.CreateInstantFeedbackCollectionViewModel(unitOfWorkFactory, getRepositoryFunc, projection);
+                InstantFeedbackMainViewModel.OnBeforeProjectionSaveIsContinueCallBack = OnBeforeInstantFeedbackEntitySaveIsContinue;
+                //this.RaisePropertyChanged(x => x.InstantFeedbackEntities);
+                this.RaisePropertiesChanged();
+            }
+            else
+            {
+                mainEntityLoaderDescription = new EntitiesLoaderDescription<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey, TMainEntityUnitOfWork>(this, 0, unitOfWorkFactory, getRepositoryFunc, OnMainViewModelLoaded, OnBeforeEntitiesChanged, OnAfterAuxiliaryEntitiesChanged, specifyMainViewModelProjection, null, this.AlwaysSkipMessage);
+                MainViewModel = mainEntityLoaderDescription.CreateMainCollectionViewModel();
+                MainViewModel.OnAfterSavedSendMessageCallBack = this.OnAfterSavedSendMessage;
+                MainViewModel.OnAfterDeletedSendMessageCallBack = this.OnAfterDeletedSendMessage;
+                MainViewModel.SelectedEntities = this.SelectedEntities;
+                MainViewModel.UnifiedValueChangingCallback = this.UnifiedCellValueChanging;
+                MainViewModel.UnifiedValueChangedCallback = this.UnifiedCellValueChanged;
+                MainViewModel.UnifiedNewRowInitialisationFromView = this.UnifiedNewRowInitializationFromView;
+                MainViewModel.UnifiedValueValidationCallback = this.UnifiedValueValidation;
+                MainViewModel.UnifiedValidateRow = this.UnifiedRowValidation;
+                MainViewModel.FullRefreshWithoutClearingUndoRedoCallBack = this.FullRefreshWithoutClearingUndoRedo;
+                MainViewModel.OnBeforeApplyingProjectionPropertiesToEntityIsContinueCallBack = OnBeforeApplyingProjectionPropertiesToEntityIsContinue;
+                MainViewModel.FormatErrorMessagesCallBack = FormatErrorMessages;
+                MainViewModel.OnSelectedEntitiesChangedCallBack = OnSelectedEntitiesChanged;
+
+                //database behaviours
+                MainViewModel.OnBeforeProjectionSaveIsContinueCallBack = OnBeforeProjectionSaveIsContinue;
+                MainViewModel.OnBeforeProjectionDeleteIsContinueCallBack = OnBeforeProjectionDeleteIsContinue;
+                MainViewModel.OnAfterProjectionSavedCallBack = OnAfterProjectionSave;
+                MainViewModel.OnAfterProjectionsSavedCallBack = OnAfterProjectionsSave;
+                MainViewModel.OnBeforeProjectionsDeleteCallBack = OnBeforeProjectionsDelete;
+                MainViewModel.OnAfterProjectionsDeletedCallBack = OnAfterProjectionsDeleted;
+                mainEntityLoaderDescription.LoadMainCollectionViewModel();
+            }
         }
 
         protected abstract Func<IRepositoryQuery<TMainEntity>, IQueryable<TMainProjectionEntity>> specifyMainViewModelProjection();
@@ -565,6 +580,7 @@ namespace BaseModel.ViewModel.Loader
         }
 
         public virtual ObservableCollection<TMainProjectionEntity> Entities => MainViewModel == null ? null : MainViewModel.Entities;
+        public virtual IListSource InstantFeedbackEntities => InstantFeedbackMainViewModel == null ? null : InstantFeedbackMainViewModel.Entities;
 
         public ScaleTransform Zoom => MainViewModel == null ? null : MainViewModel.Zoom;
 
@@ -674,6 +690,56 @@ namespace BaseModel.ViewModel.Loader
                 return;
 
             MainViewModel.ShowErrorMessage(dialogTitle, errorMessages);
+        }
+
+        public virtual object InstantFeedbackSelectedEntity
+        {
+            get
+            {
+                if (InstantFeedbackMainViewModel == null)
+                    return null;
+
+                return InstantFeedbackMainViewModel.SelectedEntity;
+            }
+            set
+            {
+                if (InstantFeedbackMainViewModel == null)
+                    return;
+
+                InstantFeedbackMainViewModel.SelectedEntity = value;
+            }
+        }
+
+        DispatcherTimer viewRefreshDispatcher;
+        public virtual void EditingAttachedBehavior_SaveChanges(GridColumnDataEventArgs e)
+        {
+            if (!IsInstantFeedbackMode)
+                return;
+
+            EditableColumn c = (EditableColumn)e.Column;
+            InstantFeedbackMainViewModel.Save(InstantFeedbackSelectedEntity, c.RealFieldName, e.Value);
+
+            InstantFeedbackMainViewModel.Refresh();
+            this.RaisePropertyChanged(x => x.InstantFeedbackEntities);
+            //viewRefreshDispatcher = new DispatcherTimer();
+            //viewRefreshDispatcher.Interval = new TimeSpan(0, 0, 0, 1);
+            //viewRefreshDispatcher.Tick += ViewRefreshDispatcher_Tick;
+            //viewRefreshDispatcher.Start();
+        }
+
+        private void ViewRefreshDispatcher_Tick(object sender, EventArgs e)
+        {
+            viewRefreshDispatcher.Stop();
+            InstantFeedbackMainViewModel.Refresh();
+            this.RaisePropertyChanged(x => x.InstantFeedbackEntities);
+        }
+
+        public void MouseDoubleClick(MouseButtonEventArgs e)
+        {
+            if (!IsInstantFeedbackMode)
+                return;
+
+
         }
         #endregion
 
@@ -893,6 +959,9 @@ namespace BaseModel.ViewModel.Loader
                 if (isLoading != null && (bool)isLoading)
                     return true;
 
+                if (IsInstantFeedbackMode)
+                    return false;
+
                 if (MainViewModel == null)
                     return true;
 
@@ -1069,8 +1138,14 @@ namespace BaseModel.ViewModel.Loader
         }
         #endregion
 
-        #region Database behaviour
-        protected virtual OperationInterceptMode OnBeforeProjectionSaveIsContinue(TMainProjectionEntity projection, out bool isNew)
+        #region Database behaviour        
+        protected virtual OperationInterceptMode OnBeforeInstantFeedbackEntitySaveIsContinue(TMainEntity entity, out bool isNew)
+        {
+            isNew = false;
+            return OperationInterceptMode.Continue;
+        }
+
+    protected virtual OperationInterceptMode OnBeforeProjectionSaveIsContinue(TMainProjectionEntity projection, out bool isNew)
         {
             isNew = false;
             return OperationInterceptMode.Continue;

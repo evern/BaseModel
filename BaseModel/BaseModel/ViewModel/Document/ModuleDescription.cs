@@ -17,7 +17,17 @@ namespace BaseModel.ViewModel.Document
             ModuleTitle = title;
             DocumentType = documentType == null ? string.Empty : documentType;
             DocumentParameter = documentParameter;
-            NavigationId = securityKey + uniqueNavigationKey;
+
+            //to allow Document.Id to comply to XamlName Grammar
+            string uniqueNavKeyFormat = string.Empty;
+            if(uniqueNavigationKey != null)
+            {
+                uniqueNavKeyFormat = uniqueNavigationKey.Replace("-", "");
+                if(uniqueNavKeyFormat.Length >= 8)
+                    uniqueNavKeyFormat = uniqueNavKeyFormat.Substring(1, 8);
+            }
+
+            NavigationId = securityKey + uniqueNavKeyFormat;
             SecurityKey = securityKey;
             ParentId = parentId;
             Image = Image;

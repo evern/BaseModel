@@ -93,6 +93,23 @@ namespace BaseModel.DataModel
     /// </summary>
     public static class RepositoryExtensions
     {
+        public static Expression<Func<TProjection, TPrimaryKey>> GetProjectionPrimaryKeyExpression<TEntity, TProjection, TPrimaryKey>(this IRepository<TEntity, TPrimaryKey> repository) where TEntity : class
+        {
+            var parameter = Expression.Parameter(typeof(TProjection));
+            return Expression.Lambda<Func<TProjection, TPrimaryKey>>(Expression.Property(parameter, repository.GetPrimaryKeyPropertyName()), parameter);
+        }
+
+        /// <summary>
+        /// Returns an entity primary key property name.
+        /// </summary>
+        /// <typeparam name="TEntity">A repository entity type.</typeparam>
+        /// <typeparam name="TPrimaryKey">A primary key type.</typeparam>
+        /// <param name="repository">A repository.</param>
+        public static string GetPrimaryKeyPropertyName<TEntity, TPrimaryKey>(this IRepository<TEntity, TPrimaryKey> repository) where TEntity : class
+        {
+            return ExpressionHelper.GetPropertyName(repository.GetPrimaryKeyExpression);
+        }
+
         /// <summary>
         /// Builds a lambda expression that compares an entity primary key with the given constant value.
         /// </summary>
@@ -371,4 +388,6 @@ namespace BaseModel.DataModel
             return !(projection is TEntity);
         }
     }
+
+
 }
