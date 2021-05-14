@@ -59,6 +59,7 @@ namespace BaseModel.ViewModel.Services
         void RemoveSelectedRows(int[] rowHandles);
         void RefreshRowByListIndex(int listIndex);
         ObservableCollection<Misc.GroupInfo> GetExpansionState();
+        void SaveExpansionStates();
         GridColumnCollection GridColumns();
         object GetRow(int rowHandle);
         void SetExpansionState(ObservableCollection<Misc.GroupInfo> states);
@@ -145,6 +146,15 @@ namespace BaseModel.ViewModel.Services
             }
 
             return new ObservableCollection<Misc.GroupInfo>();
+        }
+
+        public void SaveExpansionStates()
+        {
+            GridControlEx gridControlEx = GridControl as GridControlEx;
+            if (gridControlEx != null)
+            {
+                gridControlEx.SaveExpansionStates();
+            }
         }
 
         public void SetExpansionState(ObservableCollection<Misc.GroupInfo> states)

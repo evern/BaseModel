@@ -5,13 +5,105 @@ using System;
 using System.Linq;
 using System.Collections.ObjectModel;
 using System.Windows;
+using System.Threading.Tasks;
+using DevExpress.Data.Async.Helpers;
+using DevExpress.Data;
 
 namespace BaseModel.Misc
 {
+    public delegate void CancelledEventHandler(object sender, CancelledEventArgs e);
+    public class InstantFeedbackTableView : TableView
+    {
+        public event CancelledEventHandler FocusedRowChanging;
+        public InstantFeedbackTableView()
+        {
+
+        }
+
+        static InstantFeedbackTableView()
+        {
+            TopRowIndexProperty.OverrideMetadata(typeof(InstantFeedbackTableView), new FrameworkPropertyMetadata(GridControl.InvalidRowHandle, null, (d, e) => ((InstantFeedbackTableView)d).CoerceTopRowIndex((int)e)));
+            FocusedRowHandleProperty.OverrideMetadata(typeof(InstantFeedbackTableView), new FrameworkPropertyMetadata(GridControl.InvalidRowHandle, null, (d, e) => ((InstantFeedbackTableView)d).CoerceFocusedRowHandle((int)e)));
+        }
+
+        /// <summary>
+        /// In AsyncOperation start return old top row index
+        /// </summary>
+        object CoerceTopRowIndex(int value)
+        {
+            if (TopRowIndex == value)
+                return value;
+
+            if (FocusedRowChanging != null)
+            {
+                CancelledEventArgs e = new CancelledEventArgs(TopRowIndex, value);
+                FocusedRowChanging(this, e);
+                if (e.Cancel)
+                    return TopRowIndex; //TopRowIndex is old value, return old value during cancellation (AsyncOperation)
+            }
+
+            return value;
+        }
+
+        object CoerceFocusedRowHandle(int value)
+        {
+            if (FocusedRowHandle == value) 
+                return value;
+
+            if (FocusedRowChanging != null)
+            {
+                CancelledEventArgs e = new CancelledEventArgs(FocusedRowHandle, value);
+                FocusedRowChanging(this, e);
+                if (e.Cancel)
+                    //because Grid_CustomUnboundColumn doesn't call IsSetData when CurrentItem is the same after editing, it however always works on first visible row
+                    return 0;
+                    //when the cause is determined the following can be restored
+                    //return FocusedRowHandle; //FocusedRowHandle is old value, return old value during cancellation (AsyncOperation)
+            }
+            return value;
+        }
+    }
+
+    public class CancelledEventArgs : EventArgs
+    {
+        public int NewRowHandle { get; private set; }
+        public int OldRowHandle { get; private set; }
+        public bool Cancel { get; set; }
+
+        public CancelledEventArgs(int oldRowHandle, int newRowHandle)
+        {
+            OldRowHandle = oldRowHandle;
+            NewRowHandle = newRowHandle;
+            Cancel = false;
+        }
+    }
+
     public class GridControlEx : GridControl
     {
+        public bool IsInstantFeedbackMode { get; set; }
+
+        public GridControlEx()
+        {
+            AsyncOperationCompleted += GridControlEx_AsyncOperationCompleted;
+        }
+
         static GridControlEx()
         {
+        }
+
+        ObservableCollection<GroupInfo> tempGroupStates;
+        public void SaveExpansionStates()
+        {
+            tempGroupStates = GetGroupStates();
+
+        }
+        private void GridControlEx_AsyncOperationCompleted(object sender, RoutedEventArgs e)
+        {
+            if(IsInstantFeedbackMode && tempGroupStates != null)
+            {
+                States = tempGroupStates;
+                tempGroupStates = null;
+            }
         }
 
         [XtraSerializableProperty]
@@ -76,12 +168,12 @@ namespace BaseModel.Misc
     {
         //public bool isEditorActive;
 
-        //public TableViewEx()
-        //{
-        //    this.PreviewKeyDown += TableViewEx_PreviewKeyDown;
-        //    this.ShownEditor += TableViewEx_ShownEditor;
-        //    this.HiddenEditor += TableViewEx_HiddenEditor;
-        //}
+        public TableViewEx()
+        {
+            //this.PreviewKeyDown += TableViewEx_PreviewKeyDown;
+            //this.ShownEditor += TableViewEx_ShownEditor;
+            //this.HiddenEditor += TableViewEx_HiddenEditor;
+        }
 
         //private void TableViewEx_HiddenEditor(object sender, EditorEventArgs e)
         //{

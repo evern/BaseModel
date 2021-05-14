@@ -15,27 +15,70 @@ namespace BaseModel.Misc
     public class EditingAttachedBehavior : Behavior<GridControl>
     {
         public GridControl Grid { get { return AssociatedObject; } }
-        public TableView View { get { return (TableView)Grid.View; } }
+        public InstantFeedbackTableView View { get { return (InstantFeedbackTableView)Grid.View; } }
 
         public event SaveChangesEventHandler SaveChanges;
         protected override void OnAttached()
         {
             base.OnAttached();
             Grid.CustomUnboundColumnData += new GridColumnDataEventHandler(Grid_CustomUnboundColumnData);
+            Grid.AsyncOperationStarted += new RoutedEventHandler(GridControl_AsyncOperationStarted);
+            Grid.AsyncOperationCompleted += new RoutedEventHandler(GridControl_AsyncOperationCompleted);
             View.ShownEditor += new EditorEventHandler(View_ShownEditor);
             View.CellValueChanging += new CellValueChangedEventHandler(View_CellValueChanging);
+            View.CellValueChanged += new CellValueChangedEventHandler(View_CellValueChanged);
+            View.FocusedRowChanging += new CancelledEventHandler(View_FocusedRowChanging);
+            View.HiddenEditor += View_HiddenEditor;
+        }
+
+        private void View_HiddenEditor(object sender, EditorEventArgs e)
+        {
+            View.PostEditor();
+        }
+
+        bool cancellationFlag = false;
+        private void GridControl_AsyncOperationStarted(object sender, RoutedEventArgs e)
+        {
+            cancellationFlag = true;
+        }
+        private void View_FocusedRowChanging(object sender, CancelledEventArgs e)
+        {
+            e.Cancel = cancellationFlag;
+        }
+
+        private void GridControl_AsyncOperationCompleted(object sender, RoutedEventArgs e)
+        {
+            cancellationFlag = false;
         }
 
         void View_CellValueChanging(object sender, CellValueChangedEventArgs e)
         {
             if (View.ActiveEditor != null && e.Column is EditableColumn)
+            {
                 View.ActiveEditor.IsReadOnly = false;
+            }
         }
+
+        void View_CellValueChanged(object sender, CellValueChangedEventArgs e)
+        {
+            if (View.ActiveEditor != null && e.Column is EditableColumn)
+            {
+                if (SaveChanges != null)
+                {
+                    SaveChanges(this, saveEvent);
+                }
+            }
+        }
+
         protected override void OnDetaching()
         {
             Grid.CustomUnboundColumnData -= new GridColumnDataEventHandler(Grid_CustomUnboundColumnData);
+            Grid.AsyncOperationStarted -= new RoutedEventHandler(GridControl_AsyncOperationStarted);
+            Grid.AsyncOperationCompleted -= new RoutedEventHandler(GridControl_AsyncOperationCompleted);
             View.ShownEditor -= new EditorEventHandler(View_ShownEditor);
             View.CellValueChanging -= new CellValueChangedEventHandler(View_CellValueChanging);
+            View.CellValueChanged -= new CellValueChangedEventHandler(View_CellValueChanged);
+            View.FocusedRowChanging -= new CancelledEventHandler(View_FocusedRowChanging);
 
             base.OnDetaching();
         }
@@ -44,6 +87,8 @@ namespace BaseModel.Misc
             if (e.Column is EditableColumn)
                 e.Editor.IsReadOnly = false;
         }
+
+        GridColumnDataEventArgs saveEvent;
         void Grid_CustomUnboundColumnData(object sender, GridColumnDataEventArgs e)
         {
             EditableColumn column = e.Column as EditableColumn;
@@ -57,8 +102,9 @@ namespace BaseModel.Misc
             }
             if (e.IsSetData)
             {
-                if (SaveChanges != null)
-                    SaveChanges(this, e);
+                saveEvent = e;
+                //if (SaveChanges != null)
+                //    SaveChanges(this, e);
                 return;
             }
         }

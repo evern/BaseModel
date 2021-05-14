@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity;
+using System.Data.Entity.Core.Objects;
 using System.Data.Entity.Infrastructure;
 using System.Data.Entity.Validation;
 using System.Linq;
@@ -124,9 +125,23 @@ namespace BaseModel.DataModel.EntityFramework
             }
         }
 
+        ObjectContext ObjectContext
+        {
+            get
+            {
+                var objectContext = (Context as IObjectContextAdapter);
+                if (objectContext != null)
+                    return (Context as IObjectContextAdapter).ObjectContext;
+                else
+                    return null;
+            }
+        }
+
         protected virtual TEntity ReloadCore(TEntity entity)
         {
-            Context.Entry(entity).Reload();
+            ObjectContext.Refresh(RefreshMode.StoreWins, entity);
+
+            //Context.Entry(entity).Reload();
             return FindCore(GetPrimaryKeyCore(entity));
         }
 

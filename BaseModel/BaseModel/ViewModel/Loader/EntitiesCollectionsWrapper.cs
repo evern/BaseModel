@@ -29,6 +29,7 @@ using DevExpress.Xpf.Grid.LookUp;
 using System.Windows.Forms;
 using DevExpress.Xpf.Grid.TreeList;
 using System.Data;
+using DevExpress.Data.Async.Helpers;
 
 namespace BaseModel.ViewModel.Loader
 {
@@ -182,9 +183,10 @@ namespace BaseModel.ViewModel.Loader
                 projection = specifyMainViewModelProjection();
 
                 InstantFeedbackMainViewModel = InstantFeedbackCollectionViewModel<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey, TMainEntityUnitOfWork>.CreateInstantFeedbackCollectionViewModel(unitOfWorkFactory, getRepositoryFunc, projection);
-                InstantFeedbackMainViewModel.OnBeforeProjectionSaveIsContinueCallBack = OnBeforeInstantFeedbackEntitySaveIsContinue;
-                //this.RaisePropertyChanged(x => x.InstantFeedbackEntities);
-                this.RaisePropertiesChanged();
+                InstantFeedbackMainViewModel.ApplyInstantFeedbackEntityPropertiesToOtherUnitOfWorkEntityCallBack = ApplyInstantFeedbackEntityPropertiesToOtherUnitOfWorkEntity;
+                InstantFeedbackMainViewModel.OtherUnitOfWorkSaveChangesCallBack = InstantFeedbackOtherUnitOfWorkSaveChanges;
+                InstantFeedbackMainViewModel.SetParentViewModel(this);
+                OnMainViewModelLoaded(null);
             }
             else
             {
@@ -220,12 +222,17 @@ namespace BaseModel.ViewModel.Loader
         public Func<object> OnEntitiesLoadedCallBackRelateParam { get; set; }
         protected virtual bool OnMainViewModelLoaded(IEnumerable<TMainProjectionEntity> entities)
         {
-            //if it was disposed before fully loaded
-            if (mainEntityLoaderDescription == null)
-                return false;
+            if(!IsInstantFeedbackMode)
+            {
+                //if it was disposed before fully loaded
+                if (mainEntityLoaderDescription == null)
+                    return false;
 
-            if (MainViewModel == null)
-                return false;
+                if (MainViewModel == null)
+                    return false;
+
+                MainViewModel.SetParentViewModel(this);
+            }
 
             AssignCallBacksAndRaisePropertyChange(entities);
             return true;
@@ -245,7 +252,6 @@ namespace BaseModel.ViewModel.Loader
         protected virtual void AssignCallBacksAndRaisePropertyChange(IEnumerable<TMainProjectionEntity> entities)
         {
             isFirstLoaded = true;
-            MainViewModel.SetParentViewModel(this);
             if (!OnEntitiesLoadedCallBackManualDispose && OnEntitiesLoadedCallBack != null)
             {
                 OnEntitiesLoadedCallBack?.Invoke(entities, OnEntitiesLoadedCallBackRelateParam == null ? null : OnEntitiesLoadedCallBackRelateParam());
@@ -598,18 +604,56 @@ namespace BaseModel.ViewModel.Loader
 
         public bool IsPasteCellLevel
         {
-            get => MainViewModel == null ? false : MainViewModel.IsPasteCellLevel;
+            get
+            {
+                if(IsInstantFeedbackMode)
+                {
+                    if (InstantFeedbackMainViewModel != null)
+                        return InstantFeedbackMainViewModel.IsPasteCellLevel;
+                }
+                else
+                {
+                    if (MainViewModel != null)
+                        return MainViewModel.IsPasteCellLevel;
+                }
+
+                return false;
+            }
             set
             {
-                if (MainViewModel != null)
+                if(IsInstantFeedbackMode)
                 {
-                    MainViewModel.IsPasteCellLevel = value;
-                    this.RaisePropertyChanged(x => x.SelectMode);
+                    if (InstantFeedbackMainViewModel != null)
+                        InstantFeedbackMainViewModel.IsPasteCellLevel = value;
                 }
+                else
+                {
+                    if (MainViewModel != null)
+                        MainViewModel.IsPasteCellLevel = value;
+                }
+
+                this.RaisePropertyChanged(x => x.SelectMode);
             }
         }
 
-        public MultiSelectMode SelectMode => MainViewModel == null ? MultiSelectMode.Row : MainViewModel.SelectMode;
+        public MultiSelectMode SelectMode
+        {
+            get
+            {
+                if(IsInstantFeedbackMode)
+                {
+                    if (InstantFeedbackMainViewModel != null)
+                        return InstantFeedbackMainViewModel.SelectMode;
+                }
+                else
+                {
+                    if (MainViewModel != null)
+                        return MainViewModel.SelectMode;
+                }
+
+                return MultiSelectMode.Row;
+            }
+        }
 
         public virtual bool IsValidEntity(TMainProjectionEntity entity, IEnumerable<TMainProjectionEntity> preCommittedProjections, ref string errorMessage, out List<KeyValuePair<string, string>> constraintIssues)
         {
@@ -656,7 +700,13 @@ namespace BaseModel.ViewModel.Loader
 
         public virtual void PastingFromClipboard(PastingFromClipboardEventArgs e)
         {
-            MainViewModel?.PastingFromClipboard(e);
+            if (IsInstantFeedbackMode)
+            {
+                GridControlService.SaveExpansionStates();
+                InstantFeedbackMainViewModel.PastingFromClipboard(e);
+            }
+            else
+                MainViewModel?.PastingFromClipboard(e);
         }
 
         public void ShownEditor(EditorEventArgs e)
@@ -692,60 +742,61 @@ namespace BaseModel.ViewModel.Loader
             MainViewModel.ShowErrorMessage(dialogTitle, errorMessages);
         }
 
-        public virtual object InstantFeedbackSelectedEntity
+        public virtual object InstantFeedbackCurrentEntity
         {
             get
             {
                 if (InstantFeedbackMainViewModel == null)
                     return null;
 
-                return InstantFeedbackMainViewModel.SelectedEntity;
+                return InstantFeedbackMainViewModel.CurrentEntity;
             }
             set
             {
                 if (InstantFeedbackMainViewModel == null)
                     return;
 
-                InstantFeedbackMainViewModel.SelectedEntity = value;
+                InstantFeedbackMainViewModel.CurrentEntity = value;
             }
         }
 
-        DispatcherTimer viewRefreshDispatcher;
+        //For testing purpose
+        public List<TMainEntity> GetSelectedRows()
+        {
+            List<TMainEntity> selection = new List<TMainEntity>();
+            IList<GridRowInfo> selectedRows = ((TableView)GridControlService.GridControl.View).GetSelectedRows();
+            foreach(GridRowInfo selectedRow in selectedRows)
+            {
+                
+                selection.Add(InstantFeedbackMainViewModel.GetEntityFromThreadSafeProxy((ReadonlyThreadSafeProxyForObjectFromAnotherThread)selectedRow.Row));
+            }
+
+            return selection;
+        }
+
         public virtual void EditingAttachedBehavior_SaveChanges(GridColumnDataEventArgs e)
         {
             if (!IsInstantFeedbackMode)
                 return;
 
             EditableColumn c = (EditableColumn)e.Column;
-            InstantFeedbackMainViewModel.Save(InstantFeedbackSelectedEntity, c.RealFieldName, e.Value);
-
-            InstantFeedbackMainViewModel.Refresh();
-            this.RaisePropertyChanged(x => x.InstantFeedbackEntities);
-            //viewRefreshDispatcher = new DispatcherTimer();
-            //viewRefreshDispatcher.Interval = new TimeSpan(0, 0, 0, 1);
-            //viewRefreshDispatcher.Tick += ViewRefreshDispatcher_Tick;
-            //viewRefreshDispatcher.Start();
+            InstantFeedbackSaveChanges(c.RealFieldName, e.Value);
         }
 
-        private void ViewRefreshDispatcher_Tick(object sender, EventArgs e)
+        public virtual void InstantFeedbackSaveChanges(string fieldName, object value)
         {
-            viewRefreshDispatcher.Stop();
+            InstantFeedbackMainViewModel.EditSelectedEntity(fieldName, value);
             InstantFeedbackMainViewModel.Refresh();
             this.RaisePropertyChanged(x => x.InstantFeedbackEntities);
-        }
-
-        public void MouseDoubleClick(MouseButtonEventArgs e)
-        {
-            if (!IsInstantFeedbackMode)
-                return;
-
-
         }
         #endregion
 
         #region Button Commands
         public virtual bool CanFullRefresh()
         {
+            if (IsInstantFeedbackMode)
+                return InstantFeedbackMainViewModel != null;
+
             return !IsLoading && MainViewModel != null;
         }
 
@@ -754,6 +805,8 @@ namespace BaseModel.ViewModel.Loader
             //don't have to call this because it's not going to be called from the background by user interaction, i.e. Undo/Redo
             //if (!CanFullRefresh())
             //    return;
+            if (IsInstantFeedbackMode && !stopSubsequentEntitiesLoading && InstantFeedbackMainViewModel != null)
+                ReloadEntitiesCollection();
 
             if (!stopSubsequentEntitiesLoading && MainViewModel == null)
                 return;
@@ -834,6 +887,9 @@ namespace BaseModel.ViewModel.Loader
 
         public virtual bool CanUndo()
         {
+            if (IsInstantFeedbackMode)
+                return InstantFeedbackMainViewModel != null && InstantFeedbackMainViewModel.CanUndo();
+            
             return !IsLoading && MainViewModel != null && MainViewModel.CanUndo();
         }
 
@@ -842,11 +898,21 @@ namespace BaseModel.ViewModel.Loader
             if (!CanUndo())
                 return;
 
-            MainViewModel?.Undo();
+            if(IsInstantFeedbackMode)
+            {
+                InstantFeedbackMainViewModel.Undo();
+                InstantFeedbackMainViewModel.Refresh();
+                this.RaisePropertyChanged(x => x.InstantFeedbackEntities);
+            }
+            else
+                MainViewModel?.Undo();
         }
 
         public virtual bool CanRedo()
         {
+            if (IsInstantFeedbackMode)
+                return InstantFeedbackMainViewModel != null && InstantFeedbackMainViewModel.CanRedo();
+
             return !IsLoading && MainViewModel != null && MainViewModel.CanRedo();
         }
 
@@ -855,7 +921,14 @@ namespace BaseModel.ViewModel.Loader
             if (!CanRedo())
                 return;
 
-            MainViewModel?.Redo();
+            if (IsInstantFeedbackMode)
+            {
+                InstantFeedbackMainViewModel.Redo();
+                InstantFeedbackMainViewModel.Refresh();
+                this.RaisePropertyChanged(x => x.InstantFeedbackEntities);
+            }
+            else
+                MainViewModel?.Redo();
         }
 
         public virtual bool CanKeyboardCopy()
@@ -1139,10 +1212,14 @@ namespace BaseModel.ViewModel.Loader
         #endregion
 
         #region Database behaviour        
-        protected virtual OperationInterceptMode OnBeforeInstantFeedbackEntitySaveIsContinue(TMainEntity entity, out bool isNew)
+        protected virtual void ApplyInstantFeedbackEntityPropertiesToOtherUnitOfWorkEntity(TMainEntity entity)
         {
-            isNew = false;
-            return OperationInterceptMode.Continue;
+        }
+
+        protected virtual void InstantFeedbackOtherUnitOfWorkSaveChanges()
+        {
+            InstantFeedbackMainViewModel.Refresh();
+            this.RaisePropertyChanged(x => x.InstantFeedbackEntities);
         }
 
     protected virtual OperationInterceptMode OnBeforeProjectionSaveIsContinue(TMainProjectionEntity projection, out bool isNew)

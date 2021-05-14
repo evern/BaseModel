@@ -99,6 +99,12 @@ namespace BaseModel.DataModel
             return Expression.Lambda<Func<TProjection, TPrimaryKey>>(Expression.Property(parameter, repository.GetPrimaryKeyPropertyName()), parameter);
         }
 
+        public static Expression<Func<TProjection, TEntityValue>> GetProjectionValueExpression<TProjection, TEntityValue>(string propertyName) where TProjection : class
+        {
+            var parameter = Expression.Parameter(typeof(TProjection));
+            return Expression.Lambda<Func<TProjection, TEntityValue>>(Expression.Property(parameter, propertyName), parameter);
+        }
+
         /// <summary>
         /// Returns an entity primary key property name.
         /// </summary>

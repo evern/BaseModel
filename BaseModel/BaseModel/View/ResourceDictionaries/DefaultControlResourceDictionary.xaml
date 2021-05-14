@@ -417,7 +417,6 @@
         <Setter Property="ScrollBarAnnotationMode" Value="All" />
         <Setter Property="GroupSummaryDisplayMode" Value="AlignByColumns" />
         <Setter Property="AllowPerPixelScrolling" Value="False" />
-        <Setter Property="AllowScrollAnimation" Value="False" />
         <Setter Property="AllowHorizontalScrollingVirtualization" Value="False" />
         <Setter Property="AllowCascadeUpdate" Value="True" />
         <Setter Property="AllowGroupSummaryCascadeUpdate" Value="True" />
@@ -461,7 +460,6 @@
         <Setter Property="GroupSummaryDisplayMode" Value="AlignByColumns" />
         <Setter Property="NewItemRowPosition" Value="Top" />
         <Setter Property="AllowPerPixelScrolling" Value="False" />
-        <Setter Property="AllowScrollAnimation" Value="False" />
         <Setter Property="AllowHorizontalScrollingVirtualization" Value="False" />
         <Setter Property="AllowCascadeUpdate" Value="True" />
         <Setter Property="AllowGroupSummaryCascadeUpdate" Value="True" />

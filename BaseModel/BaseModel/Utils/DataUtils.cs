@@ -45,7 +45,8 @@ namespace BaseModel.Data.Helpers
         public Action<string, object, object, TProjection, bool> cellValueChanging;
         public Action<string, object, object, TProjection, bool> cellValueChanged;
         public Action<TProjection> newRowInitialization;
-        public CopyPasteHelper(IsValidProjectionFunc isValidProjectionFunc = null, Func<TProjection, bool> onBeforePasteWithValidationFunc = null, IDialogService errorMessagesDialogService = null, Func<TProjection, string, object, bool, string> unifiedValueValidationCallback = null, Func<TProjection, ColumnBase, string, List<UndoRedoArg<TProjection>>, bool> funcManualCellPastingIsContinue = null, Func<List<KeyValuePair<ColumnBase, string>>, TProjection, bool, bool> funcManualRowPastingIsContinue = null, Action<string, object, object, TProjection, bool> cellValueChanging = null, Action<string, object, object, TProjection, bool> cellValueChanged = null, Action<TProjection> newRowInitialization = null, Action<IEnumerable<ErrorMessage>> formatErrorMessages = null)
+        public Func<object, TProjection> instantFeedbackEntityConversionFunc;
+        public CopyPasteHelper(IsValidProjectionFunc isValidProjectionFunc = null, Func<TProjection, bool> onBeforePasteWithValidationFunc = null, IDialogService errorMessagesDialogService = null, Func<TProjection, string, object, bool, string> unifiedValueValidationCallback = null, Func<TProjection, ColumnBase, string, List<UndoRedoArg<TProjection>>, bool> funcManualCellPastingIsContinue = null, Func<List<KeyValuePair<ColumnBase, string>>, TProjection, bool, bool> funcManualRowPastingIsContinue = null, Action<string, object, object, TProjection, bool> cellValueChanging = null, Action<string, object, object, TProjection, bool> cellValueChanged = null, Action<TProjection> newRowInitialization = null, Action<IEnumerable<ErrorMessage>> formatErrorMessages = null, Func<object, TProjection> instantFeedbackEntityConversionFunc = null)
         {
             this.isValidProjectionFunc = isValidProjectionFunc;
             this.onBeforePasteWithValidationFunc = onBeforePasteWithValidationFunc;
@@ -57,6 +58,7 @@ namespace BaseModel.Data.Helpers
             this.cellValueChanged = cellValueChanged;
             this.newRowInitialization = newRowInitialization;
             this.formatErrorMessages = formatErrorMessages;
+            this.instantFeedbackEntityConversionFunc = instantFeedbackEntityConversionFunc;
         }
 
         public List<TProjection> PastingFromClipboardCellLevel<TView>(GridControl gridControl, string[] RowData, EntitiesUndoRedoManager<TProjection> undo_redo_manager, out List<ErrorMessage> errorMessages)
@@ -97,8 +99,13 @@ namespace BaseModel.Data.Helpers
                     foreach(var selected_cell in selected_cells)
                     {
 
-                            int row_handle = selected_cell.RowHandle;
-                        TProjection editing_row = (TProjection)gridControl.GetRow(row_handle);
+                        int row_handle = selected_cell.RowHandle;
+                        TProjection editing_row;
+                        if (instantFeedbackEntityConversionFunc != null)
+                            editing_row = instantFeedbackEntityConversionFunc(gridControl.GetRow(row_handle));
+                        else
+                            editing_row = (TProjection)gridControl.GetRow(row_handle);
+
                         string errorMessage = string.Empty;
                         PasteResult result = pasteDataInProjectionColumn(editing_row, selected_cell.Column, string.Empty, out errorMessage, undoRedoArguments);
                         if (result == PasteResult.FailOnRequired || errorMessage != string.Empty)
@@ -175,7 +182,12 @@ namespace BaseModel.Data.Helpers
                             if (rowObject == null)
                                 continue;
 
-                            TProjection editing_row = (TProjection)gridControl.GetRow(current_row_handle);
+                            TProjection editing_row;
+                            if (instantFeedbackEntityConversionFunc != null)
+                                editing_row = instantFeedbackEntityConversionFunc(gridControl.GetRow(current_row_handle));
+                            else
+                                editing_row = (TProjection)gridControl.GetRow(current_row_handle);
+
                             validate_row = editing_row;
                             if (editing_row == null)
                             {
@@ -590,12 +602,13 @@ namespace BaseModel.Data.Helpers
             if (column.ReadOnly)
                 return PasteResult.Skip;
 
-            string column_name = alternateFieldName != string.Empty ? alternateFieldName : column.FieldName;
+            EditableColumn editableColumn = column as EditableColumn;
+            string fieldName = alternateFieldName != string.Empty ? alternateFieldName : editableColumn != null ? editableColumn.RealFieldName : column.FieldName;
             pasteData = pasteData.Trim();
 
             try
             {
-                PropertyInfo columnPropertyInfo = DataUtils.GetNestedPropertyInfo(column_name, projection);
+                PropertyInfo columnPropertyInfo = DataUtils.GetNestedPropertyInfo(fieldName, projection);
                 if (columnPropertyInfo != null)
                 {
                     if (funcManualCellPastingIsContinue == null || (funcManualCellPastingIsContinue != null && funcManualCellPastingIsContinue.Invoke(projection, column, pasteData, undoRedoArguments)))
@@ -605,7 +618,7 @@ namespace BaseModel.Data.Helpers
                             if (Attribute.IsDefined(columnPropertyInfo, typeof(RequiredAttribute)))
                                 return PasteResult.FailOnRequired;
 
-                            return trySetValueInProjection(projection, column_name, null, out errorMessage, undoRedoArguments);
+                            return trySetValueInProjection(projection, fieldName, null, out errorMessage, undoRedoArguments);
                         }
                         else if (columnPropertyInfo.PropertyType == typeof(Guid?) || columnPropertyInfo.PropertyType == typeof(Guid))
                         {
@@ -630,7 +643,7 @@ namespace BaseModel.Data.Helpers
                             {
                                 Guid? guid_value = getEditSettingsValueMemberValue<Guid?>(editSettings, pasteData);
                                 if (guid_value != null)
-                                    return trySetValueInProjection(projection, column_name, guid_value, out errorMessage, undoRedoArguments);
+                                    return trySetValueInProjection(projection, fieldName, guid_value, out errorMessage, undoRedoArguments);
                                 else
                                     return PasteResult.Skip;
                             }
@@ -638,7 +651,7 @@ namespace BaseModel.Data.Helpers
                             else if ((editSettings != null || column.ActualEditSettings.GetType() == typeof(TextEditSettings)) && pasteData != Guid.Empty.ToString())
                             {
                                 Guid new_guid = new Guid(pasteData);
-                                return trySetValueInProjection(projection, column_name, new_guid, out errorMessage, undoRedoArguments);
+                                return trySetValueInProjection(projection, fieldName, new_guid, out errorMessage, undoRedoArguments);
                             }
                         }
                         else if (columnPropertyInfo.PropertyType == typeof(string))
@@ -667,7 +680,7 @@ namespace BaseModel.Data.Helpers
                                     return PasteResult.FailOnRequired;
                             }
 
-                            return trySetValueInProjection(projection, column_name, new_string, out errorMessage, undoRedoArguments);
+                            return trySetValueInProjection(projection, fieldName, new_string, out errorMessage, undoRedoArguments);
                         }
                         else if (columnPropertyInfo.PropertyType.BaseType == typeof(Enum))
                         {
@@ -684,14 +697,14 @@ namespace BaseModel.Data.Helpers
 
                                 var descriptionAttribute = descriptionAttributes.First();
                                 if (pasteData == descriptionAttribute.Name)
-                                    return trySetValueInProjection(projection, column_name, enum_value, out errorMessage, undoRedoArguments);
+                                    return trySetValueInProjection(projection, fieldName, enum_value, out errorMessage, undoRedoArguments);
                             }
                         }
                         else if (columnPropertyInfo.PropertyType == typeof(decimal) || columnPropertyInfo.PropertyType == typeof(decimal?) || columnPropertyInfo.PropertyType == typeof(int) || columnPropertyInfo.PropertyType == typeof(int?) || columnPropertyInfo.PropertyType == typeof(double) || columnPropertyInfo.PropertyType == typeof(double?))
                         {
                             var rgx = new Regex("[A-Za-z\\$]");
                             var cleanColumnString = rgx.Replace(pasteData, string.Empty);
-                            bool isPercentColumn = column_name.Contains('%') || column_name.ToUpper().Contains("PERCENT");
+                            bool isPercentColumn = fieldName.Contains('%') || fieldName.ToUpper().Contains("PERCENT");
                             if (isPercentColumn)
                                 cleanColumnString = cleanColumnString.Replace("%", "");
 
@@ -708,7 +721,7 @@ namespace BaseModel.Data.Helpers
                                         //else when user copy from grid and paste it will be the actual value
                                     }
 
-                                    return trySetValueInProjection(projection, column_name, decimal_value, out errorMessage, undoRedoArguments);
+                                    return trySetValueInProjection(projection, fieldName, decimal_value, out errorMessage, undoRedoArguments);
                                 }
                                 else
                                     return PasteResult.Skip;
@@ -720,7 +733,7 @@ namespace BaseModel.Data.Helpers
                                 {
                                     int? int_value = getEditSettingsValueMemberValue<int?>(editSettings, pasteData);
                                     if (int_value != null)
-                                        return trySetValueInProjection(projection, column_name, int_value, out errorMessage, undoRedoArguments);
+                                        return trySetValueInProjection(projection, fieldName, int_value, out errorMessage, undoRedoArguments);
                                     else
                                         return PasteResult.Skip;
                                 }
@@ -728,7 +741,7 @@ namespace BaseModel.Data.Helpers
                                 {
                                     int int_value;
                                     if (int.TryParse(cleanColumnString, out int_value))
-                                        return trySetValueInProjection(projection, column_name, int_value, out errorMessage, undoRedoArguments);
+                                        return trySetValueInProjection(projection, fieldName, int_value, out errorMessage, undoRedoArguments);
                                     else
                                         return PasteResult.Skip;
                                 }
@@ -739,10 +752,10 @@ namespace BaseModel.Data.Helpers
                                 double double_value;
                                 if (double.TryParse(cleanColumnString, out double_value))
                                 {
-                                    if (column_name.Contains('%') || column_name.ToUpper().Contains("PERCENT"))
+                                    if (fieldName.Contains('%') || fieldName.ToUpper().Contains("PERCENT"))
                                         double_value /= 100;
 
-                                    return trySetValueInProjection(projection, column_name, double_value, out errorMessage, undoRedoArguments);
+                                    return trySetValueInProjection(projection, fieldName, double_value, out errorMessage, undoRedoArguments);
                                 }
                                 else
                                     return PasteResult.Skip;
@@ -754,7 +767,7 @@ namespace BaseModel.Data.Helpers
                         {
                             DateTime datetime_value;
                             if (DateTime.TryParse(pasteData, out datetime_value))
-                                return trySetValueInProjection(projection, column_name, datetime_value, out errorMessage, undoRedoArguments);
+                                return trySetValueInProjection(projection, fieldName, datetime_value, out errorMessage, undoRedoArguments);
                             else
                                 return PasteResult.Skip;
                         }
@@ -786,7 +799,7 @@ namespace BaseModel.Data.Helpers
                                 }
 
                                 if (setValues.Count > 0)
-                                    return trySetValueInProjection(projection, column_name, setValues, out errorMessage, undoRedoArguments);
+                                    return trySetValueInProjection(projection, fieldName, setValues, out errorMessage, undoRedoArguments);
                                 else
                                     return PasteResult.Skip;
                             }
@@ -808,7 +821,7 @@ namespace BaseModel.Data.Helpers
                                                 enumType = columnPropertyInfo.PropertyType;
 
                                             object enumValue = System.Enum.Parse(enumType, pasteData);
-                                            return trySetValueInProjection(projection, column_name, enumValue, out errorMessage, undoRedoArguments);
+                                            return trySetValueInProjection(projection, fieldName, enumValue, out errorMessage, undoRedoArguments);
                                         }
                                     }
                                 }
@@ -825,7 +838,7 @@ namespace BaseModel.Data.Helpers
                                 if (booleanValue == null)
                                     return PasteResult.Skip;
                                 else
-                                    return trySetValueInProjection(projection, column_name, (bool)booleanValue, out errorMessage, undoRedoArguments);
+                                    return trySetValueInProjection(projection, fieldName, (bool)booleanValue, out errorMessage, undoRedoArguments);
                             }
                         }
                     }
@@ -1362,6 +1375,215 @@ namespace BaseModel.Data.Helpers
             }
 
             return displayValue;
+        }
+
+        /// <summary>
+        /// Determine whether other entities in the collection shares any common combination of unique constraints
+        /// And since this is designed to be called from cell value changing the entity would not have been updated with the new value
+        /// Hence fieldName and newValue is used for validation
+        /// </summary>
+        /// <param name="entity">The entity to be validated</param>
+        /// <param name="fieldName">Fieldname of the current changing cell</param>
+        /// <param name="newValue">New value of the current changing cell</param>
+        /// <param name="errorMessage">Error message to notify the user of conflicting constraints</param>
+        /// <returns>Returns true if no other entity contains similar constraint member values</returns>
+        public static bool IsValidEntityCellValue<TProjection>(IEnumerable<TProjection> entities, TProjection entity, string fieldName, object newValue, ref string errorMessage, out string invalidFieldName)
+        {
+            List<KeyValuePair<string, string>> constraintIssues;
+            invalidFieldName = string.Empty;
+            bool isUnique = IsUniqueEntityConstraintValues(entities, entity, null, ref errorMessage, out constraintIssues, new KeyValuePair<string, object>(fieldName, newValue));
+            if (isUnique)
+                invalidFieldName = string.Empty;
+            else
+            {
+                foreach (var constraintIssue in constraintIssues)
+                {
+                    invalidFieldName += constraintIssue.Key + ": " + constraintIssue.Value + " ,";
+                }
+
+                invalidFieldName = invalidFieldName.Substring(0, invalidFieldName.Length - 2);
+            }
+
+            return isUnique;
+        }
+
+        /// <summary>
+        /// Gets the concatenated string value for constraint field name for an entity
+        /// </summary>
+        /// <param name="entity">Entity to retrieve the field name</param>
+        /// <param name="errorMessage">Error message to be populated with entity member constraint field names</param>
+        /// <param name="keyValuePairNewFieldValue">In some instance the new value isn't yet updated on the entity, so this provides other ways pass in the new value</param>
+        /// <returns>Concatenated constraint value string</returns>
+        public static bool IsUniqueEntityConstraintValues<TProjection>(IEnumerable<TProjection> entities, TProjection entity, IEnumerable<TProjection> preCommittedProjections, ref string errorMessage, out List<KeyValuePair<string, string>> constraintIssues,
+            KeyValuePair<string, object>? keyValuePairNewFieldValue = null)
+        {
+            constraintIssues = new List<KeyValuePair<string, string>>();
+            var currentEntityConcatenatedConstraints = string.Empty;
+
+            var constraintMemberPropertyStrings =
+                DataUtils.GetConstraintPropertyStrings(typeof(TProjection));
+            if (constraintMemberPropertyStrings == null)
+                return true;
+            else if (keyValuePairNewFieldValue != null &&
+                     !constraintMemberPropertyStrings.Contains(((KeyValuePair<string, object>)keyValuePairNewFieldValue).Key))
+                return true;
+
+            foreach (var constraintMemberPropertyString in constraintMemberPropertyStrings)
+            {
+                object constraintMemberPropertyValue = null;
+                if (keyValuePairNewFieldValue == null)
+                    constraintMemberPropertyValue = DataUtils.GetNestedValue(constraintMemberPropertyString, entity);
+                else
+                {
+                    var keyValuePairForNewFieldValue =
+                        (KeyValuePair<string, object>)keyValuePairNewFieldValue;
+                    if (constraintMemberPropertyString == keyValuePairForNewFieldValue.Key)
+                        constraintMemberPropertyValue = keyValuePairForNewFieldValue.Value;
+                    else
+                        constraintMemberPropertyValue = DataUtils.GetNestedValue(constraintMemberPropertyString, entity);
+                }
+
+                if (constraintMemberPropertyValue != null)
+                {
+                    var immediatePropertyString = constraintMemberPropertyString.Split('.').Last();
+                    string constraintMemberPropertyStringFormat;
+                    if (constraintMemberPropertyValue.GetType() == typeof(decimal))
+                        constraintMemberPropertyStringFormat = ((decimal)constraintMemberPropertyValue).ToString("0.00");
+                    else
+                        constraintMemberPropertyStringFormat = constraintMemberPropertyValue.ToString();
+                    currentEntityConcatenatedConstraints += constraintMemberPropertyStringFormat;
+
+                    constraintIssues.Add(new KeyValuePair<string, string>(immediatePropertyString, constraintMemberPropertyStringFormat));
+                }
+            }
+
+            return IsConstraintExistsInOtherEntities<TProjection>(entities, entity, preCommittedProjections, currentEntityConcatenatedConstraints,
+                constraintMemberPropertyStrings, ref errorMessage, out constraintIssues);
+        }
+
+
+        /// <summary>
+        /// Determine whether current entity constraint exists in other entity
+        /// </summary>
+        /// <param name="entity">The entity to be validated</param>
+        /// <param name="entityConstraint">Constraint string of the current entity</param>
+        /// <param name="constraintMemberPropertyInfos">Constraint property infos</param>
+        /// <param name="constraintErrorMessage">Error message to notify the user of conflicting constraints</param>
+        /// <returns>Returns true if no other entity contains similar constraint member values</returns>
+        public static bool IsConstraintExistsInOtherEntities<TProjection>(IEnumerable<TProjection> entities, TProjection entity, IEnumerable<TProjection> preCommittedProjections, string entityConstraint,
+            IEnumerable<string> constraintMemberPropertyStrings, ref string constraintErrorMessage, out List<KeyValuePair<string, string>> constraintFieldNames)
+        {
+            constraintFieldNames = new List<KeyValuePair<string, string>>();
+            if (entityConstraint == string.Empty)
+                return true;
+
+            var keyPropertyInfo = DataUtils.GetKeyPropertyInfo(typeof(TProjection));
+            object exclusionKeyValue = null;
+            if (keyPropertyInfo != null)
+                exclusionKeyValue = keyPropertyInfo.GetValue(entity);
+
+            List<Tuple<IEnumerable<TProjection>, bool>> allEntities = new List<Tuple<IEnumerable<TProjection>, bool>>();
+            allEntities.Add(new Tuple<IEnumerable<TProjection>, bool>(entities, true));
+            if (preCommittedProjections != null)
+                allEntities.Add(new Tuple<IEnumerable<TProjection>, bool>(preCommittedProjections, false));
+
+            foreach (var entityTuples in allEntities)
+            {
+                bool shouldValidateKey = entityTuples.Item2;
+                foreach (var otherEntity in entityTuples.Item1)
+                {
+                    if (shouldValidateKey && keyPropertyInfo != null)
+                    {
+                        var otherKey = keyPropertyInfo.GetValue(otherEntity);
+                        if (otherKey == null)
+                            continue;
+
+                        if (otherKey.Equals(exclusionKeyValue))
+                            continue;
+                    }
+
+                    List<KeyValuePair<string, string>> errorValuePairs = new List<KeyValuePair<string, string>>();
+                    var otherEntityConcatenatedConstraints = string.Empty;
+                    foreach (var constraintMemberPropertyString in constraintMemberPropertyStrings)
+                    {
+                        var constraintMemberPropertyValue = DataUtils.GetNestedValue(constraintMemberPropertyString,
+                            otherEntity);
+                        if (constraintMemberPropertyValue != null)
+                        {
+                            string constraintMemberPropertyStringFormat;
+                            if (constraintMemberPropertyValue.GetType() == typeof(decimal))
+                                constraintMemberPropertyStringFormat =
+                                    ((decimal)constraintMemberPropertyValue).ToString("0.00");
+                            else
+                                constraintMemberPropertyStringFormat = constraintMemberPropertyValue.ToString();
+
+                            otherEntityConcatenatedConstraints += constraintMemberPropertyStringFormat;
+
+                            errorValuePairs.Add(new KeyValuePair<string, string>(constraintMemberPropertyString, constraintMemberPropertyStringFormat));
+                        }
+                    }
+
+                    if (otherEntityConcatenatedConstraints != string.Empty && otherEntityConcatenatedConstraints == entityConstraint)
+                    {
+                        IEnumerable<KeyValuePair<string, string>> validIssues = errorValuePairs.Where(x => x.Value != string.Empty);
+                        foreach (KeyValuePair<string, string> constraintIssue in validIssues)
+                        {
+                            if (constraintIssue.Key == validIssues.Last().Key && constraintIssue.Key != validIssues.First().Key)
+                            {
+                                constraintErrorMessage = constraintErrorMessage.Substring(0, constraintErrorMessage.Length - 2);
+                                constraintErrorMessage += " and ";
+                            }
+
+                            string propertyStringFormat = constraintIssue.Key.Replace("GUID_", string.Empty);
+                            //propertyStringFormat = StringFormatUtils.DisplayCamelCaseString(propertyStringFormat);
+                            constraintErrorMessage += "[" + propertyStringFormat + "] = " + constraintIssue.Value + ", ";
+                        }
+
+                        constraintErrorMessage = "Entry already exist for " + constraintErrorMessage;
+                        constraintFieldNames = errorValuePairs.ToList();
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Check if entity have key value
+        /// </summary>
+        /// <param name="entity">The entity to be validated</param>
+        /// <param name="errorMessage">Error mesasage formatted with key property info</param>
+        /// <returns></returns>
+        public static bool IsRequiredAttributesHasValue<TEntity, TProjection>(TProjection entity, ref string errorMessage)
+        {
+            IEnumerable<string> requiredPropertyStrings;
+            if (typeof(TProjection) == typeof(TEntity))
+                requiredPropertyStrings = DataUtils.GetRequiredPropertyStrings(typeof(TProjection));
+            else
+                requiredPropertyStrings = DataUtils.GetRequiredPropertyStringsForProjection(typeof(TProjection));
+
+            var requiredPropertyNames = string.Empty;
+            if (requiredPropertyStrings == null || requiredPropertyStrings.Count() == 0)
+                return true;
+            else
+            {
+                foreach (var requiredPropertyString in requiredPropertyStrings)
+                {
+                    var requiredPropertyValue = DataUtils.GetNestedValue(requiredPropertyString, entity);
+                    if (requiredPropertyValue == null || requiredPropertyValue.ToString() == Guid.Empty.ToString())
+                        requiredPropertyNames += requiredPropertyString.Replace("GUID_", string.Empty).Split('.').Last() + ", ";
+                }
+
+                if (requiredPropertyNames != string.Empty)
+                {
+                    errorMessage = string.Format("{0} value missing",
+                        requiredPropertyNames.Substring(0, requiredPropertyNames.Length - 2));
+                    return false;
+                }
+                else
+                    return true;
+            }
         }
 
         public enum PasteResult

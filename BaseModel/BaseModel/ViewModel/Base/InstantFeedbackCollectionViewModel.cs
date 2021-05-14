@@ -40,7 +40,7 @@ namespace BaseModel.ViewModel.Base
 
     public partial class InstantFeedbackCollectionViewModel<TEntity, TProjection, TPrimaryKey, TUnitOfWork> : InstantFeedbackCollectionViewModelBase<TEntity, TProjection, TPrimaryKey, TUnitOfWork>
         where TEntity : class, new()
-        where TProjection : class
+        where TProjection : class, new()
         where TUnitOfWork : IUnitOfWork
     {
 

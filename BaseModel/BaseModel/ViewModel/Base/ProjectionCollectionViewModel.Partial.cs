@@ -363,246 +363,6 @@ namespace BaseModel.ViewModel.Base
         }
         #endregion
 
-        #region Data Operations
-        /// <summary>
-        /// Determine whether other entities in the collection shares any common combination of unique constraints
-        /// </summary>
-        /// <param name="entity">The entity to be validated</param>
-        /// <param name="errorMessage">Error message to notify the user of conflicting constraints</param>
-        /// <returns>Returns true if no other entity contains similar constraint member values</returns>
-        public virtual bool IsValidEntity(TProjection entity, IEnumerable<TProjection> preCommittedProjections, ref string errorMessage, out List<KeyValuePair<string, string>> constraintIssues)
-        {
-            //if (OnBeforeEntitySavedIsContinueCallBack != null && !OnBeforeEntitySavedIsContinueCallBack(entity))
-            //    return false;
-
-            constraintIssues = new List<KeyValuePair<string, string>>();
-            if (!isRequiredAttributesHasValue(entity, ref errorMessage))
-                return false;
-
-            errorMessage = UnifiedValidateRow?.Invoke(entity);
-            if (errorMessage != null && errorMessage != string.Empty)
-                return false;
-
-            if (IsUniqueEntityConstraintValues(entity, preCommittedProjections, ref errorMessage, out constraintIssues))
-            {
-                errorMessage = string.Empty;
-                return true;
-            }
-            else
-                return false;
-        }
-
-        /// <summary>
-        /// Determine whether other entities in the collection shares any common combination of unique constraints
-        /// And since this is designed to be called from cell value changing the entity would not have been updated with the new value
-        /// Hence fieldName and newValue is used for validation
-        /// </summary>
-        /// <param name="entity">The entity to be validated</param>
-        /// <param name="fieldName">Fieldname of the current changing cell</param>
-        /// <param name="newValue">New value of the current changing cell</param>
-        /// <param name="errorMessage">Error message to notify the user of conflicting constraints</param>
-        /// <returns>Returns true if no other entity contains similar constraint member values</returns>
-        public bool IsValidEntityCellValue(TProjection entity, string fieldName, object newValue, ref string errorMessage, out string invalidFieldName)
-        {
-            List<KeyValuePair<string, string>> constraintIssues;
-            invalidFieldName = string.Empty;
-            bool isUnique = IsUniqueEntityConstraintValues(entity, null, ref errorMessage, out constraintIssues, new KeyValuePair<string, object>(fieldName, newValue));
-            if (isUnique)
-                invalidFieldName = string.Empty;
-            else
-            {
-                foreach(var constraintIssue in constraintIssues)
-                {
-                    invalidFieldName += constraintIssue.Key + ": " + constraintIssue.Value + " ,";
-                } 
-
-                invalidFieldName = invalidFieldName.Substring(0, invalidFieldName.Length - 2);
-            }
-
-            return isUnique;
-        }
-
-        /// <summary>
-        /// Gets the concatenated string value for constraint field name for an entity
-        /// </summary>
-        /// <param name="entity">Entity to retrieve the field name</param>
-        /// <param name="errorMessage">Error message to be populated with entity member constraint field names</param>
-        /// <param name="keyValuePairNewFieldValue">In some instance the new value isn't yet updated on the entity, so this provides other ways pass in the new value</param>
-        /// <returns>Concatenated constraint value string</returns>
-        private bool IsUniqueEntityConstraintValues(TProjection entity, IEnumerable<TProjection> preCommittedProjections, ref string errorMessage, out List<KeyValuePair<string, string>> constraintIssues,
-            KeyValuePair<string, object>? keyValuePairNewFieldValue = null)
-        {
-            constraintIssues = new List<KeyValuePair<string, string>>();
-            var currentEntityConcatenatedConstraints = string.Empty;
-
-            var constraintMemberPropertyStrings =
-                DataUtils.GetConstraintPropertyStrings(typeof(TProjection));
-            if (constraintMemberPropertyStrings == null)
-                return true;
-            else if (keyValuePairNewFieldValue != null &&
-                     !constraintMemberPropertyStrings.Contains(((KeyValuePair<string, object>)keyValuePairNewFieldValue).Key))
-                return true;
-
-            foreach (var constraintMemberPropertyString in constraintMemberPropertyStrings)
-            {
-                object constraintMemberPropertyValue = null;
-                if (keyValuePairNewFieldValue == null)
-                    constraintMemberPropertyValue = DataUtils.GetNestedValue(constraintMemberPropertyString, entity);
-                else
-                {
-                    var keyValuePairForNewFieldValue =
-                        (KeyValuePair<string, object>)keyValuePairNewFieldValue;
-                    if (constraintMemberPropertyString == keyValuePairForNewFieldValue.Key)
-                        constraintMemberPropertyValue = keyValuePairForNewFieldValue.Value;
-                    else
-                        constraintMemberPropertyValue = DataUtils.GetNestedValue(constraintMemberPropertyString, entity);
-                }
-
-                if (constraintMemberPropertyValue != null)
-                {
-                    var immediatePropertyString = constraintMemberPropertyString.Split('.').Last();
-                    string constraintMemberPropertyStringFormat;
-                    if (constraintMemberPropertyValue.GetType() == typeof(decimal))
-                        constraintMemberPropertyStringFormat = ((decimal)constraintMemberPropertyValue).ToString("0.00");
-                    else
-                        constraintMemberPropertyStringFormat = constraintMemberPropertyValue.ToString();
-                    currentEntityConcatenatedConstraints += constraintMemberPropertyStringFormat;
-
-                    constraintIssues.Add(new KeyValuePair<string, string>(immediatePropertyString, constraintMemberPropertyStringFormat));
-                }
-            }
-
-            return IsConstraintExistsInOtherEntities(entity, preCommittedProjections, currentEntityConcatenatedConstraints,
-                constraintMemberPropertyStrings, ref errorMessage, out constraintIssues);
-        }
-
-
-        /// <summary>
-        /// Determine whether current entity constraint exists in other entity
-        /// </summary>
-        /// <param name="entity">The entity to be validated</param>
-        /// <param name="entityConstraint">Constraint string of the current entity</param>
-        /// <param name="constraintMemberPropertyInfos">Constraint property infos</param>
-        /// <param name="constraintErrorMessage">Error message to notify the user of conflicting constraints</param>
-        /// <returns>Returns true if no other entity contains similar constraint member values</returns>
-        private bool IsConstraintExistsInOtherEntities(TProjection entity, IEnumerable<TProjection> preCommittedProjections, string entityConstraint,
-            IEnumerable<string> constraintMemberPropertyStrings, ref string constraintErrorMessage, out List<KeyValuePair<string, string>> constraintFieldNames)
-        {
-            constraintFieldNames = new List<KeyValuePair<string, string>>();
-            if (entityConstraint == string.Empty)
-                return true;
-
-            var keyPropertyInfo = DataUtils.GetKeyPropertyInfo(typeof(TProjection));
-            object exclusionKeyValue = null;
-            if (keyPropertyInfo != null)
-                exclusionKeyValue = keyPropertyInfo.GetValue(entity);
-
-            List<Tuple<IEnumerable<TProjection>, bool>> allEntities = new List<Tuple<IEnumerable<TProjection>, bool>>();
-            allEntities.Add(new Tuple<IEnumerable<TProjection>, bool>(Entities, true));
-            if (preCommittedProjections != null)
-                allEntities.Add(new Tuple<IEnumerable<TProjection>, bool>(preCommittedProjections, false));
-
-            foreach(var entityTuples in allEntities)
-            {
-                bool shouldValidateKey = entityTuples.Item2;
-                foreach (var otherEntity in entityTuples.Item1)
-                {
-                    if (shouldValidateKey && keyPropertyInfo != null)
-                    {
-                        var otherKey = keyPropertyInfo.GetValue(otherEntity);
-                        if (otherKey == null)
-                            continue;
-
-                        if (otherKey.Equals(exclusionKeyValue))
-                            continue;
-                    }
-
-                    List<KeyValuePair<string, string>> errorValuePairs = new List<KeyValuePair<string, string>>();
-                    var otherEntityConcatenatedConstraints = string.Empty;
-                    foreach (var constraintMemberPropertyString in constraintMemberPropertyStrings)
-                    {
-                        var constraintMemberPropertyValue = DataUtils.GetNestedValue(constraintMemberPropertyString,
-                            otherEntity);
-                        if (constraintMemberPropertyValue != null)
-                        {
-                            string constraintMemberPropertyStringFormat;
-                            if (constraintMemberPropertyValue.GetType() == typeof(decimal))
-                                constraintMemberPropertyStringFormat =
-                                    ((decimal)constraintMemberPropertyValue).ToString("0.00");
-                            else
-                                constraintMemberPropertyStringFormat = constraintMemberPropertyValue.ToString();
-
-                            otherEntityConcatenatedConstraints += constraintMemberPropertyStringFormat;
-
-                            errorValuePairs.Add(new KeyValuePair<string, string>(constraintMemberPropertyString, constraintMemberPropertyStringFormat));
-                        }
-                    }
-
-                    if (otherEntityConcatenatedConstraints != string.Empty && otherEntityConcatenatedConstraints == entityConstraint)
-                    {
-                        IEnumerable<KeyValuePair<string, string>> validIssues = errorValuePairs.Where(x => x.Value != string.Empty);
-                        foreach (KeyValuePair<string, string> constraintIssue in validIssues)
-                        {
-                            if (constraintIssue.Key == validIssues.Last().Key && constraintIssue.Key != validIssues.First().Key)
-                            {
-                                constraintErrorMessage = constraintErrorMessage.Substring(0, constraintErrorMessage.Length - 2);
-                                constraintErrorMessage += " and ";
-                            }
-
-                            string propertyStringFormat = constraintIssue.Key.Replace("GUID_", string.Empty);
-                            //propertyStringFormat = StringFormatUtils.DisplayCamelCaseString(propertyStringFormat);
-                            constraintErrorMessage += "[" + propertyStringFormat + "] = " + constraintIssue.Value + ", ";
-                        }
-
-                        constraintErrorMessage = "Entry already exist for " + constraintErrorMessage;
-                        constraintFieldNames = errorValuePairs.ToList();
-                        return false;
-                    }
-                }
-            }
-
-            return true;
-        }
-
-        /// <summary>
-        /// Check if entity have key value
-        /// </summary>
-        /// <param name="entity">The entity to be validated</param>
-        /// <param name="errorMessage">Error mesasage formatted with key property info</param>
-        /// <returns></returns>
-        private bool isRequiredAttributesHasValue(TProjection entity, ref string errorMessage)
-        {
-            IEnumerable<string> requiredPropertyStrings;
-            if (typeof(TProjection) == typeof(TEntity))
-                requiredPropertyStrings = DataUtils.GetRequiredPropertyStrings(typeof(TProjection));
-            else
-                requiredPropertyStrings = DataUtils.GetRequiredPropertyStringsForProjection(typeof(TProjection));
-
-            var requiredPropertyNames = string.Empty;
-            if (requiredPropertyStrings == null || requiredPropertyStrings.Count() == 0)
-                return true;
-            else
-            {
-                foreach (var requiredPropertyString in requiredPropertyStrings)
-                {
-                    var requiredPropertyValue = DataUtils.GetNestedValue(requiredPropertyString, entity);
-                    if (requiredPropertyValue == null || requiredPropertyValue.ToString() == Guid.Empty.ToString())
-                        requiredPropertyNames += requiredPropertyString.Replace("GUID_", string.Empty).Split('.').Last() + ", ";
-                }
-
-                if (requiredPropertyNames != string.Empty)
-                {
-                    errorMessage = string.Format("{0} value missing",
-                        requiredPropertyNames.Substring(0, requiredPropertyNames.Length - 2));
-                    return false;
-                }
-                else
-                    return true;
-            }
-        }
-
-        #endregion
-
         #region Views
         public Func<EditorEventArgs, bool> BeforeShownEditor;
 
@@ -841,7 +601,7 @@ namespace BaseModel.ViewModel.Base
         {
             string constraintName = string.Empty;
             string errorMessage = string.Empty;
-            if (!IsValidEntityCellValue((TProjection)e.Row, e.Column.FieldName, e.Value, ref errorMessage, out constraintName))
+            if (!DataUtils.IsValidEntityCellValue(Entities, (TProjection)e.Row, e.Column.FieldName, e.Value, ref errorMessage, out constraintName))
             {
                 e.IsValid = false;
                 e.ErrorType = DevExpress.XtraEditors.DXErrorProvider.ErrorType.Critical;
@@ -1083,6 +843,36 @@ namespace BaseModel.ViewModel.Base
 
         #endregion
 
+        #region Data Operation
+        /// <summary>
+        /// Determine whether other entities in the collection shares any common combination of unique constraints
+        /// </summary>
+        /// <param name="entity">The entity to be validated</param>
+        /// <param name="errorMessage">Error message to notify the user of conflicting constraints</param>
+        /// <returns>Returns true if no other entity contains similar constraint member values</returns>
+        public virtual bool IsValidEntity(TProjection entity, IEnumerable<TProjection> preCommittedProjections, ref string errorMessage, out List<KeyValuePair<string, string>> constraintIssues)
+        {
+            //if (OnBeforeEntitySavedIsContinueCallBack != null && !OnBeforeEntitySavedIsContinueCallBack(entity))
+            //    return false;
+
+            constraintIssues = new List<KeyValuePair<string, string>>();
+            if (!DataUtils.IsRequiredAttributesHasValue<TEntity, TProjection>(entity, ref errorMessage))
+                return false;
+
+            errorMessage = UnifiedValidateRow?.Invoke(entity);
+            if (errorMessage != null && errorMessage != string.Empty)
+                return false;
+
+            if (DataUtils.IsUniqueEntityConstraintValues(Entities, entity, preCommittedProjections, ref errorMessage, out constraintIssues))
+            {
+                errorMessage = string.Empty;
+                return true;
+            }
+            else
+                return false;
+        }
+
+        #endregion
         #region Bulk Operation
         /// <summary>
         /// Determines whether an entities can be deleted
