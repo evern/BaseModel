@@ -2,8 +2,11 @@
 using BaseModel.DataModel;
 using BaseModel.Misc;
 using BaseModel.ViewModel.Dialogs;
+using BaseModel.ViewModel.Loader;
+using BaseModel.ViewModel.Services;
 using BaseModel.ViewModel.UndoRedo;
 using DevExpress.Mvvm;
+using DevExpress.Mvvm.DataAnnotations;
 using DevExpress.Mvvm.POCO;
 using DevExpress.Xpf.Grid;
 using System;
@@ -25,7 +28,7 @@ namespace BaseModel.ViewModel.Base
 {
     public abstract class InstantFeedbackCollectionViewModelBase<TEntity, TProjection, TPrimaryKey, TUnitOfWork> : IDocumentContent, ISupportLogicalLayout, ISupportUndoRedo<TEntity>, IDisposable
         where TEntity : class, new()
-        where TProjection : class, new()
+        where TProjection : class, ICanUpdate, new()
         where TUnitOfWork : IUnitOfWork
     {
         #region inner classes
@@ -96,21 +99,8 @@ namespace BaseModel.ViewModel.Base
         string ViewName { get { return typeof(TEntity).Name + "InstantFeedbackCollectionView"; } }
         public Action<TEntity> ApplyInstantFeedbackEntityPropertiesToOtherUnitOfWorkEntityCallBack;
         public Action OtherUnitOfWorkSaveChangesCallBack;
-
-        public virtual void Reload(object threadSafeProxy)
-        {
-            //if (!source.IsLoadedProxy(threadSafeProxy))
-            //    return;
-            //TPrimaryKey primaryKey = GetProxyPrimaryKey(threadSafeProxy);
-            //TEntity entity = helperRepository.Find(primaryKey);
-
-            //helperRepository.Reload(entity);
-
-            this.source = unitOfWorkFactory.CreateInstantFeedbackSource(getRepositoryFunc, Projection);
-            this.Entities = InstantFeedbackSourceViewModel.Create(() => helperRepository.Count(), source);
-
-            //string test = GetProxyPropertyValueTest<String>(threadSafeProxy, "FIRST_NAME");
-        }
+        [ServiceProperty(Key = "DefaultGridControlService")]
+        public virtual IGridControlService GridControlService { get { return null; } }
 
         private TPrimaryKey GetPrimaryKey(object threadSafeProxy)
         {
@@ -119,17 +109,21 @@ namespace BaseModel.ViewModel.Base
 
         public virtual void Refresh()
         {
-            //this.helperRepository = CreateRepository();
-
-            //RepositoryExtensions.VerifyProjection(helperRepository, Projection);
-
             this.source = unitOfWorkFactory.CreateInstantFeedbackSource(getRepositoryFunc, Projection);
             this.Entities = InstantFeedbackSourceViewModel.Create(() => helperRepository.Count(), source);
+            GridControlService.SaveExpansionStates();
+            this.GetParentViewModel<CollectionViewModelsWrapper<TEntity, TProjection, TPrimaryKey, TUnitOfWork>>().RaisePropertyChanged(x => x.InstantFeedbackEntities);
         }
 
-        public virtual void SaveChanges()
+        public virtual void SaveChanges(bool sendMessage)
         {
-            helperRepository.UnitOfWork.SaveChanges();
+            if (OtherUnitOfWorkSaveChangesCallBack != null)
+                OtherUnitOfWorkSaveChangesCallBack();
+            else
+                helperRepository.UnitOfWork.SaveChanges();
+
+            if(sendMessage)
+                Messenger.Default.Send(new EntityMessage<TEntity>(EntityMessageType.Changed));
         }
 
         public virtual void EditSelectedEntity(string fieldName, object newValue)
@@ -142,10 +136,7 @@ namespace BaseModel.ViewModel.Base
             if (DataUtils.TrySetNestedValue(fieldName, entity, newValue))
             {
                 ApplyInstantFeedbackEntityPropertiesToOtherUnitOfWorkEntityCallBack?.Invoke(entity);
-                if (OtherUnitOfWorkSaveChangesCallBack != null)
-                    OtherUnitOfWorkSaveChangesCallBack();
-                else
-                    SaveChanges();
+                SaveChanges(true);
             }
         }
 
@@ -160,10 +151,7 @@ namespace BaseModel.ViewModel.Base
             {
                 EntitiesUndoRedoManager.AddUndo(entity, fieldName, oldValue, newValue, EntityMessageType.Changed);
                 ApplyInstantFeedbackEntityPropertiesToOtherUnitOfWorkEntityCallBack?.Invoke(entity);
-                if (OtherUnitOfWorkSaveChangesCallBack != null)
-                    OtherUnitOfWorkSaveChangesCallBack();
-                else
-                    SaveChanges();
+                SaveChanges(true);
             }
         }
 
@@ -222,7 +210,7 @@ namespace BaseModel.ViewModel.Base
 
         protected virtual void OnInitializeInRuntime()
         {
-            Messenger.Default.Register<EntityMessage<TEntity, TPrimaryKey>>(this, x => OnMessage(x));
+            Messenger.Default.Register<EntityMessage<TEntity>>(this, x => OnMessage(x));
         }
 
         protected virtual void OnDestroy()
@@ -230,10 +218,11 @@ namespace BaseModel.ViewModel.Base
             Messenger.Default.Unregister(this);
         }
 
-        void OnMessage(EntityMessage<TEntity, TPrimaryKey> message)
+        void OnMessage(EntityMessage<TEntity> message)
         {
             Refresh();
         }
+
         protected IDocumentOwner DocumentOwner { get; private set; }
 
         #region IDocumentContent
@@ -289,10 +278,46 @@ namespace BaseModel.ViewModel.Base
             get
             {
                 if (entitiesundoredomanager == null)
-                    entitiesundoredomanager = new EntitiesUndoRedoManager<TEntity>(PropertyUndo, PropertyRedo);
+                    entitiesundoredomanager = new EntitiesUndoRedoManager<TEntity>(BulkPropertUndo, BulkPropertyRedo);
 
                 return entitiesundoredomanager;
             }
+        }
+
+        public void BulkPropertUndo(IEnumerable<UndoRedoEntityInfo<TEntity>> entityProperties)
+        {
+            IEnumerable<UndoRedoEntityInfo<TEntity>> bulkSaveProperties = entityProperties.Where(x => x.MessageType == EntityMessageType.Changed);
+            var bulkSavePropertiesGroupByEntity = bulkSaveProperties.GroupBy(x => x.ChangedEntity).Select(group => new { Entity = group.Key, UndoRedoEntityInfos = group.ToList() });
+
+            foreach(var bulkSavePropertyGroupByEntity in bulkSavePropertiesGroupByEntity)
+            {
+                foreach (UndoRedoEntityInfo<TEntity> entityProperty in bulkSavePropertyGroupByEntity.UndoRedoEntityInfos)
+                {
+                    DataUtils.SetNestedValue(entityProperty.PropertyName, entityProperty.ChangedEntity, entityProperty.OldValue);
+                }
+
+                ApplyInstantFeedbackEntityPropertiesToOtherUnitOfWorkEntityCallBack?.Invoke(bulkSavePropertyGroupByEntity.Entity);
+            }
+
+            SaveChanges(true);
+        }
+
+        public virtual void BulkPropertyRedo(IEnumerable<UndoRedoEntityInfo<TEntity>> entityProperties)
+        {
+            IEnumerable<UndoRedoEntityInfo<TEntity>> bulkSaveProperties = entityProperties.Where(x => x.MessageType == EntityMessageType.Changed);
+            var bulkSavePropertiesGroupByEntity = bulkSaveProperties.GroupBy(x => x.ChangedEntity).Select(group => new { Entity = group.Key, UndoRedoEntityInfos = group.ToList() });
+
+            foreach (var bulkSavePropertyGroupByEntity in bulkSavePropertiesGroupByEntity)
+            {
+                foreach (UndoRedoEntityInfo<TEntity> entityProperty in bulkSavePropertyGroupByEntity.UndoRedoEntityInfos)
+                {
+                    DataUtils.SetNestedValue(entityProperty.PropertyName, entityProperty.ChangedEntity, entityProperty.NewValue);
+                }
+
+                ApplyInstantFeedbackEntityPropertiesToOtherUnitOfWorkEntityCallBack?.Invoke(bulkSavePropertyGroupByEntity.Entity);
+            }
+
+            SaveChanges(true);
         }
 
         public void PropertyUndo(UndoRedoEntityInfo<TEntity> entityProperty)
@@ -415,10 +440,7 @@ namespace BaseModel.ViewModel.Base
                         }
                     }
 
-                    if (OtherUnitOfWorkSaveChangesCallBack != null)
-                        OtherUnitOfWorkSaveChangesCallBack();
-                    else
-                        SaveChanges();
+                    SaveChanges(true);
                 }
 
                 if (errorMessages.Count > 0)

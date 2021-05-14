@@ -780,14 +780,7 @@ namespace BaseModel.ViewModel.Loader
                 return;
 
             EditableColumn c = (EditableColumn)e.Column;
-            InstantFeedbackSaveChanges(c.RealFieldName, e.Value);
-        }
-
-        public virtual void InstantFeedbackSaveChanges(string fieldName, object value)
-        {
-            InstantFeedbackMainViewModel.EditSelectedEntity(fieldName, value);
-            InstantFeedbackMainViewModel.Refresh();
-            this.RaisePropertyChanged(x => x.InstantFeedbackEntities);
+            InstantFeedbackMainViewModel.EditSelectedEntity(c.RealFieldName, e.Value);
         }
         #endregion
 
@@ -899,13 +892,16 @@ namespace BaseModel.ViewModel.Loader
                 return;
 
             if(IsInstantFeedbackMode)
-            {
                 InstantFeedbackMainViewModel.Undo();
-                InstantFeedbackMainViewModel.Refresh();
-                this.RaisePropertyChanged(x => x.InstantFeedbackEntities);
-            }
             else
                 MainViewModel?.Undo();
+        }
+
+        public void InstantFeedbackRefresh()
+        {
+            GridControlService.SaveExpansionStates();
+            InstantFeedbackMainViewModel.Refresh();
+            this.RaisePropertyChanged(x => x.InstantFeedbackEntities);
         }
 
         public virtual bool CanRedo()
@@ -922,11 +918,7 @@ namespace BaseModel.ViewModel.Loader
                 return;
 
             if (IsInstantFeedbackMode)
-            {
                 InstantFeedbackMainViewModel.Redo();
-                InstantFeedbackMainViewModel.Refresh();
-                this.RaisePropertyChanged(x => x.InstantFeedbackEntities);
-            }
             else
                 MainViewModel?.Redo();
         }
@@ -1218,8 +1210,6 @@ namespace BaseModel.ViewModel.Loader
 
         protected virtual void InstantFeedbackOtherUnitOfWorkSaveChanges()
         {
-            InstantFeedbackMainViewModel.Refresh();
-            this.RaisePropertyChanged(x => x.InstantFeedbackEntities);
         }
 
     protected virtual OperationInterceptMode OnBeforeProjectionSaveIsContinue(TMainProjectionEntity projection, out bool isNew)

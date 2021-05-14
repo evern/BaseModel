@@ -29,6 +29,35 @@ namespace BaseModel.Misc
     /// Provides the information about an entity state change notification that is shown when an entity has been added, removed or modified, and the IUnitOfWork.SaveChanges method has been called.
     /// </summary>
     /// <typeparam name="TEntity">An entity type.</typeparam>
+    public class EntityMessage<TEntity>
+    {
+        /// <summary>
+        /// The entity state change notification type.
+        /// </summary>
+        public EntityMessageType MessageType { get; private set; }
+
+        /// <summary>
+        /// The message sender.
+        /// </summary>
+        public object Sender { get; private set; }
+
+        /// <summary>
+        /// The messaging machine
+        /// </summary>
+        public string HWID { get; private set; }
+
+        public EntityMessage(EntityMessageType messageType, object sender = null, string hwid = "")
+        {
+            MessageType = messageType;
+            Sender = sender;
+            HWID = hwid;
+        }
+    }
+
+    /// <summary>
+    /// Provides the information about an entity state change notification that is shown when an entity has been added, removed or modified, and the IUnitOfWork.SaveChanges method has been called.
+    /// </summary>
+    /// <typeparam name="TEntity">An entity type.</typeparam>
     /// <typeparam name="TPrimaryKey">A primary key value type.</typeparam>
     public class EntityMessage<TEntity, TPrimaryKey>
     {
