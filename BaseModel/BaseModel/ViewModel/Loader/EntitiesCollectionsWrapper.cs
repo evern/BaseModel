@@ -734,12 +734,12 @@ namespace BaseModel.ViewModel.Loader
             }
         }
 
-        public void ShowErrorMessage(string dialogTitle, List<ErrorMessage> errorMessages)
+        public bool ShowErrorMessage(string dialogTitle, List<ErrorMessage> errorMessages)
         {
             if (MainViewModel == null)
-                return;
+                return false;
 
-            MainViewModel.ShowErrorMessage(dialogTitle, errorMessages);
+            return MainViewModel.ShowErrorMessage(dialogTitle, errorMessages);
         }
 
         public virtual object InstantFeedbackCurrentEntity

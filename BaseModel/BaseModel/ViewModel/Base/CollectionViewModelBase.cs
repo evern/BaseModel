@@ -471,7 +471,7 @@ namespace BaseModel.ViewModel.Base
             }
         }
 
-        public void ShowErrorMessage(string dialogTitle, IEnumerable<ErrorMessage> errorMessages)
+        public bool ShowErrorMessage(string dialogTitle, IEnumerable<ErrorMessage> errorMessages)
         {
             if (errorMessages.Count() > 0)
             {
@@ -480,9 +480,12 @@ namespace BaseModel.ViewModel.Base
                 if (ErrorMessagesDialogService != null)
                 {
                     DialogCollectionViewModel<ErrorMessage> viewModel = DialogCollectionViewModel<ErrorMessage>.Create(errorMessages, dialogTitle);
-                    ErrorMessagesDialogService.ShowDialog(MessageButton.OKCancel, string.Empty, "ListErrorMessages", viewModel);
+                    if (ErrorMessagesDialogService.ShowDialog(MessageButton.OKCancel, string.Empty, "ListErrorMessages", viewModel) == MessageResult.OK)
+                        return true;
                 }
             }
+
+            return false;
         }
 
         protected void ApplyCreatedDateToEntity(object entity)
