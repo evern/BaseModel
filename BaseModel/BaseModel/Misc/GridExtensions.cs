@@ -80,7 +80,14 @@ namespace BaseModel.Misc
 
     public class GridControlEx : GridControl
     {
-        public bool IsInstantFeedbackMode { get; set; }
+        public static readonly DependencyProperty IsInstantFeedbackModeProperty =
+            DependencyProperty.Register("IsInstantFeedbackMode", typeof(bool), typeof(GridControlEx), new PropertyMetadata(false));
+
+        public bool IsInstantFeedbackMode
+        {
+            get { return (bool)GetValue(IsInstantFeedbackModeProperty); }
+            set { SetValue(IsInstantFeedbackModeProperty, value); }
+        }
 
         public GridControlEx()
         {

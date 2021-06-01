@@ -795,15 +795,6 @@ namespace BaseModel.ViewModel.Loader
 
         public virtual void FullRefresh()
         {
-            //don't have to call this because it's not going to be called from the background by user interaction, i.e. Undo/Redo
-            //if (!CanFullRefresh())
-            //    return;
-            if (IsInstantFeedbackMode && !stopSubsequentEntitiesLoading && InstantFeedbackMainViewModel != null)
-                ReloadEntitiesCollection();
-
-            if (!stopSubsequentEntitiesLoading && MainViewModel == null)
-                return;
-
             ReloadEntitiesCollection();
         }
 

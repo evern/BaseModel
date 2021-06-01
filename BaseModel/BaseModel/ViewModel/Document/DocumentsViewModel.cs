@@ -37,8 +37,43 @@ namespace BaseModel.ViewModel.Document
 
             //Modules.AddRange(CreateModules());
             //foreach (var module in Modules)
-            //    Messenger.Default.Register<NavigateMessage<TModule>>(this, module, x => Show(x.Token));
+            Messenger.Default.Register<NavigateMessage>(this, x => Restart(x));
             //Messenger.Default.Register<DestroyOrphanedDocumentsMessage>(this, x => DestroyOrphanedDocuments());
+        }
+
+        private void Restart(NavigateMessage navigateMessage)
+        {
+            IDocument document = this.DocumentManagerService.FindDocumentById(navigateMessage.DocumentId);
+            if(document != null)
+            {
+                document.DestroyOnClose = true;
+                document.Close();
+            }
+
+            foreach(TModule module in Modules)
+            {
+                List<TModule> modules = new List<TModule>();
+                collectModules(module, modules);
+                TModule findModule = modules.FirstOrDefault(x => x.NavigationId == navigateMessage.DocumentId);
+                if (findModule != null)
+                {
+                    NavigateCore(findModule);
+                    return;
+                }
+            }
+        }
+
+        protected void collectModules(TModule parentModule, List<TModule> moduleCollector)
+        {
+            moduleCollector.Add(parentModule);
+            if(parentModule.ChildModules != null)
+            { 
+                foreach (TModule childModule in parentModule.ChildModules)
+                {
+                    moduleCollector.Add(childModule);
+                    collectModules(childModule, moduleCollector);
+                }
+            }
         }
 
         private void DestroyOrphanedDocuments()

@@ -1463,6 +1463,22 @@ namespace BaseModel.Data.Helpers
 
 
         /// <summary>
+        /// Formatting navigation key
+        /// </summary>
+        public static string FormatNavigationKey(string navigationKey)
+        {
+            string uniqueNavKeyFormat = string.Empty;
+            if (navigationKey != null)
+            {
+                uniqueNavKeyFormat = navigationKey.Replace("-", "");
+                if (uniqueNavKeyFormat.Length >= 8)
+                    uniqueNavKeyFormat = uniqueNavKeyFormat.Substring(1, 8);
+            }
+
+            return uniqueNavKeyFormat;
+        }
+
+        /// <summary>
         /// Determine whether current entity constraint exists in other entity
         /// </summary>
         /// <param name="entity">The entity to be validated</param>

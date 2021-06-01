@@ -157,21 +157,21 @@ namespace BaseModel.Misc
     /// Used by the PeekCollectionViewModel to notify that DocumentsViewModel should navigate to the specified module.
     /// </summary>
     /// <typeparam name="TNavigationToken">The navigation token type.</typeparam>
-    public class NavigateMessage<TNavigationToken>
+    public class NavigateMessage
     {
         /// <summary>
         /// Initializes a new instance of the NavigateMessage class.
         /// </summary>
-        /// <param name="token">An object that is used to identify the module to which the DocumentsViewModel should navigate.</param>
-        public NavigateMessage(TNavigationToken token)
+        /// <param name="documentId">An object that is used to identify the module to which the DocumentsViewModel should navigate.</param>
+        public NavigateMessage(string documentId)
         {
-            Token = token;
+            DocumentId = documentId;
         }
 
         /// <summary>
         /// An object that is used to identify the module to which the DocumentsViewModel should navigate.
         /// </summary>
-        public TNavigationToken Token { get; private set; }
+        public string DocumentId { get; private set; }
     }
 
     public class ErrorMessage

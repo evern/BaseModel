@@ -41,24 +41,30 @@ namespace BaseModel.ViewModel.Loader
 
         public override void UnifiedNewRowInitializationFromView(TMainProjectionEntity projection)
         {
-            if (projection.EntityNumber == string.Empty || projection.EntityNumber == null)
+            if (projection.EntityNumber == string.Empty || projection.EntityNumber == null || (projection.EntityNumber != null && projection.EntityNumber.ToString() == "0"))
             {
-                IEnumerable<TMainProjectionEntity> entitiesInOrder = MainViewModel.Entities.Where(x => x.EntityGroup == projection.EntityGroup).OrderBy(x => x.EntityNumber);
-                if (entitiesInOrder.Count() == 0)
-                {
-                    projection.EntityNumber = StringFormatUtils.AppendStringWithEnumerator(string.Empty, 0, DefaultNumericFieldLength());
-                }
-
-                TMainProjectionEntity largestNumberEntity = entitiesInOrder.Last();
-                string largestNumberString = largestNumberEntity.EntityNumber;
-                int numericFieldLength = 0;
-                long largestNumberValueOnly = 0;
-                string largestNumberStringOnly = StringFormatUtils.ParseStringIntoComponents(largestNumberString, out numericFieldLength, out largestNumberValueOnly);
-                long newRowNumber = largestNumberValueOnly + 1;
-                projection.EntityNumber = StringFormatUtils.AppendStringWithEnumerator(string.Empty, newRowNumber, DefaultNumericFieldLength());
+                updateProjectionEntityNumber(projection);
             }
 
             base.UnifiedNewRowInitializationFromView(projection);
+        }
+
+        protected void updateProjectionEntityNumber(TMainProjectionEntity projection)
+        {
+            IEnumerable<TMainProjectionEntity> entitiesInOrder = MainViewModel.Entities.Where(x => x.EntityGroup == projection.EntityGroup).OrderBy(x => x.EntityNumber);
+            if (entitiesInOrder.Count() == 0)
+            {
+                projection.EntityNumber = StringFormatUtils.AppendStringWithEnumerator(string.Empty, 0, DefaultNumericFieldLength());
+            }
+
+            TMainProjectionEntity largestNumberEntity = entitiesInOrder.Last();
+            string largestNumberString = largestNumberEntity.EntityNumber;
+            int numericFieldLength = 0;
+            long largestNumberValueOnly = 0;
+            string largestNumberStringOnly = StringFormatUtils.ParseStringIntoComponents(largestNumberString, out numericFieldLength, out largestNumberValueOnly);
+            long newRowNumber = largestNumberValueOnly + 1;
+            projection.EntityNumber = StringFormatUtils.AppendStringWithEnumerator(string.Empty, newRowNumber, DefaultNumericFieldLength());
+            projection.Update();
         }
         
         protected bool IsContinueNewRowFromViewCallBack(RowEventArgs e, TMainProjectionEntity projection)

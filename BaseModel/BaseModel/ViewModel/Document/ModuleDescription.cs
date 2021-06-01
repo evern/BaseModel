@@ -1,4 +1,6 @@
-﻿using System;
+﻿using BaseModel.Data.Helpers;
+using BaseModel.Misc;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -19,14 +21,7 @@ namespace BaseModel.ViewModel.Document
             DocumentParameter = documentParameter;
 
             //to allow Document.Id to comply to XamlName Grammar
-            string uniqueNavKeyFormat = string.Empty;
-            if(uniqueNavigationKey != null)
-            {
-                uniqueNavKeyFormat = uniqueNavigationKey.Replace("-", "");
-                if(uniqueNavKeyFormat.Length >= 8)
-                    uniqueNavKeyFormat = uniqueNavKeyFormat.Substring(1, 8);
-            }
-
+            string uniqueNavKeyFormat = DataUtils.FormatNavigationKey(uniqueNavigationKey);
             NavigationId = securityKey + uniqueNavKeyFormat;
             SecurityKey = securityKey;
             ParentId = parentId;
@@ -78,7 +73,7 @@ namespace BaseModel.ViewModel.Document
         ///     Specifies the Id used for security profiles
         /// </summary>
         public string SecurityKey { get; private set; }
-        
+
         /// <summary>
         ///     Specify the treeview image property when binded to TreeViewControl
         /// </summary>
@@ -93,5 +88,10 @@ namespace BaseModel.ViewModel.Document
         ///     Describe whether the treelist item show in expanded
         /// </summary>
         public bool ShowInCollapseMode { get; set; }
+
+        /// <summary>
+        ///     Child modules that forms the navigation tree
+        /// </summary>
+        public RangeObservableCollection<TModule> ChildModules { get; set; }
     }
 }

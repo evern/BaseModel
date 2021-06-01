@@ -12,15 +12,24 @@ namespace BaseModel.Misc
 {
     public delegate void SaveChangesEventHandler(object sender, GridColumnDataEventArgs e);
 
-    public class EditingAttachedBehavior : Behavior<GridControl>
+    public class EditingAttachedBehavior : Behavior<GridControlEx>
     {
-        public GridControl Grid { get { return AssociatedObject; } }
-        public InstantFeedbackTableView View { get { return (InstantFeedbackTableView)Grid.View; } }
+        public GridControlEx Grid { get { return AssociatedObject; } }
+        public InstantFeedbackTableView View { 
+            get 
+            {
+                if (Grid == null) return null;
+                return (InstantFeedbackTableView)Grid.View; 
+            } 
+        }
 
         public event SaveChangesEventHandler SaveChanges;
         protected override void OnAttached()
         {
             base.OnAttached();
+            if (!Grid.IsInstantFeedbackMode)
+                return;
+
             Grid.CustomUnboundColumnData += new GridColumnDataEventHandler(Grid_CustomUnboundColumnData);
             Grid.AsyncOperationStarted += new RoutedEventHandler(GridControl_AsyncOperationStarted);
             Grid.AsyncOperationCompleted += new RoutedEventHandler(GridControl_AsyncOperationCompleted);
@@ -28,11 +37,14 @@ namespace BaseModel.Misc
             View.CellValueChanging += new CellValueChangedEventHandler(View_CellValueChanging);
             View.CellValueChanged += new CellValueChangedEventHandler(View_CellValueChanged);
             View.FocusedRowChanging += new CancelledEventHandler(View_FocusedRowChanging);
-            View.HiddenEditor += View_HiddenEditor;
+            View.HiddenEditor += new EditorEventHandler(View_HiddenEditor);
         }
 
         private void View_HiddenEditor(object sender, EditorEventArgs e)
         {
+            if (View == null)
+                return;
+
             View.PostEditor();
         }
 
@@ -53,6 +65,9 @@ namespace BaseModel.Misc
 
         void View_CellValueChanging(object sender, CellValueChangedEventArgs e)
         {
+            if (View == null)
+                return;
+
             if (View.ActiveEditor != null && e.Column is EditableColumn)
             {
                 View.ActiveEditor.IsReadOnly = false;
@@ -61,6 +76,9 @@ namespace BaseModel.Misc
 
         void View_CellValueChanged(object sender, CellValueChangedEventArgs e)
         {
+            if (View == null)
+                return;
+
             if (View.ActiveEditor != null && e.Column is EditableColumn)
             {
                 if (SaveChanges != null)
@@ -79,9 +97,11 @@ namespace BaseModel.Misc
             View.CellValueChanging -= new CellValueChangedEventHandler(View_CellValueChanging);
             View.CellValueChanged -= new CellValueChangedEventHandler(View_CellValueChanged);
             View.FocusedRowChanging -= new CancelledEventHandler(View_FocusedRowChanging);
+            View.HiddenEditor -= new EditorEventHandler(View_HiddenEditor);
 
             base.OnDetaching();
         }
+
         void View_ShownEditor(object sender, EditorEventArgs e)
         {
             if (e.Column is EditableColumn)

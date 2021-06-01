@@ -334,6 +334,7 @@
     <Compile Include="Misc\GridControlHelpers.cs" />
     <Compile Include="Misc\GridExtensions.cs" />
     <Compile Include="Misc\GroupChildSelector.cs" />
+    <Compile Include="Misc\ConditionToStyleConverter.cs" />
     <Compile Include="Misc\Interfaces.cs" />
     <Compile Include="Misc\LayoutSettings.Designer.cs" />
     <Compile Include="Misc\Messages.cs" />
