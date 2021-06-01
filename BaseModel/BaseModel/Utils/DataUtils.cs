@@ -70,162 +70,175 @@ namespace BaseModel.Data.Helpers
             HashSet<TProjection> preValidatedProjections = new HashSet<TProjection>();
             List<TProjection> validatedProjections = new List<TProjection>();
             List<UndoRedoArg<TProjection>> undoRedoArguments = new List<UndoRedoArg<TProjection>>();
-            if (gridView.ActiveEditor == null && (gridView.GetType() == typeof(TView)))
+            if (gridView.ActiveEditor == null)
             {
-                var gridTView = gridView as TView;
-                TableView gridTableView = gridTView as TableView;
-                TreeListView gridTreeListView = gridTView as TreeListView;
-
-                List<List<string>> row_data = new List<List<string>>();
-                foreach (var row in RowData)
+                TableView gridTableView = gridView as TableView;
+                if(gridTableView != null)
                 {
-                    List<string> column_data = row.Split('\t').ToList();
-                    row_data.Add(column_data);
-                }
-
-                var grouped_results = row_data
-                    .SelectMany(inner => inner.Select((item, index) => new { item, index }))
-                    .GroupBy(i => i.index, i => i.item)
-                    .Select(g => g.ToList())
-                    .ToList();
-
-                var selected_cells = gridTableView.GetSelectedCells();
-                if (selected_cells.Count == 0)
-                    return validatedProjections;
-
-                var selected_cells_groupby_columns = selected_cells.GroupBy(x => x.Column.FieldName).Select(group => new { FieldName = group.Key, Cells = group.ToList() });
-                if (grouped_results.Count == 0)
-                {
-                    foreach(var selected_cell in selected_cells)
+                    List<List<string>> row_data = new List<List<string>>();
+                    foreach (var row in RowData)
                     {
-
-                        int row_handle = selected_cell.RowHandle;
-                        TProjection editing_row;
-                        if (instantFeedbackEntityConversionFunc != null)
-                            editing_row = instantFeedbackEntityConversionFunc(gridControl.GetRow(row_handle));
-                        else
-                            editing_row = (TProjection)gridControl.GetRow(row_handle);
-
-                        string errorMessage = string.Empty;
-                        PasteResult result = pasteDataInProjectionColumn(editing_row, selected_cell.Column, string.Empty, out errorMessage, undoRedoArguments);
-                        if (result == PasteResult.FailOnRequired || errorMessage != string.Empty)
-                        {
-                            string errorString = errorMessage == string.Empty ? "Cannot set null in required cell, operation has been terminated" : errorMessage;
-                            errorMessages.Add(new ErrorMessage(selected_cell.Column.Header.ToString(), errorString));
-                            break;
-                        }
-                        if (result != PasteResult.Success)
-                            continue;
-
-                        if (!preValidatedProjections.Any(x => x.GetHashCode() == editing_row.GetHashCode()))
-                            preValidatedProjections.Add(editing_row);
+                        List<string> column_data = row.Split('\t').ToList();
+                        row_data.Add(column_data);
                     }
-                }
-                else
-                {
-                    GridCell first_selected_cell = selected_cells.First();
-                    GridCell last_selected_cell = selected_cells.Last();
 
-                    int first_row_handle = selected_cells.Min(x => x.RowHandle);
-                    int last_row_handle = selected_cells.Max(x => x.RowHandle);
-                    int first_row_visible_index = gridControl.GetRowVisibleIndexByHandle(first_row_handle);
-                    //row visible index can't be retrieved from grid control in detailed descriptor
-                    if (first_row_visible_index < 1)
-                        first_row_visible_index = first_row_handle;
+                    var grouped_results = row_data
+                        .SelectMany(inner => inner.Select((item, index) => new { item, index }))
+                        .GroupBy(i => i.index, i => i.item)
+                        .Select(g => g.ToList())
+                        .ToList();
 
-                    int last_row_visible_index = gridControl.GetRowVisibleIndexByHandle(last_row_handle);
-                    if (last_row_visible_index < 1)
-                        last_row_visible_index = last_row_handle;
+                    var selected_cells = gridTableView.GetSelectedCells();
+                    if (selected_cells.Count == 0)
+                        return validatedProjections;
 
-                    int numberOfSelectedRows = (last_row_visible_index - first_row_visible_index) + 1;
-                    int numberOfCopiedRows = grouped_results.First().Count;
-
-                    List<GridColumn> visible_columns = gridTableView.VisibleColumns.ToList();
-                    //commented out because not accurate during banded view
-                    //int first_column_visible_index = first_selected_cell.Column.VisibleIndex;
-                    int first_column_visible_index = visible_columns.IndexOf(visible_columns.First(x => x.FieldName == first_selected_cell.Column.FieldName));
-                    int last_column_visible_index = visible_columns.IndexOf(visible_columns.First(x => x.FieldName == last_selected_cell.Column.FieldName));
-
-                    int numberOfSelectedColumns = (last_column_visible_index - first_column_visible_index) + 1;
-                    int numberOfCopiedColumns = grouped_results.Count;
-
-                    //commented out because not accurate during banded view
-                    //int first_column_visible_index = first_selected_cell.Column.VisibleIndex;
-
-                    int rowOffsetSelection = numberOfSelectedRows > numberOfCopiedRows ? numberOfSelectedRows : numberOfCopiedRows;
-                    int columnOffsetSelection = numberOfSelectedColumns > numberOfCopiedColumns ? numberOfSelectedColumns : numberOfCopiedColumns;
-
-                    int pasteValueRowOffset = 0;
-                    TProjection validate_row = null;
-                    for (int rowOffset = 0; rowOffset < rowOffsetSelection; rowOffset++)
+                    var selected_cells_groupby_columns = selected_cells.GroupBy(x => x.Column.FieldName).Select(group => new { FieldName = group.Key, Cells = group.ToList() });
+                    if (grouped_results.Count == 0)
                     {
-                        int pasteValueColumnOffset = 0;
-                        for (int columnOffset = 0; columnOffset < columnOffsetSelection; columnOffset++)
+                        foreach (var selected_cell in selected_cells)
                         {
-                            int findVisibleIndex = first_column_visible_index + columnOffset;
-                            if (findVisibleIndex >= visible_columns.Count)
-                                continue;
 
-                            GridColumn current_column = visible_columns[findVisibleIndex];
-                            string columnValue = grouped_results[pasteValueColumnOffset][pasteValueRowOffset];
-
-                            pasteValueColumnOffset += 1;
-                            if (pasteValueColumnOffset >= grouped_results.Count)
-                                pasteValueColumnOffset = 0;
-
-                            int current_row_visible_index = first_row_visible_index + rowOffset;
-                            int current_row_handle = gridControl.GetRowHandleByVisibleIndex(current_row_visible_index);
-                            if (current_row_handle < 1)
-                                current_row_handle = current_row_visible_index;
-
-                            object rowObject = gridControl.GetRow(current_row_handle);
-                            if (rowObject == null)
-                                continue;
-
+                            int row_handle = selected_cell.RowHandle;
                             TProjection editing_row;
                             if (instantFeedbackEntityConversionFunc != null)
-                                editing_row = instantFeedbackEntityConversionFunc(gridControl.GetRow(current_row_handle));
+                                editing_row = instantFeedbackEntityConversionFunc(gridControl.GetRow(row_handle));
                             else
-                                editing_row = (TProjection)gridControl.GetRow(current_row_handle);
-
-                            validate_row = editing_row;
-                            if (editing_row == null)
-                            {
-                                errorMessages.Add(new ErrorMessage(current_column.Header.ToString(), "Please remove all line break from paste data or double click into cell to paste your data with line breaks"));
-                                break;
-                            }
+                                editing_row = (TProjection)gridControl.GetRow(row_handle);
 
                             string errorMessage = string.Empty;
-                            PasteResult result = pasteDataInProjectionColumn(editing_row, current_column, columnValue, out errorMessage, undoRedoArguments);
+                            PasteResult result = pasteDataInProjectionColumn(editing_row, selected_cell.Column, string.Empty, out errorMessage, undoRedoArguments);
                             if (result == PasteResult.FailOnRequired || errorMessage != string.Empty)
                             {
                                 string errorString = errorMessage == string.Empty ? "Cannot set null in required cell, operation has been terminated" : errorMessage;
-                                errorMessages.Add(new ErrorMessage(current_column.Header.ToString(), errorString));
+                                errorMessages.Add(new ErrorMessage(selected_cell.Column.Header.ToString(), errorString));
                                 break;
                             }
                             if (result != PasteResult.Success)
                                 continue;
 
+                            if (!preValidatedProjections.Any(x => x.GetHashCode() == editing_row.GetHashCode()))
+                                preValidatedProjections.Add(editing_row);
                         }
-
-                        if(validate_row != null)
-                            preValidatedProjections.Add(validate_row);
-
-                        pasteValueRowOffset += 1;
-                        if (pasteValueRowOffset >= grouped_results[pasteValueColumnOffset].Count)
-                            pasteValueRowOffset = 0;
                     }
-                }
-                
-                undo_redo_manager?.PauseActionId();
-                foreach (TProjection preValidatedProjection in preValidatedProjections)
-                {
-                    string errorMessage = string.Empty;
-                    List<KeyValuePair<string, string>> constraintIssues = new List<KeyValuePair<string, string>>();
-                    if (isValidProjectionFunc != null && isValidProjectionFunc(preValidatedProjection, validatedProjections, ref errorMessage, out constraintIssues))
-                        if (onBeforePasteWithValidationFunc != null)
+                    else
+                    {
+                        GridCell first_selected_cell = selected_cells.First();
+                        GridCell last_selected_cell = selected_cells.Last();
+
+                        int first_row_handle = selected_cells.Min(x => x.RowHandle);
+                        int last_row_handle = selected_cells.Max(x => x.RowHandle);
+                        int first_row_visible_index = gridControl.GetRowVisibleIndexByHandle(first_row_handle);
+                        //row visible index can't be retrieved from grid control in detailed descriptor
+                        if (first_row_visible_index < 1)
+                            first_row_visible_index = first_row_handle;
+
+                        int last_row_visible_index = gridControl.GetRowVisibleIndexByHandle(last_row_handle);
+                        if (last_row_visible_index < 1)
+                            last_row_visible_index = last_row_handle;
+
+                        int numberOfSelectedRows = (last_row_visible_index - first_row_visible_index) + 1;
+                        int numberOfCopiedRows = grouped_results.First().Count;
+
+                        List<GridColumn> visible_columns = gridTableView.VisibleColumns.ToList();
+                        //commented out because not accurate during banded view
+                        //int first_column_visible_index = first_selected_cell.Column.VisibleIndex;
+                        int first_column_visible_index = visible_columns.IndexOf(visible_columns.First(x => x.FieldName == first_selected_cell.Column.FieldName));
+                        int last_column_visible_index = visible_columns.IndexOf(visible_columns.First(x => x.FieldName == last_selected_cell.Column.FieldName));
+
+                        int numberOfSelectedColumns = (last_column_visible_index - first_column_visible_index) + 1;
+                        int numberOfCopiedColumns = grouped_results.Count;
+
+                        //commented out because not accurate during banded view
+                        //int first_column_visible_index = first_selected_cell.Column.VisibleIndex;
+
+                        int rowOffsetSelection = numberOfSelectedRows > numberOfCopiedRows ? numberOfSelectedRows : numberOfCopiedRows;
+                        int columnOffsetSelection = numberOfSelectedColumns > numberOfCopiedColumns ? numberOfSelectedColumns : numberOfCopiedColumns;
+
+                        int pasteValueRowOffset = 0;
+                        TProjection validate_row = null;
+                        for (int rowOffset = 0; rowOffset < rowOffsetSelection; rowOffset++)
                         {
-                            if (onBeforePasteWithValidationFunc(preValidatedProjection))
+                            int pasteValueColumnOffset = 0;
+                            for (int columnOffset = 0; columnOffset < columnOffsetSelection; columnOffset++)
+                            {
+                                int findVisibleIndex = first_column_visible_index + columnOffset;
+                                if (findVisibleIndex >= visible_columns.Count)
+                                    continue;
+
+                                GridColumn current_column = visible_columns[findVisibleIndex];
+                                string columnValue = grouped_results[pasteValueColumnOffset][pasteValueRowOffset];
+
+                                pasteValueColumnOffset += 1;
+                                if (pasteValueColumnOffset >= grouped_results.Count)
+                                    pasteValueColumnOffset = 0;
+
+                                int current_row_visible_index = first_row_visible_index + rowOffset;
+                                int current_row_handle = gridControl.GetRowHandleByVisibleIndex(current_row_visible_index);
+                                if (current_row_handle < 1)
+                                    current_row_handle = current_row_visible_index;
+
+                                object rowObject = gridControl.GetRow(current_row_handle);
+                                if (rowObject == null)
+                                    continue;
+
+                                TProjection editing_row;
+                                if (instantFeedbackEntityConversionFunc != null)
+                                    editing_row = instantFeedbackEntityConversionFunc(gridControl.GetRow(current_row_handle));
+                                else
+                                    editing_row = (TProjection)gridControl.GetRow(current_row_handle);
+
+                                validate_row = editing_row;
+                                if (editing_row == null)
+                                {
+                                    errorMessages.Add(new ErrorMessage(current_column.Header.ToString(), "Please remove all line break from paste data or double click into cell to paste your data with line breaks"));
+                                    break;
+                                }
+
+                                string errorMessage = string.Empty;
+                                PasteResult result = pasteDataInProjectionColumn(editing_row, current_column, columnValue, out errorMessage, undoRedoArguments);
+                                if (result == PasteResult.FailOnRequired || errorMessage != string.Empty)
+                                {
+                                    string errorString = errorMessage == string.Empty ? "Cannot set null in required cell, operation has been terminated" : errorMessage;
+                                    errorMessages.Add(new ErrorMessage(current_column.Header.ToString(), errorString));
+                                    break;
+                                }
+                                if (result != PasteResult.Success)
+                                    continue;
+
+                            }
+
+                            if (validate_row != null)
+                                preValidatedProjections.Add(validate_row);
+
+                            pasteValueRowOffset += 1;
+                            if (pasteValueRowOffset >= grouped_results[pasteValueColumnOffset].Count)
+                                pasteValueRowOffset = 0;
+                        }
+                    }
+
+                    undo_redo_manager?.PauseActionId();
+                    foreach (TProjection preValidatedProjection in preValidatedProjections)
+                    {
+                        string errorMessage = string.Empty;
+                        List<KeyValuePair<string, string>> constraintIssues = new List<KeyValuePair<string, string>>();
+                        if (isValidProjectionFunc != null && isValidProjectionFunc(preValidatedProjection, validatedProjections, ref errorMessage, out constraintIssues))
+                            if (onBeforePasteWithValidationFunc != null)
+                            {
+                                if (onBeforePasteWithValidationFunc(preValidatedProjection))
+                                {
+                                    IEnumerable<UndoRedoArg<TProjection>> projection_undo_redos = undoRedoArguments.Where(x => x.Projection == preValidatedProjection);
+                                    foreach (UndoRedoArg<TProjection> projection_undo_redo in projection_undo_redos)
+                                    {
+                                        cellValueChanging?.Invoke(projection_undo_redo.FieldName, projection_undo_redo.OldValue, projection_undo_redo.NewValue, projection_undo_redo.Projection, false);
+                                        cellValueChanged?.Invoke(projection_undo_redo.FieldName, projection_undo_redo.OldValue, projection_undo_redo.NewValue, projection_undo_redo.Projection, false);
+
+                                        undo_redo_manager?.AddUndo(projection_undo_redo.Projection, projection_undo_redo.FieldName, projection_undo_redo.OldValue, projection_undo_redo.NewValue, EntityMessageType.Changed);
+                                    }
+
+                                    validatedProjections.Add(preValidatedProjection);
+                                }
+                            }
+                            else
                             {
                                 IEnumerable<UndoRedoArg<TProjection>> projection_undo_redos = undoRedoArguments.Where(x => x.Projection == preValidatedProjection);
                                 foreach (UndoRedoArg<TProjection> projection_undo_redo in projection_undo_redos)
@@ -238,24 +251,11 @@ namespace BaseModel.Data.Helpers
 
                                 validatedProjections.Add(preValidatedProjection);
                             }
-                        }
                         else
                         {
-                            IEnumerable<UndoRedoArg<TProjection>> projection_undo_redos = undoRedoArguments.Where(x => x.Projection == preValidatedProjection);
-                            foreach (UndoRedoArg<TProjection> projection_undo_redo in projection_undo_redos)
-                            {
-                                cellValueChanging?.Invoke(projection_undo_redo.FieldName, projection_undo_redo.OldValue, projection_undo_redo.NewValue, projection_undo_redo.Projection, false);
-                                cellValueChanged?.Invoke(projection_undo_redo.FieldName, projection_undo_redo.OldValue, projection_undo_redo.NewValue, projection_undo_redo.Projection, false);
-
-                                undo_redo_manager?.AddUndo(projection_undo_redo.Projection, projection_undo_redo.FieldName, projection_undo_redo.OldValue, projection_undo_redo.NewValue, EntityMessageType.Changed);
-                            }
-
-                            validatedProjections.Add(preValidatedProjection);
+                            formatErrorMessages?.Invoke(errorMessages);
+                            errorMessages.Add(new ErrorMessage("Cell edit error", errorMessage, constraintIssues));
                         }
-                    else
-                    {
-                        formatErrorMessages?.Invoke(errorMessages);
-                        errorMessages.Add(new ErrorMessage("Cell edit error", errorMessage, constraintIssues));
                     }
                 }
             }
