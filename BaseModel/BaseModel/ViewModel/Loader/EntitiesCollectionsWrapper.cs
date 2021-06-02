@@ -600,7 +600,21 @@ namespace BaseModel.ViewModel.Loader
             MainViewModel?.Grid_MouseWheel(e);
         }
 
-        public string CellValueChangingFieldName => MainViewModel == null ? null : MainViewModel.CellValueChangingFieldName;
+        public string CellValueChangingFieldName
+        {
+            get
+            {
+                if (MainViewModel == null)
+                    return null;
+                else
+                    return MainViewModel.CellValueChangingFieldName;
+            }
+            set
+            {
+                if (MainViewModel != null)
+                    MainViewModel.CellValueChangingFieldName = value;
+            }
+        }
 
         public bool IsPasteCellLevel
         {

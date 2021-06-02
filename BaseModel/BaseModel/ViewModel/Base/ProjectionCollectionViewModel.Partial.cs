@@ -84,7 +84,7 @@ namespace BaseModel.ViewModel.Base
         /// <summary>
         /// used to indicate whether cell value is changing to perform validation, as validation needs to be differentiated between cell value changes and general grid control validation
         /// </summary>
-        public string CellValueChangingFieldName { get; private set; }
+        public string CellValueChangingFieldName { get; set; }
 
         /// <summary>
         /// Indicate whether value is changing from events i.e. paste and fill
