@@ -218,7 +218,11 @@ namespace BaseModel.ViewModel.Document
             if (module == null || DocumentManagerService == null)
                 return null;
 
-            DocumentInfo documentInfo = new DocumentInfo(module.NavigationId, module.DocumentParameter, module.DocumentType, module.ModuleTitle);
+            string viewName = module.DocumentType;
+            if (module.PreferredDocumentType != null)
+                viewName = module.PreferredDocumentType();
+
+            DocumentInfo documentInfo = new DocumentInfo(module.NavigationId, module.DocumentParameter, viewName, module.ModuleTitle);
             var document = DocumentManagerService.ShowExistingEntityDocument(documentInfo, this);
 
             return document;

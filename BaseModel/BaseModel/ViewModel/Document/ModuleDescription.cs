@@ -14,7 +14,7 @@ namespace BaseModel.ViewModel.Document
         /// <summary>
         ///     Initializes a new instance of the ModuleDescription class.
         /// </summary>
-        protected ModuleDescription(string securityKey, string uniqueNavigationKey, string parentId, string title, string documentType = null, object documentParameter = null, ImageSource image = null, string navigationTitle = null, bool treeViewIsExpanded = false, bool showInCollapseMode = false)
+        protected ModuleDescription(string securityKey, string uniqueNavigationKey, string parentId, string title, string documentType = null, object documentParameter = null, ImageSource image = null, string navigationTitle = null, bool treeViewIsExpanded = false, bool showInCollapseMode = false, Func<string> preferredDocumentType = null)
         {
             ModuleTitle = title;
             DocumentType = documentType == null ? string.Empty : documentType;
@@ -29,6 +29,7 @@ namespace BaseModel.ViewModel.Document
             TreeViewIsExpanded = treeViewIsExpanded;
             NavigationTitle = (navigationTitle == string.Empty || navigationTitle == null) ? ModuleTitle : navigationTitle;
             ShowInCollapseMode = showInCollapseMode;
+            PreferredDocumentType = preferredDocumentType;
         }
 
         /// <summary>
@@ -46,13 +47,18 @@ namespace BaseModel.ViewModel.Document
         /// </summary>
         public bool CanNavigate
         {
-            get { return DocumentType != null && DocumentType != string.Empty; }
+            get { return (DocumentType != null && DocumentType != string.Empty) || PreferredDocumentType != null; }
         }
 
         /// <summary>
         /// Contains the corresponding document view type.
         /// </summary>
         public string DocumentType { get; private set; }
+
+        /// <summary>
+        /// Contains the method to retrieve preferred view type.
+        /// </summary>
+        public Func<string> PreferredDocumentType { get; private set; }
 
         /// <summary>
         ///     The navigation parameter for SingleObjectViewModel.

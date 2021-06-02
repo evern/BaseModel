@@ -567,33 +567,6 @@
         <Setter Property="dxsc:SpellingSettings.ShowSpellCheckMenu" Value="True" />
         <Setter Property="dxsc:SpellingSettings.SpellChecker" Value="{Binding SpellCheckerModule.SpellChecker}" />
         <Setter Property="LayoutTransform" Value="{Binding Zoom, Mode=OneWay}" />
-        <Setter Property="View">
-            <Setter.Value>
-                <custom:InstantFeedbackTableView x:Name="tableView" NewItemRowPosition="None" ShowFixedTotalSummary="True" Style="{StaticResource InstantFeedbackTableViewTemplate}">
-                    <dxg:TableView.RowCellMenuCustomizations>
-                        <dxb:BarButtonItem x:Name="biCopyWithHeader2" Command="{Binding View.DataContext.CopyWithHeaderCommand}" Content="Copy With Headers" Glyph="{dx:DXImageOffice2013 Image=AlignHorizontalTop_16x16.png}" RibbonStyle="SmallWithText" ToolTip="Copy selected rows along with header" />
-                        <dxb:BarButtonItem x:Name="biKeyboardCopy2" Command="{Binding View.DataContext.KeyboardCopyCommand}" Content="Copy" Glyph="{dx:DXImage Image=Copy_16x16.png}" LargeGlyph="{dx:DXImage Image=Copy_32x32.png}" RibbonStyle="SmallWithText" ToolTip="Ctrl + C" />
-                        <dxb:BarButtonItem x:Name="biKeyboardPaste2" Command="{Binding View.DataContext.KeyboardPasteCommand}" Content="Paste" Glyph="{dx:DXImage Image=Paste_16x16.png}" LargeGlyph="{dx:DXImage Image=Paste_32x32.png}" RibbonStyle="SmallWithText" ToolTip="Ctrl + V" />
-                        <dxb:BarButtonItemLink BarItemName="biFullRefresh1" />
-                    </dxg:TableView.RowCellMenuCustomizations>
-                </custom:InstantFeedbackTableView>
-            </Setter.Value>
-        </Setter>
-        <Setter Property="dxmvvm:Interaction.BehaviorsTemplate">
-            <Setter.Value>
-                <DataTemplate>
-                    <ItemsControl>
-                        <dxmvvm:EventToCommand Command="{Binding Grid_MouseWheelCommand}" EventName="PreviewMouseWheel" PassEventArgsToCommand="True" />
-                        <dxmvvm:EventToCommand Command="{Binding PastingFromClipboardCommand}" EventName="PastingFromClipboard" PassEventArgsToCommand="True" />
-                        <custom:EditingAttachedBehavior>
-                            <dxmvvm:Interaction.Behaviors>
-                                <dxmvvm:EventToCommand Command="{Binding EditingAttachedBehavior_SaveChangesCommand}" EventName="SaveChanges" PassEventArgsToCommand="True" />
-                            </dxmvvm:Interaction.Behaviors>
-                        </custom:EditingAttachedBehavior>
-                    </ItemsControl>
-                </DataTemplate>
-            </Setter.Value>
-        </Setter>
     </Style>
     <Style x:Key="AssociateTableViewTemplate" TargetType="{x:Type dxg:TableView}">
         <Setter Property="dxmvvm:Interaction.BehaviorsTemplate">
