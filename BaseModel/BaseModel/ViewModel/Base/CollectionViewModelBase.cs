@@ -628,7 +628,6 @@ namespace BaseModel.ViewModel.Base
         {
             List<BulkProcessModel<TProjection, TEntity>> bulkProcessModels = new List<BulkProcessModel<TProjection, TEntity>>();
             bulkProcessModels.AddRange(projections.Select(x => new BulkProcessModel<TProjection, TEntity>() { Projection = x }));
-
             if (bulkProcessModels.Count > Int32.Parse(CommonResources.BulkOperationLoadingScreenMinCount))
             {
                 LoadingScreenManager.ShowLoadingScreen(bulkProcessModels.Count);

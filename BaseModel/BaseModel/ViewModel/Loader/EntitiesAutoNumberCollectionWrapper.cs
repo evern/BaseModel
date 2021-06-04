@@ -39,15 +39,15 @@ namespace BaseModel.ViewModel.Loader
             base.AssignCallBacksAndRaisePropertyChange(entities);
         }
 
-        public override void UnifiedNewRowInitializationFromView(TMainProjectionEntity projection)
-        {
-            if (projection.EntityNumber == string.Empty || projection.EntityNumber == null || (projection.EntityNumber != null && projection.EntityNumber.ToString() == "0"))
-            {
-                updateProjectionEntityNumber(projection);
-            }
+        //public override void UnifiedNewRowInitializationFromView(TMainProjectionEntity projection)
+        //{
+        //    if (projection.EntityNumber == string.Empty || projection.EntityNumber == null || (projection.EntityNumber != null && projection.EntityNumber.ToString() == "0"))
+        //    {
+        //        updateProjectionEntityNumber(projection);
+        //    }
 
-            base.UnifiedNewRowInitializationFromView(projection);
-        }
+        //    base.UnifiedNewRowInitializationFromView(projection);
+        //}
 
         protected void updateProjectionEntityNumber(TMainProjectionEntity projection)
         {

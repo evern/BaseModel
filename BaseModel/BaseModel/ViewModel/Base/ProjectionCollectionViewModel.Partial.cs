@@ -561,23 +561,28 @@ namespace BaseModel.ViewModel.Base
             {
                 CellValueChangingFieldName = null;
                 var projection = (TProjection)e.Row;
-                PauseEntitiesUndoRedoManager();
-                if (e.RowHandle != DataControlBase.NewItemRowHandle)
-                {
-                    if (OnBeforeRowSaveIsContinue != null)
-                        if (!OnBeforeRowSaveIsContinue(e, projection))
-                        {
-                            return;
-                        }
 
-                    EntitiesUndoRedoManager.AddUndo(projection, e.Column.FieldName, e.OldValue, e.Value, EntityMessageType.Changed);
-                    UnifiedValueChangedCallback?.Invoke(e.Column.FieldName, e.OldValue, e.Value, projection, e.RowHandle == GridControl.NewItemRowHandle);
-                    Save(projection); //undoredomanager will be unpaused within
-                }
-                else
+                //row validation is called after cell value changed, so call it first before save
+                if(UnifiedValidateRow(projection) == string.Empty)
                 {
-                    UnifiedValueChangedCallback?.Invoke(e.Column.FieldName, e.OldValue, e.Value, projection, e.RowHandle == GridControl.NewItemRowHandle);
-                    UnpauseEntitiesUndoRedoManager();
+                    PauseEntitiesUndoRedoManager();
+                    if (e.RowHandle != DataControlBase.NewItemRowHandle)
+                    {
+                        if (OnBeforeRowSaveIsContinue != null)
+                            if (!OnBeforeRowSaveIsContinue(e, projection))
+                            {
+                                return;
+                            }
+
+                        EntitiesUndoRedoManager.AddUndo(projection, e.Column.FieldName, e.OldValue, e.Value, EntityMessageType.Changed);
+                        UnifiedValueChangedCallback?.Invoke(e.Column.FieldName, e.OldValue, e.Value, projection, e.RowHandle == GridControl.NewItemRowHandle);
+                        Save(projection); //undoredomanager will be unpaused within
+                    }
+                    else
+                    {
+                        UnifiedValueChangedCallback?.Invoke(e.Column.FieldName, e.OldValue, e.Value, projection, e.RowHandle == GridControl.NewItemRowHandle);
+                        UnpauseEntitiesUndoRedoManager();
+                    }
                 }
             }
         }
