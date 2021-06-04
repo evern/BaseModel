@@ -148,7 +148,7 @@ namespace BaseModel.ViewModel.Base
             SelectedEntities = new ObservableCollection<TProjection>();
             selectedentities.CollectionChanged += DelayedOnSelectedEntitiesChanged;
             selectedEntitiesChangedDispatchTimer = new DispatcherTimer();
-            selectedEntitiesChangedDispatchTimer.Interval = new TimeSpan(0, 0, 0, 0, 300);
+            selectedEntitiesChangedDispatchTimer.Interval = new TimeSpan(0, 0, 0, 0, 10);
             focusNewlyAddedProjectionTimer = new DispatcherTimer();
             focusNewlyAddedProjectionTimer.Interval = new TimeSpan(0, 0, 0, 0, 1);
         }
