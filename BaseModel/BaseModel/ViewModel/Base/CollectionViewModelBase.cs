@@ -637,9 +637,9 @@ namespace BaseModel.ViewModel.Base
             bool skipDbSave = false;
             bool doBulkRefresh = false;
 
-            ////when the total count of refreshes exceeds a certain threshold, it's faster to perform bulk refresh, but this will cause grid entries order to be rearranged
-            //if (projections.Count() > Int32.Parse(CommonResources.BulkOperationBulkRefreshMinCount))
-            //    doBulkRefresh = true;
+            //when the total count of refreshes exceeds a certain threshold, it's faster to perform bulk refresh, but this will cause grid entries order to be rearranged
+            if (projections.Count() > Int32.Parse(CommonResources.BulkOperationBulkRefreshMinCount))
+                doBulkRefresh = true;
 
             PauseEntitiesUndoRedoManager();
             List<TProjection> newlyAddedProjections = new List<TProjection>();
@@ -755,8 +755,8 @@ namespace BaseModel.ViewModel.Base
                         bulkProcessModels.ForEach(x => ((ICanUpdate)x.Projection).Update());
                 }
 
-                //if ((doBulkRefresh && !doNotRefresh) && FullRefreshWithoutClearingUndoRedoCallBack != null)
-                //    FullRefreshWithoutClearingUndoRedoCallBack.Invoke();
+                if ((doBulkRefresh && !doNotRefresh) && FullRefreshWithoutClearingUndoRedoCallBack != null)
+                    FullRefreshWithoutClearingUndoRedoCallBack.Invoke();
             }
             LoadingScreenManager.CloseLoadingScreen();
         }
