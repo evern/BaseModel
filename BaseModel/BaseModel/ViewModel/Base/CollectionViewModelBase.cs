@@ -758,6 +758,7 @@ namespace BaseModel.ViewModel.Base
                 if ((doBulkRefresh && !doNotRefresh) && FullRefreshWithoutClearingUndoRedoCallBack != null)
                     FullRefreshWithoutClearingUndoRedoCallBack.Invoke();
             }
+
             LoadingScreenManager.CloseLoadingScreen();
         }
 

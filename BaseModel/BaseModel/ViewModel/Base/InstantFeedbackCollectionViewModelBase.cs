@@ -452,6 +452,8 @@ namespace BaseModel.ViewModel.Base
                     }
                 }
 
+                gridControl.UpdateGroupSummary();
+                gridControl.UpdateTotalSummary();
                 e.Handled = true;
             }
         }

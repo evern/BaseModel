@@ -681,7 +681,11 @@ namespace BaseModel.ViewModel.Base
                         ErrorMessagesDialogService.ShowDialog(MessageButton.OKCancel, string.Empty, "ListErrorMessages", viewModel);
                     }
                 }
+
+                gridControl.UpdateGroupSummary();
+                gridControl.UpdateTotalSummary();
             }
+
             IsChangingValueFromBackgroundEvents = false;
         }
         #endregion
@@ -1253,6 +1257,8 @@ namespace BaseModel.ViewModel.Base
                     }
                 }
 
+                gridControl.UpdateGroupSummary();
+                gridControl.UpdateTotalSummary();
                 e.Handled = true;
             }
 
@@ -1315,6 +1321,8 @@ namespace BaseModel.ViewModel.Base
                 }
             }
 
+            gridControl.UpdateGroupSummary();
+            gridControl.UpdateTotalSummary();
             IsChangingValueFromBackgroundEvents = false;
         }
         #endregion
