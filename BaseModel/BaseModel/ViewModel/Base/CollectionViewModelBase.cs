@@ -734,7 +734,8 @@ namespace BaseModel.ViewModel.Base
                         OnAfterProjectionSavedCallBack?.Invoke(bulkProcessModel.Projection, bulkProcessModel.RepositoryEntity, bulkProcessModel.IsNewEntity);
 
                         if (!skipDbSave)
-                            if (!doBulkRefresh && !AlwaysSkipMessage)
+                            //if (!doBulkRefresh && !AlwaysSkipMessage)
+                            if (!doBulkRefresh)
                                 SendMessage(primaryKey, bulkProcessModel.Projection, bulkProcessModel.RepositoryEntity, bulkProcessModel.IsNewEntity, doBulkRefresh);
                     }
                 }

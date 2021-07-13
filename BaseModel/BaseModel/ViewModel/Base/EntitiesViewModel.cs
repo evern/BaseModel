@@ -135,7 +135,7 @@ namespace BaseModel.ViewModel.Base
                 if (owner.OnBeforeEntitiesChangedCallBack != null && !owner.OnBeforeEntitiesChangedCallBack(message.PrimaryKey, typeof(TEntity), message.MessageType, message.Sender, message.Key, message.WillPerformBulkRefresh))
                     return;
 
-                if (owner.AlwaysSkipMessage)
+                if (message.MessageType == EntityMessageType.Changed && owner.AlwaysSkipMessage)
                     return;
 
                 if (message.WillPerformBulkRefresh)
