@@ -174,6 +174,9 @@ namespace BaseModel.Data.Helpers
 
                                 int current_row_visible_index = first_row_visible_index + rowOffset;
                                 int current_row_handle = gridControl.GetRowHandleByVisibleIndex(current_row_visible_index);
+                                if (!selected_cells.Any(x => x.RowHandle == current_row_handle))
+                                    continue;
+
                                 if (current_row_handle < 1)
                                     current_row_handle = current_row_visible_index;
 
