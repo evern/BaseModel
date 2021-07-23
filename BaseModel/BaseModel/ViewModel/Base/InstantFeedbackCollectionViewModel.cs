@@ -16,7 +16,7 @@ using BaseModel.Misc;
 namespace BaseModel.ViewModel.Base
 {
     public partial class InstantFeedbackCollectionViewModel<TEntity, TPrimaryKey, TUnitOfWork> : InstantFeedbackCollectionViewModelBase<TEntity, TEntity, TPrimaryKey, TUnitOfWork>
-        where TEntity : class, ICanUpdate, new()
+        where TEntity : class, new()
         where TUnitOfWork : IUnitOfWork
     {
 
@@ -41,7 +41,7 @@ namespace BaseModel.ViewModel.Base
 
     public partial class InstantFeedbackCollectionViewModel<TEntity, TProjection, TPrimaryKey, TUnitOfWork> : InstantFeedbackCollectionViewModelBase<TEntity, TProjection, TPrimaryKey, TUnitOfWork>
         where TEntity : class, new()
-        where TProjection : class, ICanUpdate, new()
+        where TProjection : class, new()
         where TUnitOfWork : IUnitOfWork
     {
 

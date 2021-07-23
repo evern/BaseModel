@@ -1,4 +1,5 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:dxr="http://schemas.devexpress.com/winfx/2008/xaml/ribbon" xmlns:custom="clr-namespace:BaseModel.Misc" xmlns:dxgh="clr-namespace:DevExpress.Xpf.Grid.Hierarchy;assembly=DevExpress.Xpf.Grid.v20.2.Core" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core" xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid" xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm" xmlns:dxsc="clr-namespace:DevExpress.Xpf.SpellChecker;assembly=DevExpress.Xpf.SpellChecker.v20.2" xmlns:misc="clr-namespace:BaseModel.Misc" xmlns:services="clr-namespace:BaseModel.ViewModel.Services" xmlns:dxb="http://schemas.devexpress.com/winfx/2008/xaml/bars">
+    <misc:BooleanToNewItemRowPositionConverter x:Key="BooleanToNewItemRowPositionConverter" />
     <DataTemplate x:Key="DefaultHeaderTemplate">
         <TextBlock TextWrapping="WrapWithOverflow" 
                            VerticalAlignment="Center" TextAlignment="Center" Margin="0"
@@ -455,10 +456,11 @@
                 </DataTemplate>
             </Setter.Value>
         </Setter>
+        <Setter Property="NewItemRowPosition" Value="{Binding IsReadOnly, Converter={StaticResource BooleanToNewItemRowPositionConverter}}" />
+        <Setter Property="AllowEditing" Value="{Binding IsReadOnly, Converter={dxmvvm:BooleanNegationConverter}}" />
         <Setter Property="ScrollBarAnnotationMode" Value="All" />
         <Setter Property="ShowTotalSummary" Value="True" />
         <Setter Property="GroupSummaryDisplayMode" Value="AlignByColumns" />
-        <Setter Property="NewItemRowPosition" Value="Top" />
         <Setter Property="AllowPerPixelScrolling" Value="False" />
         <Setter Property="AllowHorizontalScrollingVirtualization" Value="False" />
         <Setter Property="AllowCascadeUpdate" Value="True" />

@@ -327,6 +327,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>CommonResources.resx</DependentUpon>
     </Compile>
+    <Compile Include="Misc\BooleanToNewItemRowPositionConverter.cs" />
     <Compile Include="Misc\CustomRibbonPageGroupsItemsPanel.cs" />
     <Compile Include="Misc\EditableColumn.cs" />
     <Compile Include="Misc\Enums.cs" />

@@ -28,7 +28,7 @@ namespace BaseModel.ViewModel.Base
 {
     public abstract class InstantFeedbackCollectionViewModelBase<TEntity, TProjection, TPrimaryKey, TUnitOfWork> : IDocumentContent, ISupportLogicalLayout, ISupportUndoRedo<TEntity>, IDisposable
         where TEntity : class, new()
-        where TProjection : class, ICanUpdate, new()
+        where TProjection : class, new()
         where TUnitOfWork : IUnitOfWork
     {
         #region inner classes

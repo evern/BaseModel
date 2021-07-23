@@ -10,7 +10,7 @@ namespace BaseModel.ViewModel.Loader
 {
     public abstract partial class CollectionViewModelsWrapper<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey, TMainEntityUnitOfWork> : ViewModelBase, ICollectionViewModelsWrapper<TMainProjectionEntity>, IDocumentContent, ISupportParameter, IDisposable
         where TMainEntity : class, new()
-        where TMainProjectionEntity : class, ICanUpdate, new()
+        where TMainProjectionEntity : class, new()
         where TMainEntityUnitOfWork : IUnitOfWork
     {
         public void Dispose()

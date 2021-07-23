@@ -36,7 +36,7 @@ namespace BaseModel.ViewModel.Loader
     public abstract partial class CollectionViewModelsWrapper<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey,
         TMainEntityUnitOfWork> : ViewModelBase, ICollectionViewModelsWrapper<TMainProjectionEntity>, IDocumentContent, ISupportParameter
         where TMainEntity : class, new()
-        where TMainProjectionEntity : class, ICanUpdate, new()
+        where TMainProjectionEntity : class, new()
         where TMainEntityUnitOfWork : IUnitOfWork
         
     {
@@ -49,7 +49,7 @@ namespace BaseModel.ViewModel.Loader
         protected bool isHandleLoadedGridRows;
         public bool IsReadOnly { get; set; }
         public bool IsInstantFeedbackMode { get; set; }
-        protected virtual string readOnlyMessage => string.Empty;
+        protected virtual string readOnlyMessage => "This screen is read only because you don't have authority to edit records";
         public CollectionViewModel<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey, TMainEntityUnitOfWork> MainViewModel { get; set; }
         public bool SuppressNotification { get; set; }
         public bool AlwaysSkipMessage { get; set; }
@@ -63,7 +63,6 @@ namespace BaseModel.ViewModel.Loader
         private BackgroundWorker viewRefreshBackgroundWorker;
         private DispatcherTimer viewRaisePropertyChangeDispatcherTimer;
         private System.Timers.Timer entitiesLoadedTimer;
-
         public CollectionViewModelsWrapper()
         {
             viewRefreshBackgroundWorker = new BackgroundWorker();
@@ -1097,9 +1096,10 @@ namespace BaseModel.ViewModel.Loader
         public void SetMainNestedValueWithUndoAndRefresh(TMainProjectionEntity entity, string propertyName, object newValue)
         {
             MainViewModel.SetNestedValueWithUndo(entity, propertyName, newValue);
-            entity.Update();
+            ICanUpdate ICanUpdateEntity = entity as ICanUpdate;
+            if(ICanUpdateEntity != null)
+                ICanUpdateEntity.Update();
         }
-
 
         protected virtual string ExportFilename()
         {
