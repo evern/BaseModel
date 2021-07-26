@@ -78,7 +78,7 @@ namespace BaseModel.ViewModel.UndoRedo
                     }
                     else
                     { 
-                        if (oldValue == null && newValue == null && messageType != EntityMessageType.Added)
+                        if (oldValue == null && newValue == null && messageType == EntityMessageType.Changed)
                             return;
 
                         if (!force && (oldValue != null && newValue != null) && oldValue.ToString() == newValue.ToString())
