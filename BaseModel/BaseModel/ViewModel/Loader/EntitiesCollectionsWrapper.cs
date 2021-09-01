@@ -903,7 +903,9 @@ namespace BaseModel.ViewModel.Loader
 
         public void InstantFeedbackRefresh()
         {
-            GridControlService.SaveExpansionStates();
+            if(GridControlService != null)
+                GridControlService.SaveExpansionStates();
+
             InstantFeedbackMainViewModel.Refresh();
             this.RaisePropertyChanged(x => x.InstantFeedbackEntities);
         }
@@ -1263,9 +1265,9 @@ namespace BaseModel.ViewModel.Loader
         {
             if (e.Value1 != null && e.Value2 != null)
             {
-                string first_department_string = e.Value1.ToString();
-                string second_department_string = e.Value2.ToString();
-                int res = Comparer.Default.Compare(first_department_string, second_department_string);
+                string firstString = e.Value1.ToString();
+                string secondString = e.Value2.ToString();
+                int res = Comparer.Default.Compare(firstString, secondString);
                 e.Result = res;
                 e.Handled = true;
             }

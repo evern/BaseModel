@@ -111,7 +111,7 @@ namespace BaseModel.ViewModel.Base
         {
             this.source = unitOfWorkFactory.CreateInstantFeedbackSource(getRepositoryFunc, Projection);
             this.Entities = InstantFeedbackSourceViewModel.Create(() => helperRepository.Count(), source);
-            GridControlService.SaveExpansionStates();
+            GridControlService?.SaveExpansionStates();
             this.GetParentViewModel<CollectionViewModelsWrapper<TEntity, TProjection, TPrimaryKey, TUnitOfWork>>().RaisePropertyChanged(x => x.InstantFeedbackEntities);
         }
 
