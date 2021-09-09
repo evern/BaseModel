@@ -212,7 +212,7 @@ namespace BaseModel.ViewModel.Services
                 column.BestFitMode = DevExpress.Xpf.Core.BestFitMode.VisibleRows;
                 double defaultMaxWidth = column.MaxWidth;
                 double defaultMinWidth = column.MinWidth;
-                column.MaxWidth = 250;
+                column.MaxWidth = 500;
                 column.MinWidth = 50;
                 var textEditSetting = column.EditSettings as TextEditSettings;
                 if (textEditSetting == null || textEditSetting.TextWrapping == TextWrapping.NoWrap)

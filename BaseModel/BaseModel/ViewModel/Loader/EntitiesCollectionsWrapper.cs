@@ -60,6 +60,7 @@ namespace BaseModel.ViewModel.Loader
         protected Dispatcher mainThreadDispatcher = System.Windows.Application.Current.Dispatcher;
         //so that bulk refresh don't get called multiple times within a short duration
         private DispatcherTimer viewRefreshDispatcherTimer;
+        private DispatcherTimer layoutFormattingDispatcherTimer;
         private BackgroundWorker viewRefreshBackgroundWorker;
         private DispatcherTimer viewRaisePropertyChangeDispatcherTimer;
         private System.Timers.Timer entitiesLoadedTimer;
@@ -71,6 +72,9 @@ namespace BaseModel.ViewModel.Loader
 
             viewRefreshDispatcherTimer = new DispatcherTimer();
             viewRefreshDispatcherTimer.Interval = new TimeSpan(0, 0, 0, 3);
+            layoutFormattingDispatcherTimer = new DispatcherTimer();
+            layoutFormattingDispatcherTimer.Interval = new TimeSpan(0, 0, 0, 1);
+            layoutFormattingDispatcherTimer.Tick += layoutFormattingDispatcherTimer_Tick;
             viewRaisePropertyChangeDispatcherTimer = new DispatcherTimer();
             viewRaisePropertyChangeDispatcherTimer.Interval = new TimeSpan(0, 0, 0, 3);
 
@@ -486,14 +490,9 @@ namespace BaseModel.ViewModel.Loader
             mainThreadDispatcher.BeginInvoke(new Action(() => this.ViewRefresh()));
         }
 
-        protected virtual bool loadDataPointsTable()
+        private void layoutFormattingDispatcherTimer_Tick(object sender, EventArgs e)
         {
-            return false;
-        }
-
-        public virtual void ViewRefresh()
-        {
-            bool isUsingDataTable = loadDataPointsTable();
+            layoutFormattingDispatcherTimer.Stop();
             if (!PersistentLayoutHelper.TryDeserializeLayout(LayoutSerializationService, ViewName))
             {
                 isLayoutLoaded = false;
@@ -509,7 +508,17 @@ namespace BaseModel.ViewModel.Loader
             }
             else
                 isLayoutLoaded = true;
+        }
 
+        protected virtual bool loadDataPointsTable()
+        {
+            return false;
+        }
+
+        public virtual void ViewRefresh()
+        {
+            bool isUsingDataTable = loadDataPointsTable();
+            layoutFormattingDispatcherTimer.Start();
             //remove this because of performance issue
             //expanded state will be reset if layout is saved on datatable
             //if(!isUsingDataTable)
