@@ -562,8 +562,11 @@ namespace BaseModel.ViewModel.Base
                 CellValueChangingFieldName = null;
                 var projection = (TProjection)e.Row;
 
+                //codesvalidationmodel have to be updated irregardless of whether it's valid or not
+                UnifiedValueChangedCallback?.Invoke(e.Column.FieldName, e.OldValue, e.Value, projection, e.RowHandle == GridControl.NewItemRowHandle);
+
                 //row validation is called after cell value changed, so call it first before save
-                if(UnifiedValidateRow(projection) == string.Empty)
+                if (UnifiedValidateRow(projection) == string.Empty)
                 {
                     PauseEntitiesUndoRedoManager();
                     if (e.RowHandle != DataControlBase.NewItemRowHandle)
@@ -575,12 +578,10 @@ namespace BaseModel.ViewModel.Base
                             }
 
                         EntitiesUndoRedoManager.AddUndo(projection, e.Column.FieldName, e.OldValue, e.Value, EntityMessageType.Changed);
-                        UnifiedValueChangedCallback?.Invoke(e.Column.FieldName, e.OldValue, e.Value, projection, e.RowHandle == GridControl.NewItemRowHandle);
                         Save(projection); //undoredomanager will be unpaused within
                     }
                     else
                     {
-                        UnifiedValueChangedCallback?.Invoke(e.Column.FieldName, e.OldValue, e.Value, projection, e.RowHandle == GridControl.NewItemRowHandle);
                         UnpauseEntitiesUndoRedoManager();
                     }
                 }
