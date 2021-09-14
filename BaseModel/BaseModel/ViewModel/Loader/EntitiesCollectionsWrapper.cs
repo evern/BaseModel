@@ -1199,6 +1199,8 @@ namespace BaseModel.ViewModel.Loader
 
         public bool SupressCompulsoryEntityNotFoundMessage { get; set; }
         public bool InViewModelOnlyMode { get; set; }
+
+        public IUnitOfWork UnitOfWork => MainEntityUnitOfWork;
         #endregion
 
         #region Messages
@@ -1406,6 +1408,7 @@ namespace BaseModel.ViewModel.Loader
         //allow loaded entities to relate back to it's context
         Func<object> OnEntitiesLoadedCallBackRelateParam { get; set; }
         Action<IEnumerable<TMainProjectionEntity>, object> OnEntitiesLoadedCallBack { get; set; }
+        IUnitOfWork UnitOfWork { get; }
     }
 
     public interface ICollectionViewModelsWrapper
