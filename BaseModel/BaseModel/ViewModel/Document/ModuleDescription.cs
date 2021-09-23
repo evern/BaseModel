@@ -86,6 +86,11 @@ namespace BaseModel.ViewModel.Document
         public ImageSource Image { get; set; }
 
         /// <summary>
+        ///     Specifies the tool tip to display on menu item
+        /// </summary>
+        public string ToolTip { get; set; }
+
+        /// <summary>
         ///     Describe whether the treelist item is expanded
         /// </summary>
         public bool TreeViewIsExpanded { get; set; }
