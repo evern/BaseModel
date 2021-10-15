@@ -335,17 +335,17 @@ namespace BaseModel.ViewModel.Base
                 OnEntitiesLoaded(GetUnitOfWork(repository), entities);
                 return new Tuple<IReadOnlyRepository<TEntity>, ObservableCollection<TProjection>>(repository, entities);
             }).ContinueWith(x =>
+            {
+                if (!x.IsFaulted)
                 {
-                    if (!x.IsFaulted)
-                    {
-                        ReadOnlyRepository = x.Result.Item1;
-                        entities = x.Result.Item2;
-                        this.RaisePropertyChanged(y => y.Entities);
-                        OnEntitiesAssigned(selectedEntitiesCallBack);
-                    }
-                    IsLoading = false;
-                    refreshAction?.Invoke();
-                }, cancellationTokenSource.Token, TaskContinuationOptions.None,
+                    ReadOnlyRepository = x.Result.Item1;
+                    entities = x.Result.Item2;
+                    this.RaisePropertyChanged(y => y.Entities);
+                    OnEntitiesAssigned(selectedEntitiesCallBack);
+                }
+                IsLoading = false;
+                refreshAction?.Invoke();
+            }, cancellationTokenSource.Token, TaskContinuationOptions.None,
                 TaskScheduler.FromCurrentSynchronizationContext());
             return cancellationTokenSource;
         }

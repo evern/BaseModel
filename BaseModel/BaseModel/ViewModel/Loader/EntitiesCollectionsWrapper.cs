@@ -266,7 +266,7 @@ namespace BaseModel.ViewModel.Loader
                 return;
             }
 
-            BackgroundRefresh();
+            BackgroundRefresh(true);
             if (!isHandleLoadedGridRows)
             {
                 onGridRowsLoaded();
@@ -445,7 +445,7 @@ namespace BaseModel.ViewModel.Loader
                 return;
 
             //need to force load or else addition/deletion won't be refreshed
-            MainViewModel.LoadEntities(true, BackgroundRefresh);
+            MainViewModel.LoadEntities(true, backgroundRefreshWithoutLoadingLayout);
         }
 
         private void onAfterBulkChangeRefresh()
@@ -470,16 +470,24 @@ namespace BaseModel.ViewModel.Loader
             set { doNotAutoRefresh = value; }
         }
 
+        private void backgroundRefreshWithoutLoadingLayout()
+        {
+            BackgroundRefresh(false);
+        }
+
         //Delay to make sure entities are fully loaded before refreshing the view
         int viewRefreshDelay = 1000;
-        protected virtual void BackgroundRefresh()
+        protected virtual void BackgroundRefresh(bool loadLayout = false)
         {
             if (viewRefreshBackgroundWorker != null && !viewRefreshBackgroundWorker.IsBusy)
-                viewRefreshBackgroundWorker.RunWorkerAsync();
+            {
+                viewRefreshBackgroundWorker.RunWorkerAsync(loadLayout);
+            }
         }
 
         private void refreshBackgroundWorker_DoWork(object sender, DoWorkEventArgs e)
         {
+            bool loadLayout = (bool)e.Argument;
             System.Threading.Thread.Sleep(viewRefreshDelay);
             if (viewRefreshBackgroundWorker.CancellationPending)
             {
@@ -487,7 +495,7 @@ namespace BaseModel.ViewModel.Loader
                 return;
             }
 
-            mainThreadDispatcher.BeginInvoke(new Action(() => this.ViewRefresh()));
+            mainThreadDispatcher.BeginInvoke(new Action(() => this.ViewRefresh(loadLayout)));
         }
 
         private void layoutFormattingDispatcherTimer_Tick(object sender, EventArgs e)
@@ -515,10 +523,12 @@ namespace BaseModel.ViewModel.Loader
             return false;
         }
 
-        public virtual void ViewRefresh()
+        public virtual void ViewRefresh(bool loadLayout)
         {
             bool isUsingDataTable = loadDataPointsTable();
-            layoutFormattingDispatcherTimer.Start();
+
+            if(loadLayout)
+                layoutFormattingDispatcherTimer.Start();
             //remove this because of performance issue
             //expanded state will be reset if layout is saved on datatable
             //if(!isUsingDataTable)
@@ -853,7 +863,7 @@ namespace BaseModel.ViewModel.Loader
 
         public virtual bool CanCopyWithHeader()
         {
-            return !IsLoading && GridControlService != null;
+            return !IsLoading && GridControlService.GridControl != null;
         }
 
         public virtual void CopyWithHeader()
@@ -863,7 +873,7 @@ namespace BaseModel.ViewModel.Loader
 
         public bool CanExpandAllGroups()
         {
-            return !IsLoading && GridControlService != null && GridControlService.GridControl.IsGrouped;
+            return !IsLoading && GridControlService.GridControl != null && GridControlService.GridControl.IsGrouped;
         }
 
         public virtual void ExpandAllGroups()
@@ -873,7 +883,7 @@ namespace BaseModel.ViewModel.Loader
 
         public bool CanCollapseAllGroups()
         {
-            return !IsLoading && GridControlService != null && GridControlService.GridControl.IsGrouped;
+            return !IsLoading && GridControlService.GridControl != null && GridControlService.GridControl.IsGrouped;
         }
 
         public virtual void CollapseAllGroups()
@@ -1230,7 +1240,7 @@ namespace BaseModel.ViewModel.Loader
         {
         }
 
-    protected virtual OperationInterceptMode OnBeforeProjectionSaveIsContinue(TMainProjectionEntity projection, out bool isNew)
+        protected virtual OperationInterceptMode OnBeforeProjectionSaveIsContinue(TMainProjectionEntity projection, out bool isNew)
         {
             isNew = false;
             return OperationInterceptMode.Continue;
@@ -1273,6 +1283,21 @@ namespace BaseModel.ViewModel.Loader
         /// Resolve problem in the view group value repeats itself
         /// </summary>
         public void CustomColumnGroup(CustomColumnSortEventArgs e)
+        {
+            if (e.Value1 != null && e.Value2 != null)
+            {
+                string firstString = e.Value1.ToString();
+                string secondString = e.Value2.ToString();
+                int res = Comparer.Default.Compare(firstString, secondString);
+                e.Result = res;
+                e.Handled = true;
+            }
+        }
+
+        /// <summary>
+        /// Resolve problem in the view sort sorting by display text
+        /// </summary>
+        public void CustomColumnSort(CustomColumnSortEventArgs e)
         {
             if (e.Value1 != null && e.Value2 != null)
             {
