@@ -126,9 +126,9 @@ namespace BaseModel.ViewModel.Base
                 Messenger.Default.Send(new EntityMessage<TEntity>(EntityMessageType.Changed));
         }
 
-        public virtual void EditSelectedEntity(string fieldName, object newValue)
+        public virtual void EditSelectedEntity(object threadSafeProxy, string fieldName, object newValue)
         {
-            Save(CurrentEntity, fieldName, newValue);
+            Save(threadSafeProxy, fieldName, newValue);
         }
 
         public virtual void SaveEntity(TEntity entity, string fieldName, object newValue)

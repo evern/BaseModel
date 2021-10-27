@@ -812,7 +812,9 @@ namespace BaseModel.ViewModel.Loader
                 return;
 
             EditableColumn c = (EditableColumn)e.Column;
-            InstantFeedbackMainViewModel.EditSelectedEntity(c.RealFieldName, e.Value);
+            int rowHandle = GridControlService.GetRowHandleByListIndex(e.ListSourceRowIndex);
+            object threadSafeProxy = GridControlService.GetRow(rowHandle);
+            InstantFeedbackMainViewModel.EditSelectedEntity(threadSafeProxy, c.RealFieldName, e.Value);
         }
         #endregion
 
