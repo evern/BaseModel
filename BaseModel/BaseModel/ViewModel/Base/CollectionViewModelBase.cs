@@ -630,7 +630,7 @@ namespace BaseModel.ViewModel.Base
             bulkProcessModels.AddRange(projections.Select(x => new BulkProcessModel<TProjection, TEntity>() { Projection = x }));
             if (bulkProcessModels.Count > Int32.Parse(CommonResources.BulkOperationLoadingScreenMinCount))
             {
-                LoadingScreenManager.ShowLoadingScreen(bulkProcessModels.Count);
+                LoadingScreenManager.ShowLoadingScreen(1);
                 LoadingScreenManager.SetMessage("Saving...");
             }
 
@@ -706,7 +706,7 @@ namespace BaseModel.ViewModel.Base
                     newlyAddedProjections.Add(bulkProcessModel.Projection);
                 }
 
-                LoadingScreenManager.Progress();
+                //LoadingScreenManager.Progress();
             }
 
             UnpauseEntitiesUndoRedoManager();
