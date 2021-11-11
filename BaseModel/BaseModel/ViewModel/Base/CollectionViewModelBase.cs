@@ -630,8 +630,8 @@ namespace BaseModel.ViewModel.Base
             bulkProcessModels.AddRange(projections.Select(x => new BulkProcessModel<TProjection, TEntity>() { Projection = x }));
             if (bulkProcessModels.Count > Int32.Parse(CommonResources.BulkOperationLoadingScreenMinCount))
             {
-                LoadingScreenManager.ShowLoadingScreen(1);
-                LoadingScreenManager.SetMessage("Saving...");
+                LoadingScreenManager.ShowLoadingScreen(projections.Count());
+                LoadingScreenManager.SetMessage("Preparing Data...");
             }
 
             bool skipDbSave = false;
@@ -706,11 +706,14 @@ namespace BaseModel.ViewModel.Base
                     newlyAddedProjections.Add(bulkProcessModel.Projection);
                 }
 
-                //LoadingScreenManager.Progress();
+                LoadingScreenManager.Progress();
             }
 
             UnpauseEntitiesUndoRedoManager();
 
+            LoadingScreenManager.CloseLoadingScreen();
+            LoadingScreenManager.ShowLoadingScreen(1);
+            LoadingScreenManager.SetMessage("Saving...");
             bool isError = false;
             //perform after save operation to map primary key back to TEntity
             if(bulkProcessModels.Count > 0)
