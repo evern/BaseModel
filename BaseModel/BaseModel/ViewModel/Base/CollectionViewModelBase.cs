@@ -628,7 +628,11 @@ namespace BaseModel.ViewModel.Base
         {
             List<BulkProcessModel<TProjection, TEntity>> bulkProcessModels = new List<BulkProcessModel<TProjection, TEntity>>();
             bulkProcessModels.AddRange(projections.Select(x => new BulkProcessModel<TProjection, TEntity>() { Projection = x }));
+            bool showLoadingScreen = false;
             if (bulkProcessModels.Count > Int32.Parse(CommonResources.BulkOperationLoadingScreenMinCount))
+                showLoadingScreen = true;
+
+            if(showLoadingScreen)
             {
                 LoadingScreenManager.ShowLoadingScreen(projections.Count());
                 LoadingScreenManager.SetMessage("Preparing Data...");
@@ -706,14 +710,19 @@ namespace BaseModel.ViewModel.Base
                     newlyAddedProjections.Add(bulkProcessModel.Projection);
                 }
 
-                LoadingScreenManager.Progress();
+                if (showLoadingScreen)
+                    LoadingScreenManager.Progress();
             }
 
             UnpauseEntitiesUndoRedoManager();
 
-            LoadingScreenManager.CloseLoadingScreen();
-            LoadingScreenManager.ShowLoadingScreen(1);
-            LoadingScreenManager.SetMessage("Saving...");
+            if (showLoadingScreen)
+            {
+                LoadingScreenManager.CloseLoadingScreen();
+                LoadingScreenManager.ShowLoadingScreen(1);
+                LoadingScreenManager.SetMessage("Saving...");
+            }
+
             bool isError = false;
             //perform after save operation to map primary key back to TEntity
             if(bulkProcessModels.Count > 0)
@@ -763,7 +772,8 @@ namespace BaseModel.ViewModel.Base
                     FullRefreshWithoutClearingUndoRedoCallBack.Invoke();
             }
 
-            LoadingScreenManager.CloseLoadingScreen();
+            if (showLoadingScreen)
+                LoadingScreenManager.CloseLoadingScreen();
         }
 
         /// <summary>
