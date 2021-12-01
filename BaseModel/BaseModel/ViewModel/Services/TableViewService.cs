@@ -22,6 +22,7 @@ namespace BaseModel.ViewModel.Services
         TableView TableView { get; set; }
         bool ExportToPDF(string exportPath);
         bool ExportToXls(string exportPath, bool isDataAware);
+        bool ExportToXls(string exportPath, bool isDataAware, string sheetName);
         bool ExportToXls(MemoryStream stream);
         void CommitEditing();
         void AddFormatCondition(FormatConditionBase item);
@@ -59,6 +60,25 @@ namespace BaseModel.ViewModel.Services
                 try
                 {
                     TableView.ExportToXlsx(exportPath, new XlsxExportOptionsEx { ExportType = isDataAware ? ExportType.DataAware : ExportType.WYSIWYG });
+                    Process.Start(exportPath);
+                    return true;
+                }
+                catch
+                {
+
+                }
+            }
+
+            return false;
+        }
+
+        public bool ExportToXls(string exportPath, bool isDataAware = true, string sheetName = "Sheet1")
+        {
+            if (this.TableView != null)
+            {
+                try
+                {
+                    TableView.ExportToXlsx(exportPath, new XlsxExportOptionsEx { SheetName = sheetName, ExportType = isDataAware ? ExportType.DataAware : ExportType.WYSIWYG });
                     Process.Start(exportPath);
                     return true;
                 }

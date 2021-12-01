@@ -1066,6 +1066,11 @@ namespace BaseModel.ViewModel.Loader
             }
         }
 
+        protected void resetIsLoading()
+        {
+            isLoading = null;
+        }
+
         protected virtual void OnClose(CancelEventArgs e)
         {
             viewRefreshBackgroundWorker.CancelAsync();
