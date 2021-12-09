@@ -50,6 +50,7 @@ namespace BaseModel.View.Behaviors
                 detailCol.SetBinding(GridColumn.WidthProperty, new Binding("ActualDataWidth") { Source = masterCol });
 
             detailCol.SetBinding(GridColumn.VisibleProperty, new Binding("Visible") { Source = masterCol });
+            detailCol.SetBinding(GridColumn.VisibleIndexProperty, new Binding("VisibleIndex") { Source = masterCol });
         }
 
         private void RemoveColumnBinding(GridColumn masterCol, GridColumn detailCol)
