@@ -1474,7 +1474,7 @@ namespace BaseModel.Data.Helpers
             if (navigationKey != null)
             {
                 uniqueNavKeyFormat = navigationKey.Replace("-", "");
-                if (uniqueNavKeyFormat.Length >= 8)
+                if (uniqueNavKeyFormat.Length >= 9)
                     uniqueNavKeyFormat = uniqueNavKeyFormat.Substring(1, 8);
             }
 
