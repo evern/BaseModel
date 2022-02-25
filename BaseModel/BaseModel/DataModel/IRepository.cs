@@ -271,8 +271,9 @@ namespace BaseModel.DataModel
 
             //empty guid must be excluded when finding because during bulk save operation there might be another entity with empty guid already added and waiting to be saved
             bool isGuidEmpty = projectionPrimaryKey.GetType() == typeof(Guid) && projectionPrimaryKey.ToString() == Guid.Empty.ToString();
+            bool isIntEmpty = projectionPrimaryKey.GetType() == typeof(int) && projectionPrimaryKey.ToString() == 0.ToString();
             TEntity entity = null;
-            if(!isGuidEmpty)
+            if(!isGuidEmpty && !isIntEmpty)
                 entity = repository.Find(projectionPrimaryKey);
 
             if (entity == null)
