@@ -286,7 +286,7 @@ namespace BaseModel.ViewModel.Base
                 {
                     //need to set created date because POCO have incompatible min date with Db
                     IHaveCreatedDate iHaveCreatedDateObject = projectionObject as IHaveCreatedDate;
-                    if(iHaveCreatedDateObject != null)
+                    if(iHaveCreatedDateObject != null && iHaveCreatedDateObject.EntityCreatedDate.Year == 1)
                         iHaveCreatedDateObject.EntityCreatedDate = DateTime.Now;
 
                     DataUtils.ShallowCopy(entity, projectionObject);
