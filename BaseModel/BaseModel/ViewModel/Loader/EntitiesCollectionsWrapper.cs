@@ -188,6 +188,7 @@ namespace BaseModel.ViewModel.Loader
                 InstantFeedbackMainViewModel = InstantFeedbackCollectionViewModel<TMainEntity, TMainProjectionEntity, TMainEntityPrimaryKey, TMainEntityUnitOfWork>.CreateInstantFeedbackCollectionViewModel(unitOfWorkFactory, getRepositoryFunc, projection);
                 InstantFeedbackMainViewModel.ApplyInstantFeedbackEntityPropertiesToOtherUnitOfWorkEntityCallBack = ApplyInstantFeedbackEntityPropertiesToOtherUnitOfWorkEntity;
                 InstantFeedbackMainViewModel.OtherUnitOfWorkSaveChangesCallBack = InstantFeedbackOtherUnitOfWorkSaveChanges;
+                InstantFeedbackMainViewModel.UnifiedValueValidationCallback = this.UnifiedValueValidation;
                 InstantFeedbackMainViewModel.SetParentViewModel(this);
                 OnMainViewModelLoaded(null);
             }
@@ -814,7 +815,16 @@ namespace BaseModel.ViewModel.Loader
             EditableColumn c = (EditableColumn)e.Column;
             int rowHandle = GridControlService.GetRowHandleByListIndex(e.ListSourceRowIndex);
             object threadSafeProxy = GridControlService.GetRow(rowHandle);
-            InstantFeedbackMainViewModel.EditSelectedEntity(threadSafeProxy, c.RealFieldName, e.Value);
+
+            TMainEntity entity = InstantFeedbackMainViewModel.GetEntityFromThreadSafeProxy(threadSafeProxy);
+            if (entity == null)
+                return;
+
+            string errorMessage = InstantFeedbackMainViewModel.UnifiedEntityValueValidation(entity, c.RealFieldName, e.Value, false);
+            if (errorMessage == string.Empty)
+                InstantFeedbackMainViewModel.EditSelectedEntity(threadSafeProxy, c.RealFieldName, e.Value);
+            else
+                MessageBoxService.ShowMessage(errorMessage);
         }
         #endregion
 

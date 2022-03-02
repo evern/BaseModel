@@ -1224,9 +1224,9 @@ namespace BaseModel.ViewModel.Base
                 {
                     List<ErrorMessage> errorMessages = new List<ErrorMessage>();
                     if (IsPasteCellLevel)
-                        pasteProjections = copyPasteHelper.PastingFromClipboardCellLevel<TableView>(gridControl, RowData, EntitiesUndoRedoManager, out errorMessages);
+                        pasteProjections = copyPasteHelper.PastingFromClipboardCellLevel<TableView>(gridControl, RowData, EntitiesUndoRedoManager, out errorMessages, UnifiedValueValidationCallback);
                     else if (!DisablePasteRowLevel)
-                        pasteProjections = copyPasteHelper.PastingFromClipboard<TableView>(gridControl, RowData, out errorMessages);
+                        pasteProjections = copyPasteHelper.PastingFromClipboard<TableView>(gridControl, RowData, out errorMessages, UnifiedValueValidationCallback);
                     else
                         pasteProjections = new List<TProjection>();
 
@@ -1298,7 +1298,7 @@ namespace BaseModel.ViewModel.Base
             if (IsPasteCellLevel)
                 pasteProjections = copyPasteHelper.PastingFromClipboardTreeListCellLevel<TreeListView>(gridControl, RowData, EntitiesUndoRedoManager, out errorMessages);
             else
-                pasteProjections = copyPasteHelper.PastingFromClipboard<TreeListView>(gridControl, RowData, out errorMessages);
+                pasteProjections = copyPasteHelper.PastingFromClipboard<TreeListView>(gridControl, RowData, out errorMessages, UnifiedValueValidationCallback);
 
             if (pasteProjections.Count > 0)
             {

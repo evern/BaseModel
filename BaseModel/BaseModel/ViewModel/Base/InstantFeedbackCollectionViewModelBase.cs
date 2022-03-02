@@ -31,6 +31,28 @@ namespace BaseModel.ViewModel.Base
         where TProjection : class, new()
         where TUnitOfWork : IUnitOfWork
     {
+        /// <summary>
+        /// External call back used by copy paste, fill, new and existing row cell value changing to determine whether value is valid
+        /// </summary>
+        public Func<TProjection, string, object, bool, string> UnifiedValueValidationCallback;
+
+        public string UnifiedEntityValueValidation(TEntity entity, string fieldName, object newValue, bool isPaste)
+        {
+            if (UnifiedValueValidationCallback == null)
+                return string.Empty;
+
+            if (typeof(TEntity) == typeof(TProjection))
+            {
+                TProjection projection = entity as TProjection;
+                if (projection == null)
+                    return "Cannot convert projection to entity";
+                else
+                    return UnifiedValueValidationCallback(projection, fieldName, newValue, isPaste);
+            }
+            else
+                return "Cannot convert projection to entity";
+        }
+
         #region inner classes
         public class InstantFeedbackSourceViewModel : IListSource
         {
@@ -426,9 +448,9 @@ namespace BaseModel.ViewModel.Base
 
                 List<ErrorMessage> errorMessages = new List<ErrorMessage>();
                 if (IsPasteCellLevel)
-                    pasteEntities = copyPasteHelper.PastingFromClipboardCellLevel<InstantFeedbackTableView>(gridControl, RowData, EntitiesUndoRedoManager, out errorMessages);
+                    pasteEntities = copyPasteHelper.PastingFromClipboardCellLevel<InstantFeedbackTableView>(gridControl, RowData, EntitiesUndoRedoManager, out errorMessages, UnifiedEntityValueValidation);
                 else
-                    pasteEntities = copyPasteHelper.PastingFromClipboard<InstantFeedbackTableView>(gridControl, RowData, out errorMessages);
+                    pasteEntities = copyPasteHelper.PastingFromClipboard<InstantFeedbackTableView>(gridControl, RowData, out errorMessages, UnifiedEntityValueValidation);
 
                 if (pasteEntities.Count > 0)
                 {
