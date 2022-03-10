@@ -118,7 +118,7 @@ namespace BaseModel.ViewModel.Base
             base.AddUndoBeforeEntityDeleted(projection);
         }
 
-        protected override void PauseEntitiesUndoRedoManager()
+        public override void PauseEntitiesUndoRedoManager()
         {
             if(!DisableEntitiesPauseUnpause)
             {
@@ -127,7 +127,7 @@ namespace BaseModel.ViewModel.Base
             }
         }
 
-        protected override void UnpauseEntitiesUndoRedoManager()
+        public override void UnpauseEntitiesUndoRedoManager()
         {
             if (!DisableEntitiesPauseUnpause)
             {

@@ -855,12 +855,12 @@ namespace BaseModel.ViewModel.Base
         {
         }
 
-        protected virtual void PauseEntitiesUndoRedoManager()
+        public virtual void PauseEntitiesUndoRedoManager()
         {
 
         }
 
-        protected virtual void UnpauseEntitiesUndoRedoManager()
+        public virtual void UnpauseEntitiesUndoRedoManager()
         {
 
         }

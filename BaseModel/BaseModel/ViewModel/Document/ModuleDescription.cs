@@ -14,7 +14,7 @@ namespace BaseModel.ViewModel.Document
         /// <summary>
         ///     Initializes a new instance of the ModuleDescription class.
         /// </summary>
-        protected ModuleDescription(string securityKey, string uniqueNavigationKey, string parentId, string title, string documentType = null, object documentParameter = null, ImageSource image = null, string navigationTitle = null, bool treeViewIsExpanded = false, bool showInCollapseMode = false, Func<string> preferredDocumentType = null)
+        protected ModuleDescription(string securityKey, string uniqueNavigationKey, string parentId, string title, string documentType = null, object documentParameter = null, ImageSource image = null, string navigationTitle = null, bool treeViewIsExpanded = false, bool showInCollapseMode = false, Func<string> preferredDocumentType = null, bool isTextSearchEnabled = false)
         {
             ModuleTitle = title;
             DocumentType = documentType == null ? string.Empty : documentType;
@@ -30,6 +30,7 @@ namespace BaseModel.ViewModel.Document
             NavigationTitle = (navigationTitle == string.Empty || navigationTitle == null) ? ModuleTitle : navigationTitle;
             ShowInCollapseMode = showInCollapseMode;
             PreferredDocumentType = preferredDocumentType;
+            IsTextSearchEnabled = isTextSearchEnabled;
         }
 
         /// <summary>
@@ -94,6 +95,11 @@ namespace BaseModel.ViewModel.Document
         ///     Describe whether the treelist item is expanded
         /// </summary>
         public bool TreeViewIsExpanded { get; set; }
+
+        /// <summary>
+        ///     Describe whether the treelist item can be searched
+        /// </summary>
+        public bool IsTextSearchEnabled { get; set; }
 
         /// <summary>
         ///     Describe whether the treelist item show in expanded
