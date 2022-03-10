@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -24,11 +25,18 @@ namespace BaseModel.View.Behaviors
         private double widthAdjustmentValue = 0.0f;
         private double leftMarginWidthAdjustmentValue = 0.0f;
         public static readonly DependencyProperty IsUseTagProperty = DependencyProperty.Register("IsUseTag", typeof(bool), typeof(DetailSyncBehavior), new PropertyMetadata(false));
+        public static readonly DependencyProperty FirstColumnFieldNameProperty = DependencyProperty.Register("FirstColumnFieldName", typeof(string), typeof(DetailSyncBehavior), new PropertyMetadata(string.Empty));
 
         public bool IsUseTag
         {
             get { return (bool)GetValue(IsUseTagProperty); }
             set { SetValue(IsUseTagProperty, value); }
+        }
+
+        public string FirstColumnFieldName
+        {
+            get { return (string)GetValue(FirstColumnFieldNameProperty); }
+            set { SetValue(FirstColumnFieldNameProperty, value); }
         }
 
         private void SetColumnBinding(GridColumn masterCol, GridColumn detailCol)
@@ -44,13 +52,21 @@ namespace BaseModel.View.Behaviors
             DependencyPropertyDescriptor.FromProperty(GridColumn.VisibleProperty, typeof(GridColumn)).AddValueChanged(detailCol, OnDetailColumnPropertyChanged);
             detailCol.AllowResizing = DefaultBoolean.False;
 
-            if (detailCol.VisibleIndex == 0)
+            if (detailCol.VisibleIndex == 0 || detailCol.FieldName == FirstColumnFieldName)
+            {
                 detailCol.SetBinding(GridColumn.WidthProperty, new Binding("ActualDataWidth") { Source = masterCol, Converter = widthAdjustmentConverter, ConverterParameter = widthAdjustmentValue });
+                //not setting visibility property here because first column cannot be hidden
+            }
             else
-                detailCol.SetBinding(GridColumn.WidthProperty, new Binding("ActualDataWidth") { Source = masterCol });
+            {
+                string s;
+                if (detailCol.FieldName == "Entity.DropDownIndirectBudget")
+                    s = string.Empty;
 
-            detailCol.SetBinding(GridColumn.VisibleProperty, new Binding("Visible") { Source = masterCol });
-            detailCol.SetBinding(GridColumn.VisibleIndexProperty, new Binding("VisibleIndex") { Source = masterCol });
+                detailCol.SetBinding(GridColumn.WidthProperty, new Binding("ActualDataWidth") { Source = masterCol });
+                detailCol.SetBinding(GridColumn.VisibleProperty, new Binding("Visible") { Source = masterCol });
+                detailCol.SetBinding(GridColumn.VisibleIndexProperty, new Binding("VisibleIndex") { Source = masterCol });
+            }
         }
 
         private void RemoveColumnBinding(GridColumn masterCol, GridColumn detailCol)
@@ -104,6 +120,7 @@ namespace BaseModel.View.Behaviors
             TableView masterView = MasterGrid.View as TableView;
             TableView detailView = DetailGrid.View as TableView;
 
+            bool check = false;
             foreach (GridColumn detailCol in detailView.VisibleColumns)
             {
                 GridColumn masterCol = null;
@@ -133,11 +150,18 @@ namespace BaseModel.View.Behaviors
 
                     IEnumerable<GridColumn> masterColumnsWithoutChild = masterView.VisibleColumns.Where(x => !detailView.VisibleColumns.Any(y => y.HeaderCaption.ToString() == x.HeaderCaption.ToString()));
                     widthAdjustmentValue = masterColumnsWithoutChild.Sum(x => x.Width.Value);
+                    //Debug.Print(widthAdjustmentValue.ToString());
+                    //widthAdjustmentValue = 500;
                 }
 
                 RemoveColumnBinding(masterCol, detailCol);
                 if (masterCol != null)
                     SetColumnBinding(masterCol, detailCol);
+
+                if(check)
+                {
+                    Debug.Print(detailCol.VisibleIndex + " " + detailCol.FieldName);
+                }
             }
         }
 
