@@ -157,7 +157,7 @@ namespace BaseModel.ViewModel.Loader
             return unsavedEntities;
         }
 
-        private void OnAfterProjectionDeletedCallBack(IEnumerable<TMainProjectionEntity> entities)
+        protected virtual void OnAfterProjectionDeletedCallBack(IEnumerable<TMainProjectionEntity> entities)
         {
             List<TMainProjectionEntity> changedEntities = new List<TMainProjectionEntity>();
             IEnumerable<TMainProjectionEntity> entitiesInOrder = MainViewModel.Entities.OrderBy(x => x.EntityNumber);
