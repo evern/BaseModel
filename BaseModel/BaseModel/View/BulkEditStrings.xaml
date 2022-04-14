@@ -3,7 +3,7 @@
         <dxlc:LayoutGroup Name="LayoutGroupMain" Header="Edit Value" Orientation="Vertical" View="Group">
             <dxlc:LayoutGroup Name="LayoutGroupContent" Height="50" Orientation="Horizontal" View="Group">
                 <dxlc:LayoutItem Height="50" Label="{Binding LabelTitle}">
-                    <dxe:TextEdit x:Name="txtContent" Text="{Binding EditValue, Mode=TwoWay}" />
+                    <dxe:TextEdit x:Name="txtContent" Text="{Binding EditValue, Mode=TwoWay}" TextWrapping="Wrap" AcceptsReturn="True"/>
                 </dxlc:LayoutItem>
             </dxlc:LayoutGroup>
             <dxlc:LayoutGroup Name="LayoutGroupButtons" Height="30" HorizontalAlignment="Right" Orientation="Horizontal" View="Group" />

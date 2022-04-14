@@ -402,6 +402,7 @@
     <Compile Include="ViewModel\Dialogs\BasicMessageBoxViewModel.cs" />
     <Compile Include="ViewModel\Dialogs\BulkEditEnumsViewModel.cs" />
     <Compile Include="ViewModel\Dialogs\BulkEditNumbersViewModel.cs" />
+    <Compile Include="ViewModel\Dialogs\BulkEditDateTimeViewModel.cs" />
     <Compile Include="ViewModel\Dialogs\BulkFindAndReplaceViewModel.cs" />
     <Compile Include="ViewModel\Dialogs\BulkEditStringsViewModel.cs" />
     <Compile Include="ViewModel\Dialogs\DialogCollectionViewModel.cs" />
@@ -434,6 +435,12 @@
     </Compile>
     <Compile Include="View\Behaviors\DetailGridSearchingBehavior.cs" />
     <Compile Include="View\Behaviors\DetailSyncBehavior.cs" />
+    <Compile Include="View\BulkEditDate.xaml.cs">
+      <DependentUpon>BulkEditDate.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="View\BulkEditDateTime.xaml.cs">
+      <DependentUpon>BulkEditDateTime.xaml</DependentUpon>
+    </Compile>
     <Compile Include="View\BulkFindAndReplace.xaml.cs">
       <DependentUpon>BulkFindAndReplace.xaml</DependentUpon>
     </Compile>
@@ -462,6 +469,14 @@
   </ItemGroup>
   <ItemGroup>
     <Page Include="View\BasicMessageBox.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="View\BulkEditDate.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="View\BulkEditDateTime.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
