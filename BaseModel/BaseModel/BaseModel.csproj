@@ -438,6 +438,9 @@
     <Compile Include="View\BulkEditDate.xaml.cs">
       <DependentUpon>BulkEditDate.xaml</DependentUpon>
     </Compile>
+    <Compile Include="View\BulkEditTime.xaml.cs">
+      <DependentUpon>BulkEditTime.xaml</DependentUpon>
+    </Compile>
     <Compile Include="View\BulkEditDateTime.xaml.cs">
       <DependentUpon>BulkEditDateTime.xaml</DependentUpon>
     </Compile>
@@ -473,6 +476,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="View\BulkEditDate.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="View\BulkEditTime.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
