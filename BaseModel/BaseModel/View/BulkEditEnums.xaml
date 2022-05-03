@@ -3,7 +3,7 @@
         <dxlc:LayoutGroup Header="Edit Value" Name="LayoutGroupMain" Orientation="Vertical" View="Group">
             <dxlc:LayoutGroup Name="LayoutGroupContent" Height="80" Orientation="Horizontal" View="Group">
                 <dxlc:LayoutItem Height="50" Label="Value:">
-                    <dxe:ComboBoxEdit x:Name="cmbContent" DisplayMember="{Binding ComboBoxDisplayMember}" IsTextEditable="False" ItemsSource="{Binding SourceObjects}" SelectedItem="{Binding SelectedItem, Mode=TwoWay}" />
+                    <dxe:ComboBoxEdit x:Name="cmbContent" DisplayMember="{Binding ComboBoxDisplayMember}" IsTextEditable="False" ItemsSource="{Binding SourceObjects}" NullValueButtonPlacement="Popup" SelectedItem="{Binding SelectedItem, Mode=TwoWay}" />
                 </dxlc:LayoutItem>
             </dxlc:LayoutGroup>
             <dxlc:LayoutGroup Name="LayoutGroupButtons" Height="50" HorizontalAlignment="Right" Orientation="Horizontal" View="Group" />

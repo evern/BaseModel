@@ -26,11 +26,8 @@ namespace BaseModel.ViewModel.Dialogs
             get { return selectedItem; }
             set
             {
-                if (value != null)
-                {
-                    selectedItem = value;
-                    this.RaisePropertiesChanged();
-                }
+                selectedItem = value;
+                this.RaisePropertiesChanged();
             }
         }
     }
