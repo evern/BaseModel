@@ -50,7 +50,7 @@ namespace BaseModel.ViewModel.Loader
                     IHaveCreatedDate childEntityCreatedDate = childEntity as IHaveCreatedDate;
                     if (childEntityCreatedDate != null)
                     {
-                        if (childEntityCreatedDate.EntityCreatedDate.Year == 1)
+                        if (childEntityCreatedDate.EntityCreatedDate.Year < 1900)
                             childEntityCreatedDate.EntityCreatedDate = DateTime.Now;
                     }
 

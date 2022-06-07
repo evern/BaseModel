@@ -1022,7 +1022,7 @@ namespace BaseModel.Data.Helpers
             if (iHaveCreatedDateProjectionEntity != null)
             {
                 //workaround for created because Save() only sets the projection primary key, this is used for property redo where the interceptor only tampers with UPDATED and CREATED is left as null
-                if (iHaveCreatedDateProjectionEntity.EntityCreatedDate.Date.Year == 1)
+                if (iHaveCreatedDateProjectionEntity.EntityCreatedDate.Date.Year < 1900)
                     return true;
                 else
                     return false;

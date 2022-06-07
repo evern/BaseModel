@@ -286,7 +286,7 @@ namespace BaseModel.ViewModel.Base
                 {
                     //need to set created date because POCO have incompatible min date with Db
                     IHaveCreatedDate iHaveCreatedDateObject = projectionObject as IHaveCreatedDate;
-                    if(iHaveCreatedDateObject != null && iHaveCreatedDateObject.EntityCreatedDate.Year == 1)
+                    if(iHaveCreatedDateObject != null && iHaveCreatedDateObject.EntityCreatedDate.Year < 1900)
                         iHaveCreatedDateObject.EntityCreatedDate = DateTime.Now;
 
                     DataUtils.ShallowCopy(entity, projectionObject);
@@ -496,7 +496,7 @@ namespace BaseModel.ViewModel.Base
                 if (iHaveCreatedDateProjectionEntity != null)
                 {
                     //workaround for created because Save() only sets the projection primary key, this is used for property redo where the interceptor only tampers with UPDATED and CREATED is left as null
-                    if (iHaveCreatedDateProjectionEntity.EntityCreatedDate.Date.Year == 1)
+                    if (iHaveCreatedDateProjectionEntity.EntityCreatedDate.Date.Year < 1900)
                         iHaveCreatedDateProjectionEntity.EntityCreatedDate = DateTime.Now;
                 }
             }
