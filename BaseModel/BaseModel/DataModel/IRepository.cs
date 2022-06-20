@@ -4,6 +4,7 @@ using System;
 using System.ComponentModel;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Collections.Generic;
 
 namespace BaseModel.DataModel
 {
@@ -31,11 +32,24 @@ namespace BaseModel.DataModel
         void Add(TEntity entity);
 
         /// <summary>
+        /// Marks a given collection of entities as Added such that it will be commited to the store when IUnitOfWork.SaveChanges is called.
+        /// </summary>
+        /// <param name="entities">The given collection of of entities to add</param>
+        void AddRange(IEnumerable<TEntity> entities);
+
+        /// <summary>
         /// Marks the given entity as Deleted such that it will be deleted from the store when IUnitOfWork.SaveChanges is called. 
         /// Note that the entity must exist in the unit of work in some other state before this method is called.
         /// </summary>
         /// <param name="entity">The entity to remove.</param>
         void Remove(TEntity entity);
+
+        /// <summary>
+        /// Marks the given collection of entities as Deleted such that it will be deleted from the store when IUnitOfWork.SaveChanges is called. 
+        /// Note that the given collection of of entities must exist in the unit of work in some other state before this method is called.
+        /// </summary>
+        /// <param name="entity">The given collection of of entities to remove.</param>
+        void RemoveRange(IEnumerable<TEntity> entities);
 
         /// <summary>
         /// Creates a new instance of the entity type.
@@ -62,6 +76,8 @@ namespace BaseModel.DataModel
         /// </summary>
         /// <param name="entity">An entity to reload.</param>
         TEntity Reload(TEntity entity);
+
+        void ReloadAll();
 
         /// <summary>
         /// The lambda-expression that returns the entity primary key.

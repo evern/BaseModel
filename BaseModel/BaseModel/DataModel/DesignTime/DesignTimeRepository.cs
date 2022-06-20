@@ -1,6 +1,8 @@
 ﻿using BaseModel.Utils;
 using DevExpress.Mvvm;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 
 namespace BaseModel.DataModel.DesignTime
@@ -136,6 +138,21 @@ namespace BaseModel.DataModel.DesignTime
         void IRepository<TEntity, TPrimaryKey>.SetPrimaryKey(TEntity entity, TPrimaryKey primaryKey)
         {
             SetPrimaryKeyCore(entity, primaryKey);
+        }
+
+        public void AddRange(IEnumerable<TEntity> entities)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void RemoveRange(IEnumerable<TEntity> entities)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void ReloadAll()
+        {
+            throw new NotImplementedException();
         }
 
         #endregion

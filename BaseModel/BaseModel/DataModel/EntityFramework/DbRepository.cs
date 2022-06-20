@@ -168,9 +168,19 @@ namespace BaseModel.DataModel.EntityFramework
             DbSet.Add(entity);
         }
 
+        public void AddRange(IEnumerable<TEntity> entities)
+        {
+            DbSet.AddRange(entities);
+        }
+
         void IRepository<TEntity, TPrimaryKey>.Remove(TEntity entity)
         {
             RemoveCore(entity);
+        }
+
+        public void RemoveRange(IEnumerable<TEntity> entities)
+        {
+            DbSet.RemoveRange(entities);
         }
 
         TEntity IRepository<TEntity, TPrimaryKey>.Create(bool add)
@@ -213,6 +223,19 @@ namespace BaseModel.DataModel.EntityFramework
             return entityTraits.HasPrimaryKey(entity);
         }
 
+        public void ReloadAll()
+        {
+            // Get all objects in statemanager with entityKey 
+            // (context.Refresh will throw an exception otherwise) 
+            var refreshableObjects = from entry in ObjectContext.ObjectStateManager.GetObjectStateEntries(
+                                                        System.Data.Entity.EntityState.Deleted
+                                                      | System.Data.Entity.EntityState.Modified
+                                                      | System.Data.Entity.EntityState.Unchanged)
+                                      where entry.EntityKey != null
+                                      select entry.Entity;
+
+            ObjectContext.Refresh(RefreshMode.StoreWins, refreshableObjects);
+        }
         #endregion
     }
 }
